@@ -582,7 +582,7 @@ test("fetchAdminManualHospitalSubmissions requests the Figma review page", async
   );
 });
 
-test("approveManualHospitalSubmission preserves the one-time invite response", async () => {
+test("approveManualHospitalSubmission preserves the reusable invite response", async () => {
   const originalFetch = globalThis.fetch;
   process.env.NEXT_PUBLIC_CHIKAPICK_API_BASE_URL = "https://api.example.com";
   globalThis.fetch = async () =>
@@ -593,7 +593,7 @@ test("approveManualHospitalSubmission preserves the one-time invite response", a
       invite: {
         code: "CP-TEST-1234",
         role: "staff",
-        expiresAt: "2026-08-20T00:00:00.000Z",
+        expiresAt: null,
       },
     });
 
@@ -606,7 +606,7 @@ test("approveManualHospitalSubmission preserves the one-time invite response", a
     assert.deepEqual(result.invite, {
       code: "CP-TEST-1234",
       role: "staff",
-      expiresAt: "2026-08-20T00:00:00.000Z",
+      expiresAt: null,
     });
   } finally {
     globalThis.fetch = originalFetch;

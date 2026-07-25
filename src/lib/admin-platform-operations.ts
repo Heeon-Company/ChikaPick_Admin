@@ -82,6 +82,8 @@ export interface AdminInviteDirectoryItem {
   issuedAt: string | null;
   expiresAt: string | null;
   redeemedAt: string | null;
+  usageCount: number;
+  lastUsedAt: string | null;
   createdAt: string;
 }
 
@@ -209,8 +211,8 @@ export function adminInviteStatusLabel(status: string) {
   return (
     {
       pending_owner_claim: "대표자 인증 대기",
-      active: "사용 가능",
-      redeemed: "사용 완료",
+      active: "사용 중",
+      redeemed: "기존 사용 완료",
       revoked: "폐기",
     }[status] ?? status
   );

@@ -145,7 +145,7 @@ export interface ManualHospitalApprovalResult extends AdminActionResult {
   invite: {
     code: string;
     role: "staff";
-    expiresAt: string;
+    expiresAt: string | null;
   };
 }
 

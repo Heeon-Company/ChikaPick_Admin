@@ -7112,7 +7112,7 @@ function PartnerInviteDirectoryTab({
     inviteId: string;
     clinicName: string;
     code: string | null;
-    expiresAt: string | null;
+    isActive: boolean;
     error: string;
     isLoading: boolean;
   } | null>(null);
@@ -7157,13 +7157,17 @@ function PartnerInviteDirectoryTab({
     if (succeeded) await loadInvites();
   }
 
-  async function openInviteCode(inviteId: string, clinicName: string) {
+  async function openInviteCode(
+    inviteId: string,
+    clinicName: string,
+    status: string,
+  ) {
     setCopyMessage("");
     setInviteCodeDialog({
       inviteId,
       clinicName,
       code: null,
-      expiresAt: null,
+      isActive: status === "active",
       error: "",
       isLoading: true,
     });
@@ -7175,7 +7179,7 @@ function PartnerInviteDirectoryTab({
               inviteId,
               clinicName: result.clinic.name ?? clinicName,
               code: result.code,
-              expiresAt: result.expiresAt,
+              isActive: status === "active",
               error: "",
               isLoading: false,
             }
@@ -7188,7 +7192,7 @@ function PartnerInviteDirectoryTab({
               inviteId,
               clinicName,
               code: null,
-              expiresAt: null,
+              isActive: status === "active",
               error:
                 revealError instanceof Error
                   ? revealError.message
@@ -7228,21 +7232,6 @@ function PartnerInviteDirectoryTab({
           />
         </label>
         <label>
-          <span>초대 역할</span>
-          <select
-            value={draftFilters.role}
-            onChange={(event) =>
-              setDraftFilters((current) => ({ ...current, role: event.target.value }))
-            }
-          >
-            <option value="all">전체</option>
-            <option value="owner">대표자</option>
-            <option value="doctor">치과의사</option>
-            <option value="manager">매니저</option>
-            <option value="staff">스태프</option>
-          </select>
-        </label>
-        <label>
           <span>상태</span>
           <select
             value={draftFilters.status}
@@ -7255,8 +7244,8 @@ function PartnerInviteDirectoryTab({
           >
             <option value="all">전체</option>
             <option value="pending_owner_claim">대표자 인증 대기</option>
-            <option value="active">사용 가능</option>
-            <option value="redeemed">사용 완료</option>
+            <option value="active">사용 중</option>
+            <option value="redeemed">기존 사용 완료</option>
             <option value="revoked">폐기</option>
           </select>
         </label>
@@ -7279,12 +7268,12 @@ function PartnerInviteDirectoryTab({
             <thead>
               <tr>
                 <th>치과</th>
-                <th>역할</th>
+                <th>가입 대상</th>
                 <th>발급자</th>
                 <th>상태</th>
                 <th>발급 일시</th>
-                <th>만료 일시</th>
-                <th>사용 일시</th>
+                <th>가입 인원</th>
+                <th>최근 가입</th>
                 <th>처리</th>
               </tr>
             </thead>
@@ -7300,18 +7289,23 @@ function PartnerInviteDirectoryTab({
                         void openInviteCode(
                           item.id,
                           item.clinic.name ?? "치과 정보 없음",
+                          item.status,
                         )
                       }
                     >
                       {item.clinic.name ?? "—"}
                     </button>
                   </td>
-                  <td>{adminMembershipRoleLabel(item.role)}</td>
+                  <td>
+                    {item.role === "doctor" || item.role === "staff"
+                      ? "치과의사·직원"
+                      : adminMembershipRoleLabel(item.role)}
+                  </td>
                   <td>{adminDirectoryPersonLabel(item.issuer)}</td>
                   <td><span className="admin-operational-status">{adminInviteStatusLabel(item.status)}</span></td>
                   <td>{adminDirectoryDateTime(item.issuedAt ?? item.createdAt)}</td>
-                  <td>{adminDirectoryDateTime(item.expiresAt)}</td>
-                  <td>{adminDirectoryDateTime(item.redeemedAt)}</td>
+                  <td>{item.usageCount.toLocaleString("ko-KR")}명</td>
+                  <td>{adminDirectoryDateTime(item.lastUsedAt)}</td>
                   <td>
                     <button
                       type="button"
@@ -7372,11 +7366,7 @@ function PartnerInviteDirectoryTab({
                 {inviteCodeDialog.error}
               </div>
             )}
-            {inviteCodeDialog.expiresAt ? (
-              <p>
-                만료일: {adminDirectoryDateTime(inviteCodeDialog.expiresAt)}
-              </p>
-            ) : null}
+            {inviteCodeDialog.isActive ? <p>유효기간: 없음</p> : null}
             {copyMessage ? <p role="status">{copyMessage}</p> : null}
             <div className="admin-hospital-invite-actions">
               <button
@@ -8540,23 +8530,16 @@ function ManualHospitalReviewTab({
             aria-labelledby="admin-hospital-invite-dialog-title"
           >
             <h2 id="admin-hospital-invite-dialog-title">
-              직원 초대코드가 발급되었습니다
+              병원 초대코드가 발급되었습니다
             </h2>
             <p>
-              이 코드는 지금 한 번만 확인할 수 있습니다. 직원에게 안전하게
-              전달해 주세요.
+              이 코드는 병원 의료진과 직원이 함께 사용할 수 있으며 새로
+              발급하기 전까지 계속 사용할 수 있습니다. 안전하게 전달해 주세요.
             </p>
-            <div className="admin-hospital-invite-code" aria-label="직원 초대코드">
+            <div className="admin-hospital-invite-code" aria-label="병원 초대코드">
               {approvalResult.invite.code}
             </div>
-            <p>
-              만료일:{" "}
-              {new Intl.DateTimeFormat("ko-KR", {
-                dateStyle: "long",
-                timeStyle: "short",
-                timeZone: "Asia/Seoul",
-              }).format(new Date(approvalResult.invite.expiresAt))}
-            </p>
+            <p>유효기간: 없음</p>
             {copyMessage ? <p role="status">{copyMessage}</p> : null}
             <div className="admin-hospital-invite-actions">
               <button type="button" onClick={() => void copyApprovalInvite()}>
