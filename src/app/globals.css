@@ -5514,6 +5514,35 @@ td span {
   color: #d96505;
 }
 
+.admin-license-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-license-filters button {
+  min-height: 40px;
+  border: 1px solid #d4d6da;
+  border-radius: 100px;
+  background: var(--surface);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.admin-license-filters button[aria-pressed="true"] {
+  border-color: #3366e5;
+  background: #eef3ff;
+  color: #023dc7;
+}
+
+.admin-license-filters button span {
+  margin-left: 4px;
+  font-weight: 800;
+}
+
 .admin-license-request-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -5538,6 +5567,13 @@ td span {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+}
+
+.admin-license-request-card header > div {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .admin-license-request-card h2,
@@ -5566,6 +5602,33 @@ td span {
   font-weight: 400;
   line-height: normal;
   text-align: right;
+}
+
+.admin-license-status {
+  flex: 0 0 auto;
+  border-radius: 100px;
+  background: #f2f3f5;
+  color: var(--text-tertiary);
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.admin-license-status--approved {
+  background: #e9f8ef;
+  color: #168044;
+}
+
+.admin-license-status--pending {
+  background: #fff2e8;
+  color: #d96505;
+}
+
+.admin-license-status--rejected {
+  background: #fff0f0;
+  color: #cf3333;
 }
 
 .admin-license-request-card dl {

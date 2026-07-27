@@ -216,11 +216,15 @@ import {
   type SalesPerformancePayload,
 } from "@/lib/sales-performance";
 import {
+  filterLicenseVerificationRequests,
   licenseMembershipRoleLabel,
   licenseRequestTimeLabel,
+  licenseVerificationStatus,
+  licenseVerificationStatusLabel,
   normalizeLicenseRejectionReason,
   pendingLicenseVerificationRequests,
   summarizeLicenseVerifications,
+  type LicenseVerificationFilter,
 } from "@/lib/license-verifications";
 import { signInWithAdminPassword } from "@/lib/password-auth";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
@@ -8889,19 +8893,36 @@ function LicenseReviewTab({
   const [rejectionReason, setRejectionReason] = useState("");
   const [rejectionError, setRejectionError] = useState("");
   const [isApprovalCompleteOpen, setIsApprovalCompleteOpen] = useState(false);
+  const [statusFilter, setStatusFilter] =
+    useState<LicenseVerificationFilter>("all");
   const sectionRef = useRef<HTMLElement>(null);
   const lastTriggerRef = useRef<HTMLButtonElement>(null);
   const approvalConfirmRef = useRef<HTMLButtonElement>(null);
   const rejectionTextareaRef = useRef<HTMLTextAreaElement>(null);
   const summary = summarizeLicenseVerifications(data.licenseVerificationRequests);
-  const pendingRequests = pendingLicenseVerificationRequests(
+  const visibleRequests = filterLicenseVerificationRequests(
     data.licenseVerificationRequests,
+    statusFilter,
   );
   const metrics = [
     { label: "소속 치과 의사 전체 가입자 수", value: summary.total },
     { label: "면허 인증 완료 수", value: summary.approved },
     { label: "승인 요청 수", value: summary.pending, isPending: true },
-    { label: "미요청 수", value: summary.unrequested },
+    { label: "미요청/재요청 필요 수", value: summary.unrequested },
+  ];
+  const filters: Array<{
+    id: LicenseVerificationFilter;
+    label: string;
+    count: number;
+  }> = [
+    { id: "all", label: "전체", count: summary.total },
+    { id: "pending", label: "승인 요청", count: summary.pending },
+    { id: "approved", label: "인증 완료", count: summary.approved },
+    {
+      id: "needs_submission",
+      label: "미요청/재요청 필요",
+      count: summary.unrequested,
+    },
   ];
 
   useEffect(() => {
@@ -9021,16 +9042,34 @@ function LicenseReviewTab({
         ))}
       </div>
 
+      <div className="admin-license-filters" role="group" aria-label="면허 인증 상태 필터">
+        {filters.map((filter) => (
+          <button
+            aria-pressed={statusFilter === filter.id}
+            key={filter.id}
+            onClick={() => setStatusFilter(filter.id)}
+            type="button"
+          >
+            {filter.label} <span>{filter.count}</span>
+          </button>
+        ))}
+      </div>
+
       <div className="admin-license-request-grid">
-        {pendingRequests.map((item) => {
+        {visibleRequests.map((item) => {
           const submission = item.latestSubmission;
-          if (!submission) return null;
+          const status = licenseVerificationStatus(item);
           const isProcessing = processingDecision?.userId === item.userId;
           const displayName = item.displayName ?? "이름 없음";
           return (
             <article className="admin-license-request-card" key={item.userId}>
               <header>
-                <h2>{displayName}</h2>
+                <div>
+                  <h2>{displayName}</h2>
+                  <span className={`admin-license-status admin-license-status--${status}`}>
+                    {licenseVerificationStatusLabel(status)}
+                  </span>
+                </div>
                 <p title={item.email ?? undefined}>{item.email ?? item.userId}</p>
               </header>
               <dl>
@@ -9044,12 +9083,16 @@ function LicenseReviewTab({
                 </div>
                 <div>
                   <dt>요청 시간</dt>
-                  <dd>{licenseRequestTimeLabel(submission.submittedAt)}</dd>
+                  <dd>
+                    {submission
+                      ? licenseRequestTimeLabel(submission.submittedAt)
+                      : "-"}
+                  </dd>
                 </div>
                 <div>
                   <dt>첨부 파일</dt>
                   <dd className="admin-license-file">
-                    {submission.signedUrl ? (
+                    {submission?.signedUrl ? (
                       <a
                         href={submission.signedUrl}
                         rel="noreferrer"
@@ -9058,35 +9101,45 @@ function LicenseReviewTab({
                       >
                         {submission.fileName}
                       </a>
-                    ) : (
+                    ) : submission ? (
                       <span title={submission.fileName}>{submission.fileName}</span>
+                    ) : (
+                      <span>미제출</span>
                     )}
                   </dd>
                 </div>
               </dl>
-              <footer>
-                <button
-                  type="button"
-                  disabled={isLoading || processingDecision !== null}
-                  onClick={(event) =>
-                    openRejection(item.userId, displayName, event.currentTarget)
-                  }
-                >
-                  {isProcessing && !processingDecision.approved ? "처리 중" : "반려"}
-                </button>
-                <button
-                  type="button"
-                  disabled={isLoading || processingDecision !== null}
-                  onClick={(event) => void approve(item.userId, event.currentTarget)}
-                >
-                  {isProcessing && processingDecision.approved ? "처리 중" : "승인"}
-                </button>
-              </footer>
+              {status === "pending" ? (
+                <footer>
+                  <button
+                    type="button"
+                    disabled={isLoading || processingDecision !== null}
+                    onClick={(event) =>
+                      openRejection(item.userId, displayName, event.currentTarget)
+                    }
+                  >
+                    {isProcessing && !processingDecision.approved
+                      ? "처리 중"
+                      : "반려"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isLoading || processingDecision !== null}
+                    onClick={(event) => void approve(item.userId, event.currentTarget)}
+                  >
+                    {isProcessing && processingDecision.approved
+                      ? "처리 중"
+                      : "승인"}
+                  </button>
+                </footer>
+              ) : null}
             </article>
           );
         })}
-        {!isLoading && pendingRequests.length === 0 ? (
-          <p className="admin-license-empty">현재 승인 요청이 없습니다.</p>
+        {!isLoading && visibleRequests.length === 0 ? (
+          <p className="admin-license-empty">
+            선택한 상태에 해당하는 치과의사가 없습니다.
+          </p>
         ) : null}
         {isLoading && data.licenseVerificationRequests.length === 0 ? (
           <p className="admin-license-empty">면허 인증 요청을 불러오는 중입니다.</p>
