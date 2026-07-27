@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 
+import { AdminSelect } from "@/components/AdminSelect";
 import {
   approveManualHospitalSubmission,
   assignAdminDentalSalesperson,
@@ -1285,21 +1286,22 @@ function MembershipManagementTab({
           </label>
           <label className="admin-membership-sort">
             <span className="sr-only">정렬 기준</span>
-            <select
+            <AdminSelect
+              label="정렬 기준"
               value={filters.sort}
-              aria-label="정렬 기준"
-              onChange={(event) => {
+              options={[
+                { value: "recommended", label: membershipSortLabel("recommended") },
+                { value: "name", label: membershipSortLabel("name") },
+                { value: "updated", label: membershipSortLabel("updated") },
+              ]}
+              onChange={(value) => {
                 setCurrentPage(1);
                 setFilters((current) => ({
                   ...current,
-                  sort: event.target.value as AdminMembershipFilters["sort"],
+                  sort: value,
                 }));
               }}
-            >
-              <option value="recommended">{membershipSortLabel("recommended")}</option>
-              <option value="name">{membershipSortLabel("name")}</option>
-              <option value="updated">{membershipSortLabel("updated")}</option>
-            </select>
+            />
           </label>
         </div>
       </div>
@@ -1529,18 +1531,15 @@ function MembershipManagementTab({
               </label>
               <label>
                 <span>카테고리</span>
-                <select
+                <AdminSelect
+                  label="카테고리"
                   value={editCategory}
-                  onChange={(event) =>
-                    setEditCategory(event.target.value as MembershipCategory)
-                  }
-                >
-                  {membershipCategories.slice(1).map((category) => (
-                    <option key={category.code} value={category.code}>
-                      {category.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setEditCategory}
+                  options={membershipCategories.slice(1).map((category) => ({
+                    value: category.code as MembershipCategory,
+                    label: category.label,
+                  }))}
+                />
               </label>
               <label>
                 <span>추천순</span>
@@ -1786,14 +1785,16 @@ function MembershipRegistrationView({
               </MembershipFormField>
               <div className="admin-membership-form-row">
                 <MembershipFormField label="카테고리" required>
-                  <select
+                  <AdminSelect
+                    label="카테고리"
+                    required
                     value={category}
-                    onChange={(event) => setCategory(event.target.value as MembershipCategory)}
-                  >
-                    {membershipCategories.slice(1).map((item) => (
-                      <option key={item.code} value={item.code}>{item.label}</option>
-                    ))}
-                  </select>
+                    onChange={setCategory}
+                    options={membershipCategories.slice(1).map((item) => ({
+                      value: item.code as MembershipCategory,
+                      label: item.label,
+                    }))}
+                  />
                 </MembershipFormField>
                 <MembershipFormField label="추천순 노출 가중치" required>
                   <input
@@ -2821,16 +2822,16 @@ function AdminAccountsTab({
                 <label className="admin-account-invite-role">
                   <span>역할</span>
                   <span className="admin-account-role-select">
-                    <select
+                    <AdminSelect
+                      label="역할"
                       value={inviteRole}
-                      onChange={(event) =>
-                        setInviteRole(event.target.value as AdminAccountRole)
-                      }
-                    >
-                      <option value="super_admin">최고 관리자</option>
-                      <option value="sales">영업 담당자</option>
-                      <option value="admin">운영 관리자</option>
-                    </select>
+                      onChange={setInviteRole}
+                      options={[
+                        { value: "super_admin", label: "최고 관리자" },
+                        { value: "sales", label: "영업 담당자" },
+                        { value: "admin", label: "운영 관리자" },
+                      ] satisfies Array<{ value: AdminAccountRole; label: string }>}
+                    />
                   </span>
                 </label>
                 {dialogError ? <p role="alert">{dialogError}</p> : null}
@@ -4083,9 +4084,13 @@ function SalesPerformanceTab({
         <label className="admin-sales-filter-field">
           <span>상태</span>
           <span className="admin-sales-select-wrap admin-performance-fixed-filter">
-            <select value="SIGNED" disabled aria-label="상태">
-              <option value="SIGNED">가입완료</option>
-            </select>
+            <AdminSelect
+              disabled
+              label="상태"
+              onChange={() => undefined}
+              options={[{ value: "SIGNED", label: "가입완료" }]}
+              value="SIGNED"
+            />
           </span>
         </label>
         <SalesFilterSelect
@@ -4653,6 +4658,14 @@ function PartnerClinicDetailPage({
   async function saveOperationEvent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!operationForm.content.trim()) return;
+    if (
+      operationForm.type === "support_history" &&
+      operationForm.resolvedAt &&
+      !operationForm.resolvedByAdminUserId
+    ) {
+      setOperationError("최종 처리 일시를 입력한 경우 처리 담당자를 선택해 주세요.");
+      return;
+    }
     setIsOperationSaving(true);
     setOperationError("");
     try {
@@ -4785,19 +4798,19 @@ function PartnerClinicDetailPage({
               <dt>담당 운영자</dt>
               <dd className="is-strong admin-partner-operator-control">
                 {detail.canManageOperations ? (
-                  <select
-                    aria-label="담당 운영자"
+                  <AdminSelect
+                    label="담당 운영자"
                     disabled={isOperatorSaving}
                     value={detail.operations.assignedOperator?.id ?? ""}
-                    onChange={(event) => void saveOperator(event.target.value)}
-                  >
-                    <option value="">미지정</option>
-                    {detail.operations.operatorOptions.map((operator) => (
-                      <option key={operator.id} value={operator.id}>
-                        {operator.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(value) => void saveOperator(value)}
+                    options={[
+                      { value: "", label: "미지정" },
+                      ...detail.operations.operatorOptions.map((operator) => ({
+                        value: operator.id,
+                        label: operator.name,
+                      })),
+                    ]}
+                  />
                 ) : (
                   detail.operations.assignedOperator?.name ?? "미지정"
                 )}
@@ -5170,20 +5183,22 @@ function PartnerClinicDetailPage({
             <form onSubmit={saveOperationEvent}>
               <label>
                 <span>유형</span>
-                <select
+                <AdminSelect
+                  label="유형"
                   value={operationForm.type}
-                  onChange={(event) =>
+                  onChange={(value) =>
                     setOperationForm((form) => ({
                       ...form,
-                      type: event.target.value as typeof form.type,
+                      type: value,
                       resolvedAt: "",
                       resolvedByAdminUserId: "",
                     }))
                   }
-                >
-                  <option value="operation_memo">운영 메모</option>
-                  <option value="support_history">지원 요청 이력</option>
-                </select>
+                  options={[
+                    { value: "operation_memo", label: "운영 메모" },
+                    { value: "support_history", label: "지원 요청 이력" },
+                  ]}
+                />
               </label>
               <label>
                 <span>발생 일시</span>
@@ -5230,24 +5245,25 @@ function PartnerClinicDetailPage({
                   </label>
                   <label>
                     <span>처리 담당자</span>
-                    <select
+                    <AdminSelect
+                      label="처리 담당자"
                       disabled={!operationForm.resolvedAt}
                       required={!!operationForm.resolvedAt}
                       value={operationForm.resolvedByAdminUserId}
-                      onChange={(event) =>
+                      onChange={(value) =>
                         setOperationForm((form) => ({
                           ...form,
-                          resolvedByAdminUserId: event.target.value,
+                          resolvedByAdminUserId: value,
                         }))
                       }
-                    >
-                      <option value="">선택</option>
-                      {detail.operations.operatorOptions.map((operator) => (
-                        <option key={operator.id} value={operator.id}>
-                          {operator.name}
-                        </option>
-                      ))}
-                    </select>
+                      options={[
+                        { value: "", label: "선택" },
+                        ...detail.operations.operatorOptions.map((operator) => ({
+                          value: operator.id,
+                          label: operator.name,
+                        })),
+                      ]}
+                    />
                   </label>
                 </>
               ) : null}
@@ -6308,18 +6324,19 @@ function DentalSalesDetailPage({
                 <label className="admin-sales-assignee-field">
                   <span>담당자 선택</span>
                   <span className="admin-sales-assignee-select-wrap">
-                    <select
+                    <AdminSelect
+                      label="담당자 선택"
                       value={assignmentDraftSalespersonId}
                       disabled={isSavingAssignment}
-                      onChange={(event) =>
-                        setAssignmentDraftSalespersonId(event.target.value)
-                      }
-                    >
-                      <option value="">선택 안함</option>
-                      {detail.salespeople.map((person) => (
-                        <option key={person.id} value={person.id}>{person.name}</option>
-                      ))}
-                    </select>
+                      onChange={setAssignmentDraftSalespersonId}
+                      options={[
+                        { value: "", label: "선택 안함" },
+                        ...detail.salespeople.map((person) => ({
+                          value: person.id,
+                          label: person.name,
+                        })),
+                      ]}
+                    />
                   </span>
                 </label>
 
@@ -6328,19 +6345,19 @@ function DentalSalesDetailPage({
                 <label className="admin-sales-assignee-field">
                   <span>외부 연결자 선택</span>
                   <span className="admin-sales-assignee-select-wrap">
-                    <select
-                      aria-label="외부 연결자 선택"
+                    <AdminSelect
+                      label="외부 연결자 선택"
                       value={assignmentDraftExternalConnectorId}
                       disabled={isSavingAssignment}
-                      onChange={(event) =>
-                        setAssignmentDraftExternalConnectorId(event.target.value)
-                      }
-                    >
-                      <option value="">선택 안함</option>
-                      {(detail.externalConnectors ?? []).map((person) => (
-                        <option key={person.id} value={person.id}>{person.name}</option>
-                      ))}
-                    </select>
+                      onChange={setAssignmentDraftExternalConnectorId}
+                      options={[
+                        { value: "", label: "선택 안함" },
+                        ...(detail.externalConnectors ?? []).map((person) => ({
+                          value: person.id,
+                          label: person.name,
+                        })),
+                      ]}
+                    />
                   </span>
                 </label>
 
@@ -6788,16 +6805,15 @@ function SalesFilterSelect({
     <label className="admin-sales-filter-field">
       <span>{label}</span>
       <span className="admin-sales-select-wrap">
-        <select value={value} onChange={(event) => onChange(event.target.value)}>
-          {options.map((option) => (
-            <option
-              key={typeof option === "string" ? option : option.value}
-              value={typeof option === "string" ? option : option.value}
-            >
-              {typeof option === "string" ? option : option.label}
-            </option>
-          ))}
-        </select>
+        <AdminSelect
+          label={label}
+          value={value}
+          onChange={onChange}
+          options={options.map((option) => ({
+            value: typeof option === "string" ? option : option.value,
+            label: typeof option === "string" ? option : option.label,
+          }))}
+        />
       </span>
     </label>
   );
@@ -6932,41 +6948,45 @@ function AdminReservationsTab({ accessToken }: { accessToken: string }) {
         </label>
         <label>
           <span>예약 유형</span>
-          <select
+          <AdminSelect
+            label="예약 유형"
             value={draftFilters.bookingSource}
-            onChange={(event) =>
+            onChange={(value) =>
               setDraftFilters((current) => ({
                 ...current,
-                bookingSource: event.target.value,
+                bookingSource: value,
               }))
             }
-          >
-            <option value="all">전체</option>
-            <option value="standard">일반 예약</option>
-            <option value="instant">즉시 예약</option>
-          </select>
+            options={[
+              { value: "all", label: "전체" },
+              { value: "standard", label: "일반 예약" },
+              { value: "instant", label: "즉시 예약" },
+            ]}
+          />
         </label>
         <label>
           <span>상태</span>
-          <select
+          <AdminSelect
+            label="상태"
             value={draftFilters.status}
-            onChange={(event) =>
+            onChange={(value) =>
               setDraftFilters((current) => ({
                 ...current,
-                status: event.target.value,
+                status: value,
               }))
             }
-          >
-            <option value="all">전체</option>
-            <option value="pending">접수</option>
-            <option value="time_proposed">시간 제안</option>
-            <option value="alternative_proposed">대안 제안</option>
-            <option value="proposed">제안</option>
-            <option value="reschedule_proposed">일정 재제안</option>
-            <option value="confirmed">확정</option>
-            <option value="completed">완료</option>
-            <option value="cancelled">취소</option>
-          </select>
+            options={[
+              { value: "all", label: "전체" },
+              { value: "pending", label: "접수" },
+              { value: "time_proposed", label: "시간 제안" },
+              { value: "alternative_proposed", label: "대안 제안" },
+              { value: "proposed", label: "제안" },
+              { value: "reschedule_proposed", label: "일정 재제안" },
+              { value: "confirmed", label: "확정" },
+              { value: "completed", label: "완료" },
+              { value: "cancelled", label: "취소" },
+            ]}
+          />
         </label>
         <button type="submit">조회</button>
       </form>
@@ -7101,19 +7121,21 @@ function AdminConsultationsTab({ accessToken }: { accessToken: string }) {
         </label>
         <label>
           <span>상태</span>
-          <select
+          <AdminSelect
+            label="상태"
             value={draftFilters.status}
-            onChange={(event) =>
+            onChange={(value) =>
               setDraftFilters((current) => ({
                 ...current,
-                status: event.target.value,
+                status: value,
               }))
             }
-          >
-            <option value="all">전체</option>
-            <option value="pending">답변 대기</option>
-            <option value="completed">답변 완료</option>
-          </select>
+            options={[
+              { value: "all", label: "전체" },
+              { value: "pending", label: "답변 대기" },
+              { value: "completed", label: "답변 완료" },
+            ]}
+          />
         </label>
         <button type="submit">조회</button>
       </form>
@@ -7320,21 +7342,23 @@ function PartnerInviteDirectoryTab({
         </label>
         <label>
           <span>상태</span>
-          <select
+          <AdminSelect
+            label="상태"
             value={draftFilters.status}
-            onChange={(event) =>
+            onChange={(value) =>
               setDraftFilters((current) => ({
                 ...current,
-                status: event.target.value,
+                status: value,
               }))
             }
-          >
-            <option value="all">전체</option>
-            <option value="pending_owner_claim">대표자 인증 대기</option>
-            <option value="active">사용 중</option>
-            <option value="redeemed">기존 사용 완료</option>
-            <option value="revoked">폐기</option>
-          </select>
+            options={[
+              { value: "all", label: "전체" },
+              { value: "pending_owner_claim", label: "대표자 인증 대기" },
+              { value: "active", label: "사용 중" },
+              { value: "redeemed", label: "기존 사용 완료" },
+              { value: "revoked", label: "폐기" },
+            ]}
+          />
         </label>
         <button type="submit">조회</button>
       </form>
@@ -7566,18 +7590,20 @@ function ClinicMembershipRequestsTab({
         </label>
         <label>
           <span>신청 역할</span>
-          <select
+          <AdminSelect
+            label="신청 역할"
             value={draftFilters.role}
-            onChange={(event) =>
-              setDraftFilters((current) => ({ ...current, role: event.target.value }))
+            onChange={(value) =>
+              setDraftFilters((current) => ({ ...current, role: value }))
             }
-          >
-            <option value="all">전체</option>
-            <option value="owner">대표자</option>
-            <option value="doctor">치과의사</option>
-            <option value="manager">매니저</option>
-            <option value="staff">스태프</option>
-          </select>
+            options={[
+              { value: "all", label: "전체" },
+              { value: "owner", label: "대표자" },
+              { value: "doctor", label: "치과의사" },
+              { value: "manager", label: "매니저" },
+              { value: "staff", label: "스태프" },
+            ]}
+          />
         </label>
         <button type="submit">조회</button>
       </form>
@@ -7933,19 +7959,21 @@ function AdminAuditLogTab({ accessToken }: { accessToken: string }) {
         </label>
         <label>
           <span>결과</span>
-          <select
+          <AdminSelect
+            label="결과"
             value={draftFilters.result}
-            onChange={(event) =>
+            onChange={(value) =>
               setDraftFilters((current) => ({
                 ...current,
-                result: event.target.value,
+                result: value,
               }))
             }
-          >
-            <option value="all">전체</option>
-            <option value="success">성공</option>
-            <option value="failure">실패</option>
-          </select>
+            options={[
+              { value: "all", label: "전체" },
+              { value: "success", label: "성공" },
+              { value: "failure", label: "실패" },
+            ]}
+          />
         </label>
         <button type="submit">조회</button>
       </form>
