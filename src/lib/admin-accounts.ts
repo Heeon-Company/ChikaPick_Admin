@@ -11,6 +11,9 @@ export interface AdminAccountDirectoryFilters {
 
 export interface AdminAccountDirectoryItem {
   id: string;
+  kind: "account" | "invitation";
+  userId: string | null;
+  invitationId: string | null;
   fullName: string | null;
   email: string | null;
   accountId: string;
@@ -18,6 +21,9 @@ export interface AdminAccountDirectoryItem {
   status: string;
   lastLoginAt: string | null;
   joinedAt: string;
+  expiresAt: string | null;
+  canResend: boolean;
+  canRevoke: boolean;
 }
 
 export interface AdminAccountDirectoryPayload {
@@ -52,6 +58,8 @@ export function adminAccountDirectoryRoleLabel(
 export function adminAccountDirectoryStatusLabel(status: string) {
   if (status === "active") return "활성";
   if (status === "invited") return "초대 대기";
+  if (status === "invite_expired") return "초대 만료";
+  if (status === "invite_failed") return "전송 실패";
   if (status === "locked") return "잠금";
   return "비활성";
 }

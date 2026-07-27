@@ -131,6 +131,23 @@ export interface AdminActionResult {
   message: string;
 }
 
+export type AdminAccountSetupFlow = "invitation" | "recovery";
+
+export interface AdminAccountSetupPayload {
+  actionId: string;
+  email: string;
+  expiresAt: string | null;
+  flow: AdminAccountSetupFlow;
+  fullName: string | null;
+  role: AdminAccountRole | null;
+  completed: boolean;
+  accountStatus: "active" | "locked" | null;
+}
+
+export interface AdminAccountSetupResult extends AdminActionResult {
+  accountStatus: "active" | "locked";
+}
+
 export interface AdminInviteCodeReveal {
   code: string;
   clinic: {
@@ -525,6 +542,50 @@ export async function sendAdminPasswordReset(
     `/api/v1/admin/accounts/${userId}/password-reset`,
     accessToken,
     { method: "POST", body: JSON.stringify({ redirectTo }) },
+  );
+}
+
+export async function resendAdminAccountInvitation(
+  accessToken: string,
+  invitationId: string,
+  redirectTo?: string,
+) {
+  return adminFetch<AdminActionResult>(
+    `/api/v1/admin/accounts/invitations/${encodeURIComponent(invitationId)}`,
+    accessToken,
+    { method: "POST", body: JSON.stringify({ redirectTo }) },
+  );
+}
+
+export async function revokeAdminAccountInvitation(
+  accessToken: string,
+  invitationId: string,
+) {
+  return adminFetch<AdminActionResult>(
+    `/api/v1/admin/accounts/invitations/${encodeURIComponent(invitationId)}`,
+    accessToken,
+    { method: "DELETE" },
+  );
+}
+
+export async function fetchAdminAccountSetup(
+  accessToken: string,
+  flow: AdminAccountSetupFlow,
+) {
+  return adminFetch<AdminAccountSetupPayload>(
+    `/api/v1/admin/auth/account-setup?flow=${encodeURIComponent(flow)}`,
+    accessToken,
+  );
+}
+
+export async function completeAdminAccountSetup(
+  accessToken: string,
+  body: { flow: AdminAccountSetupFlow; password: string },
+) {
+  return adminFetch<AdminAccountSetupResult>(
+    "/api/v1/admin/auth/account-setup",
+    accessToken,
+    { method: "POST", body: JSON.stringify(body) },
   );
 }
 

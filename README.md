@@ -10,6 +10,7 @@ stores or uses Supabase service-role credentials.
 ## Features
 
 - 관리자 Supabase 이메일/비밀번호 로그인
+- 24시간 유효한 관리자 초대, 재전송/취소, 초대 수락 및 비밀번호 재설정
 - Admin browser session registration with `appSurface: "admin"`
 - 운영 현황 summary metrics
 - 전국 HIRA 치과 영업 관리: 서버 필터/페이지네이션, 지역 초대코드, 담당자 배정, 방문 이력, 가입/활성 상태
@@ -52,3 +53,11 @@ npm run dev -- --port 3002
 The backend verifies admin authorization through `user_roles.role = 'admin'`.
 Logging in with a non-admin Supabase account will authenticate successfully but
 admin API calls will be rejected.
+
+Admin invitations do not provision authorization when mail is sent. The
+recipient opens `/account/setup`, explicitly confirms the email link, and sets
+a 10–72 character password containing a digit and a supported symbol. Only the
+API's transactional completion step adds the Admin role. The same page handles
+password recovery and registers an active, unlocked Admin browser session
+before opening the console. A locked account stays locked after its password is
+changed.

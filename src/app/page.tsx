@@ -41,7 +41,9 @@ import {
   lookupAdminPartnerAccount,
   publishAdminTermVersion,
   rejectManualHospitalSubmission,
+  resendAdminAccountInvitation,
   revealInviteCode,
+  revokeAdminAccountInvitation,
   revokeInvite,
   sendAdminPasswordReset,
   searchAdminPartnerAccounts,
@@ -590,8 +592,10 @@ export default function AdminHome() {
     }
   }
 
-  function adminResetRedirectUrl() {
-    return typeof window === "undefined" ? undefined : window.location.origin;
+  function adminSetupRedirectUrl() {
+    return typeof window === "undefined"
+      ? undefined
+      : `${window.location.origin}/account/setup`;
   }
 
   if (isAuthLoading) {
@@ -961,13 +965,27 @@ export default function AdminHome() {
                 runAction((token) =>
                   inviteAdminAccount(token, {
                     ...body,
-                    redirectTo: adminResetRedirectUrl(),
+                    redirectTo: adminSetupRedirectUrl(),
                   }),
                 )
               }
               onPasswordReset={(userId) =>
                 runAction((token) =>
-                  sendAdminPasswordReset(token, userId, adminResetRedirectUrl()),
+                  sendAdminPasswordReset(token, userId, adminSetupRedirectUrl()),
+                )
+              }
+              onInvitationResend={(invitationId) =>
+                runAction((token) =>
+                  resendAdminAccountInvitation(
+                    token,
+                    invitationId,
+                    adminSetupRedirectUrl(),
+                  ),
+                )
+              }
+              onInvitationRevoke={(invitationId) =>
+                runAction((token) =>
+                  revokeAdminAccountInvitation(token, invitationId),
                 )
               }
               onUnlock={(userId) =>
@@ -2264,6 +2282,8 @@ function AdminAccountsTab({
   dialog,
   onDialogChange,
   onInvite,
+  onInvitationResend,
+  onInvitationRevoke,
   onLock,
   onPasswordReset,
   onUnlock,
@@ -2277,6 +2297,8 @@ function AdminAccountsTab({
     fullName: string;
     role: AdminAccountRole;
   }) => Promise<boolean>;
+  onInvitationResend: (invitationId: string) => Promise<boolean>;
+  onInvitationRevoke: (invitationId: string) => Promise<boolean>;
   onLock: (userId: string) => Promise<boolean>;
   onPasswordReset: (userId: string) => Promise<boolean>;
   onUnlock: (userId: string) => Promise<boolean>;
@@ -2400,6 +2422,33 @@ function AdminAccountsTab({
     setActionUserId(userId);
     const succeeded = await onPasswordReset(userId);
     if (succeeded) setOpenActionId(null);
+    setActionUserId(null);
+  }
+
+  async function handleInvitationResend(invitationId: string) {
+    setActionUserId(invitationId);
+    const succeeded = await onInvitationResend(invitationId);
+    if (succeeded) {
+      setOpenActionId(null);
+      await loadAccounts();
+    }
+    setActionUserId(null);
+  }
+
+  async function handleInvitationRevoke(invitationId: string) {
+    if (
+      !window.confirm(
+        "이 관리자 초대를 취소하시겠습니까? 기존 링크로는 계정을 설정할 수 없습니다.",
+      )
+    ) {
+      return;
+    }
+    setActionUserId(invitationId);
+    const succeeded = await onInvitationRevoke(invitationId);
+    if (succeeded) {
+      setOpenActionId(null);
+      await loadAccounts();
+    }
     setActionUserId(null);
   }
 
@@ -2595,43 +2644,80 @@ function AdminAccountsTab({
                           role="menu"
                           style={actionMenuPosition}
                         >
-                          <button
-                            type="button"
-                            role="menuitem"
-                            disabled={actionUserId === account.id}
-                            onClick={() => void handlePasswordReset(account.id)}
-                          >
-                            비밀번호 재설정 이메일 전송
-                          </button>
-                          <span aria-hidden="true" />
-                          {account.status === "locked" ? (
-                            <button
-                              type="button"
-                              role="menuitem"
-                              disabled={actionUserId === account.id}
-                              onClick={() => void handleUnlock(account.id)}
-                            >
-                              계정 잠금 해제
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              role="menuitem"
-                              disabled={actionUserId === account.id}
-                              onClick={() => void handleLock(account.id)}
-                            >
-                              계정 잠금
-                            </button>
-                          )}
-                          <span aria-hidden="true" />
-                          <button
-                            type="button"
-                            role="menuitem"
-                            disabled={actionUserId === account.id}
-                            onClick={() => void handleWithdraw(account.id)}
-                          >
-                            계정 탈퇴
-                          </button>
+                          {account.kind === "invitation" &&
+                          account.invitationId ? (
+                            <>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                disabled={
+                                  !account.canResend ||
+                                  actionUserId === account.invitationId
+                                }
+                                onClick={() =>
+                                  void handleInvitationResend(account.invitationId!)
+                                }
+                              >
+                                초대 메일 재전송
+                              </button>
+                              <span aria-hidden="true" />
+                              <button
+                                type="button"
+                                role="menuitem"
+                                disabled={
+                                  !account.canRevoke ||
+                                  actionUserId === account.invitationId
+                                }
+                                onClick={() =>
+                                  void handleInvitationRevoke(account.invitationId!)
+                                }
+                              >
+                                초대 취소
+                              </button>
+                            </>
+                          ) : account.userId ? (
+                            <>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                disabled={actionUserId === account.userId}
+                                onClick={() =>
+                                  void handlePasswordReset(account.userId!)
+                                }
+                              >
+                                비밀번호 재설정 이메일 전송
+                              </button>
+                              <span aria-hidden="true" />
+                              {account.status === "locked" ? (
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  disabled={actionUserId === account.userId}
+                                  onClick={() => void handleUnlock(account.userId!)}
+                                >
+                                  계정 잠금 해제
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  disabled={actionUserId === account.userId}
+                                  onClick={() => void handleLock(account.userId!)}
+                                >
+                                  계정 잠금
+                                </button>
+                              )}
+                              <span aria-hidden="true" />
+                              <button
+                                type="button"
+                                role="menuitem"
+                                disabled={actionUserId === account.userId}
+                                onClick={() => void handleWithdraw(account.userId!)}
+                              >
+                                계정 탈퇴
+                              </button>
+                            </>
+                          ) : null}
                         </div>
                       ) : null}
                     </div>

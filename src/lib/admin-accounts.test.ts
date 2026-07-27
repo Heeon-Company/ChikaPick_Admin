@@ -19,6 +19,8 @@ test("admin account directory uses the Figma role and status labels", () => {
   assert.equal(adminAccountDirectoryRoleLabel("admin"), "운영 관리자");
   assert.equal(adminAccountDirectoryStatusLabel("active"), "활성");
   assert.equal(adminAccountDirectoryStatusLabel("invited"), "초대 대기");
+  assert.equal(adminAccountDirectoryStatusLabel("invite_expired"), "초대 만료");
+  assert.equal(adminAccountDirectoryStatusLabel("invite_failed"), "전송 실패");
   assert.equal(adminAccountDirectoryStatusLabel("locked"), "잠금");
   assert.equal(adminAccountDirectoryStatusLabel("suspended"), "비활성");
 });
