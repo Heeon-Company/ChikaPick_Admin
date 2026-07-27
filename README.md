@@ -65,3 +65,10 @@ A locked account stays locked after its password is changed.
 The Admin sidebar includes a Partners-aligned `설정` tab. It shows the current
 Admin account summary and signs out only the current browser session before
 returning to the Admin login screen.
+
+A Super Admin may withdraw their own Admin access from `어드민 계정 관리`.
+Successful self-withdrawal revokes Admin sessions and returns the current
+browser to the login screen. The API rejects the action when that account is
+the last unlocked Super Admin, preventing an administrator lockout. Withdrawal
+does not delete the underlying Supabase identity or unrelated patient/partner
+roles.

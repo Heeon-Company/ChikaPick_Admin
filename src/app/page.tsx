@@ -63,6 +63,7 @@ import {
 import {
   adminAccountDirectoryRoleLabel,
   adminAccountDirectoryStatusLabel,
+  adminAccountWithdrawalConfirmation,
   adminInviteDisplayName,
   defaultAdminAccountDirectoryFilters,
   formatAdminAccountDirectoryDate,
@@ -605,6 +606,37 @@ export default function AdminHome() {
     }
   }
 
+  async function withdrawAccount(userId: string) {
+    if (!session?.access_token) return false;
+    const isCurrentAccount = session.user.id === userId;
+    setMessage("");
+
+    try {
+      await withdrawAdminAccount(session.access_token, userId);
+      if (isCurrentAccount) {
+        const { error } = await signOutCurrentAdminSession(supabase);
+        lastAutoLoadedAccessTokenRef.current = null;
+        setSession(null);
+        setConsoleData(emptyConsole);
+        setHasLoadedConsole(false);
+        setActivePrimaryTab("dashboard");
+        setMessage(
+          error
+            ? "어드민 계정은 탈퇴 처리되었지만 브라우저 로그아웃을 완료하지 못했습니다. 이 창을 닫고 다시 접속해 주세요."
+            : "어드민 계정이 탈퇴 처리되었습니다.",
+        );
+        return true;
+      }
+
+      setMessage("처리되었습니다.");
+      await loadConsole(session);
+      return true;
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "처리에 실패했습니다.");
+      return false;
+    }
+  }
+
   async function runResultAction<T>(
     action: (accessToken: string) => Promise<T>,
   ): Promise<T | null> {
@@ -990,6 +1022,7 @@ export default function AdminHome() {
           ) : activePrimaryTab === "admin-accounts" ? (
             <AdminAccountsTab
               accessToken={session?.access_token ?? ""}
+              currentUserId={session?.user.id ?? null}
               dialog={adminAccountDialog}
               onDialogChange={setAdminAccountDialog}
               onInvite={(body) =>
@@ -1025,9 +1058,7 @@ export default function AdminHome() {
               onLock={(userId) =>
                 runAction((token) => lockAdminAccount(token, userId))
               }
-              onWithdraw={(userId) =>
-                runAction((token) => withdrawAdminAccount(token, userId))
-              }
+              onWithdraw={withdrawAccount}
             />
           ) : activePrimaryTab === "external-connectors" ? (
             <ExternalConnectorsTab
@@ -2374,6 +2405,7 @@ function MembershipListField({
 
 function AdminAccountsTab({
   accessToken,
+  currentUserId,
   dialog,
   onDialogChange,
   onInvite,
@@ -2385,6 +2417,7 @@ function AdminAccountsTab({
   onWithdraw,
 }: {
   accessToken: string;
+  currentUserId: string | null;
   dialog: "invite" | null;
   onDialogChange: (dialog: "invite" | null) => void;
   onInvite: (body: {
@@ -2578,7 +2611,7 @@ function AdminAccountsTab({
   async function handleWithdraw(userId: string) {
     if (
       !window.confirm(
-        "이 어드민 계정을 탈퇴 처리하시겠습니까? 어드민 권한과 로그인 세션이 즉시 해제됩니다.",
+        adminAccountWithdrawalConfirmation(userId === currentUserId),
       )
     ) {
       return;
@@ -2587,7 +2620,7 @@ function AdminAccountsTab({
     const succeeded = await onWithdraw(userId);
     if (succeeded) {
       setOpenActionId(null);
-      await loadAccounts();
+      if (userId !== currentUserId) await loadAccounts();
     }
     setActionUserId(null);
   }

@@ -64,6 +64,12 @@ export function adminAccountDirectoryStatusLabel(status: string) {
   return "비활성";
 }
 
+export function adminAccountWithdrawalConfirmation(isCurrentAccount: boolean) {
+  return isCurrentAccount
+    ? "본인의 어드민 계정을 탈퇴 처리하시겠습니까? 어드민 권한과 관리자 세션이 즉시 해제되며 로그인 화면으로 이동합니다."
+    : "이 어드민 계정을 탈퇴 처리하시겠습니까? 어드민 권한과 로그인 세션이 즉시 해제됩니다.";
+}
+
 export function formatAdminAccountDirectoryDate(
   value: string | null,
   includeTime = false,

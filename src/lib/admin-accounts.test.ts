@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   adminAccountDirectoryRoleLabel,
   adminAccountDirectoryStatusLabel,
+  adminAccountWithdrawalConfirmation,
   adminInviteDisplayName,
   formatAdminAccountDirectoryDate,
 } from "./admin-accounts.ts";
@@ -35,4 +36,16 @@ test("admin account directory dates render in Korea time", () => {
     "2026.01.12",
   );
   assert.equal(formatAdminAccountDirectoryDate(null, true), "-");
+});
+
+test("admin account withdrawal warns when the current account will be signed out", () => {
+  assert.match(
+    adminAccountWithdrawalConfirmation(true),
+    /본인의 어드민 계정/,
+  );
+  assert.match(adminAccountWithdrawalConfirmation(true), /로그인 화면/);
+  assert.doesNotMatch(
+    adminAccountWithdrawalConfirmation(false),
+    /로그인 화면/,
+  );
 });
