@@ -402,9 +402,10 @@ export default function AdminHome() {
       clearAdminDetail();
       setIsPartnerAccountSearchView(false);
       setIsMembershipRegistrationView(false);
+      if (tab !== activePrimaryTab) setMessage("");
       setActivePrimaryTab(tab);
     },
-    [clearAdminDetail],
+    [activePrimaryTab, clearAdminDetail],
   );
 
   const loadConsole = useCallback(

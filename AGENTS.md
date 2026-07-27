@@ -110,6 +110,7 @@ Before pushing, always run `npm run test`, `npm run lint`, and `npm run build`.
 ## Architecture
 
 - `src/app/page.tsx` - Single-page admin console shell, auth state handling, tab navigation, data loading, and action wiring.
+- Root-level action feedback is scoped to the primary tab that displayed it. Navigating to a different primary tab clears the message so stale success or error notices do not carry into another workflow.
 - `src/app/globals.css` - ChikaPick admin visual system and responsive layout styles.
 - Primary tab canvases are full-width. `primaryTabContentLayouts` assigns each tab a `fluid`, `compact`, or `form` inner layout; keep Figma-defined compact widths and readable form widths in the shared layout-mode CSS instead of adding new per-tab `max-width` rules.
 - `src/lib/supabase.ts` - Browser Supabase client using `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
