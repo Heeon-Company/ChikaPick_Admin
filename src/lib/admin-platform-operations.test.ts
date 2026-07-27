@@ -14,6 +14,14 @@ test("platform operation labels distinguish invite, role, audit, and audience va
   assert.equal(adminInviteStatusLabel("pending_owner_claim"), "대표자 인증 대기");
   assert.equal(adminMembershipRoleLabel("doctor"), "치과의사");
   assert.equal(adminAuditActionLabel("terms.version.publish"), "약관 버전 게시");
+  assert.equal(
+    adminAuditActionLabel("admin_account.invitation.setup_failure"),
+    "어드민 초대 설정 실패",
+  );
+  assert.equal(
+    adminAuditActionLabel("admin_account.recovery.setup_attempt"),
+    "어드민 비밀번호 재설정 시도",
+  );
   assert.equal(adminTermAudienceLabel("patient"), "치카픽");
   assert.equal(adminTermAudienceLabel("partner"), "파트너스");
 });

@@ -1528,6 +1528,39 @@ textarea:focus-visible {
   font-weight: 600;
 }
 
+.admin-session-gate {
+  display: grid;
+  gap: 24px;
+}
+
+.admin-session-gate p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.admin-session-gate > div {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.admin-session-gate button {
+  min-width: 112px;
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.admin-session-gate button:first-child {
+  border-color: var(--chika-primary-5);
+  background: var(--chika-primary-5);
+  color: white;
+}
+
 .admin-login-card {
   position: relative;
   width: min(100%, 484px);

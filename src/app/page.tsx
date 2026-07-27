@@ -71,7 +71,11 @@ import {
   type AdminAccountDirectoryPayload,
   type AdminAccountDirectoryRole,
 } from "@/lib/admin-accounts";
-import { shouldAutoLoadAdminConsole } from "@/lib/admin-auth-session";
+import {
+  adminSessionRejectionMessage,
+  isAdminConsoleReady,
+  shouldAutoLoadAdminConsole,
+} from "@/lib/admin-auth-session";
 import {
   adminDetailFromHistoryState,
   pushAdminDetailHistory,
@@ -335,6 +339,9 @@ export default function AdminHome() {
   const [consoleData, setConsoleData] = useState<AdminConsolePayload>(emptyConsole);
   const [isLoadingConsole, setIsLoadingConsole] = useState(false);
   const [hasLoadedConsole, setHasLoadedConsole] = useState(false);
+  const [authorizedAdminUserId, setAuthorizedAdminUserId] = useState<string | null>(
+    null,
+  );
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -436,12 +443,24 @@ export default function AdminHome() {
         const payload = await fetchAdminConsole(currentSession.access_token);
         setConsoleData(payload);
         setHasLoadedConsole(true);
+        setAuthorizedAdminUserId(currentSession.user.id);
       } catch (error) {
-        setMessage(
-          error instanceof Error
-            ? error.message
-            : "관리자 데이터를 불러오지 못했습니다.",
-        );
+        const rejectionMessage = adminSessionRejectionMessage(error);
+        if (rejectionMessage) {
+          await signOutCurrentAdminSession(supabase);
+          lastAutoLoadedAccessTokenRef.current = null;
+          setSession(null);
+          setConsoleData(emptyConsole);
+          setHasLoadedConsole(false);
+          setAuthorizedAdminUserId(null);
+          setMessage(rejectionMessage);
+        } else {
+          setMessage(
+            error instanceof Error
+              ? error.message
+              : "관리자 데이터를 불러오지 못했습니다.",
+          );
+        }
       } finally {
         setIsLoadingConsole(false);
       }
@@ -466,6 +485,7 @@ export default function AdminHome() {
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
       setSession(data.session);
+      setAuthorizedAdminUserId(null);
       setIsAuthLoading(false);
       autoLoadConsole(data.session);
     });
@@ -473,13 +493,20 @@ export default function AdminHome() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
+      setSession((currentSession) => {
+        if (currentSession?.user.id !== nextSession?.user.id) {
+          setAuthorizedAdminUserId(null);
+          setHasLoadedConsole(false);
+        }
+        return nextSession;
+      });
       if (nextSession) {
         autoLoadConsole(nextSession);
       } else {
         lastAutoLoadedAccessTokenRef.current = null;
         setConsoleData(emptyConsole);
         setHasLoadedConsole(false);
+        setAuthorizedAdminUserId(null);
       }
     });
 
@@ -490,7 +517,7 @@ export default function AdminHome() {
   }, [autoLoadConsole, supabase]);
 
   useEffect(() => {
-    if (!session) return;
+    if (!session || authorizedAdminUserId !== session.user.id) return;
 
     return startAdminSessionHeartbeat({
       supabase,
@@ -500,10 +527,11 @@ export default function AdminHome() {
         setSession(null);
         setConsoleData(emptyConsole);
         setHasLoadedConsole(false);
+        setAuthorizedAdminUserId(null);
         setMessage("세션이 만료되어 다시 로그인해 주세요.");
       },
     });
-  }, [session, supabase]);
+  }, [authorizedAdminUserId, session, supabase]);
 
   useEffect(() => {
     const syncFromHistory = () => {
@@ -515,7 +543,7 @@ export default function AdminHome() {
   }, [applyDetailSelection]);
 
   useEffect(() => {
-    if (!session) return;
+    if (!session || authorizedAdminUserId !== session.user.id) return;
 
     const markActivity = () => {
       lastActivityAtRef.current = Date.now();
@@ -532,6 +560,7 @@ export default function AdminHome() {
           setSession(null);
           setConsoleData(emptyConsole);
           setHasLoadedConsole(false);
+          setAuthorizedAdminUserId(null);
           setMessage("1시간 동안 활동이 없어 자동 로그아웃되었습니다.");
         });
       }
@@ -551,7 +580,7 @@ export default function AdminHome() {
       window.removeEventListener("pointermove", markActivity);
       window.removeEventListener("scroll", markActivity);
     };
-  }, [session, supabase]);
+  }, [authorizedAdminUserId, session, supabase]);
 
   async function handlePasswordSignIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -583,6 +612,7 @@ export default function AdminHome() {
       setSession(null);
       setConsoleData(emptyConsole);
       setHasLoadedConsole(false);
+      setAuthorizedAdminUserId(null);
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "로그아웃하지 못했습니다.",
@@ -619,6 +649,7 @@ export default function AdminHome() {
         setSession(null);
         setConsoleData(emptyConsole);
         setHasLoadedConsole(false);
+        setAuthorizedAdminUserId(null);
         setActivePrimaryTab("dashboard");
         setMessage(
           error
@@ -750,6 +781,36 @@ export default function AdminHome() {
             계정 발급 및 비밀번호 재설정은 회사 대표에게 요청해 주세요.
           </p>
         </section>
+      </main>
+    );
+  }
+
+  if (
+    !isAdminConsoleReady({
+      authorizedUserId: authorizedAdminUserId,
+      hasLoadedConsole,
+      sessionUserId: session.user.id,
+    })
+  ) {
+    return (
+      <main className="admin-entry">
+        <div className="admin-loading admin-session-gate" role="status">
+          <p>
+            {isLoadingConsole
+              ? "관리자 권한을 확인하고 있습니다."
+              : message || "관리자 콘솔을 불러오지 못했습니다."}
+          </p>
+          {!isLoadingConsole ? (
+            <div>
+              <button type="button" onClick={() => void loadConsole(session)}>
+                다시 시도
+              </button>
+              <button type="button" onClick={() => void signOut()}>
+                로그아웃
+              </button>
+            </div>
+          ) : null}
+        </div>
       </main>
     );
   }
