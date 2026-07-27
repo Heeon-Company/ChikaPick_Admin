@@ -58,6 +58,10 @@ Admin invitations do not provision authorization when mail is sent. The
 recipient opens `/account/setup`, explicitly confirms the email link, and sets
 an 8–16 character password containing a digit and a supported symbol. Only the
 API's transactional completion step adds the Admin role. The same page handles
-password recovery and registers an active, unlocked Admin browser session
-before opening the console. A locked account stays locked after its password is
-changed.
+password recovery. After a successful invitation or recovery, the setup page
+clears the verification session and directs the recipient to sign in manually.
+A locked account stays locked after its password is changed.
+
+The Admin sidebar includes a Partners-aligned `설정` tab. It shows the current
+Admin account summary and signs out only the current browser session before
+returning to the Admin login screen.

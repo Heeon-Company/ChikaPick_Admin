@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  adminAccountSetupCompletionMessage,
   parseAdminAccountSetupLink,
   validateAdminSetupPassword,
 } from "./admin-account-setup.ts";
@@ -35,4 +36,15 @@ test("admin invitation links accept only the matching explicit flow and OTP type
     null,
   );
   assert.equal(parseAdminAccountSetupLink("?flow=invitation"), null);
+});
+
+test("completed setup directs invitation and recovery recipients to sign in", () => {
+  assert.equal(
+    adminAccountSetupCompletionMessage("invitation"),
+    "어드민 계정이 성공적으로 생성되었습니다.",
+  );
+  assert.equal(
+    adminAccountSetupCompletionMessage("recovery"),
+    "비밀번호가 성공적으로 변경되었습니다.",
+  );
 });

@@ -11,14 +11,12 @@ import {
   type AdminAccountSetupPayload,
 } from "@/lib/admin-api";
 import {
+  adminAccountSetupCompletionMessage,
   adminPasswordRequirementMessage,
   parseAdminAccountSetupLink,
   validateAdminSetupPassword,
 } from "@/lib/admin-account-setup";
-import {
-  registerCurrentAdminBrowserSession,
-  signOutCurrentAdminSession,
-} from "@/lib/browser-session";
+import { signOutCurrentAdminSession } from "@/lib/browser-session";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 
 type SetupStage =
@@ -27,7 +25,7 @@ type SetupStage =
   | "verifying"
   | "password"
   | "submitting"
-  | "registering"
+  | "success"
   | "locked"
   | "error";
 
@@ -38,7 +36,6 @@ export default function AdminAccountSetupPage() {
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [message, setMessage] = useState("");
-  const [registrationPending, setRegistrationPending] = useState(false);
 
   const loadContext = useCallback(async (selectedFlow: AdminAccountSetupFlow) => {
     const supabase = createSupabaseBrowserClient();
@@ -54,25 +51,16 @@ export default function AdminAccountSetupPage() {
     );
     setContext(payload);
     if (payload.completed) {
+      await signOutCurrentAdminSession(supabase);
       if (payload.accountStatus === "locked") {
-        await signOutCurrentAdminSession(supabase);
         setMessage(
           "비밀번호는 변경되었지만 계정 잠금은 유지됩니다. 최고 관리자에게 잠금 해제를 요청해 주세요.",
         );
         setStage("locked");
         return;
       }
-      setStage("registering");
-      try {
-        await registerCurrentAdminBrowserSession(supabase);
-        window.location.replace("/");
-      } catch (error) {
-        setRegistrationPending(true);
-        setMessage(
-          `계정 설정은 완료되었지만 관리자 세션을 등록하지 못했습니다. ${setupErrorMessage(error)}`,
-        );
-        setStage("error");
-      }
+      setMessage(adminAccountSetupCompletionMessage(selectedFlow));
+      setStage("success");
       return;
     }
     setStage("password");
@@ -134,21 +122,6 @@ export default function AdminAccountSetupPage() {
     }
   }
 
-  async function registerAndOpenConsole() {
-    setStage("registering");
-    setMessage("");
-    try {
-      await registerCurrentAdminBrowserSession(createSupabaseBrowserClient());
-      window.location.replace("/");
-    } catch (error) {
-      setRegistrationPending(true);
-      setMessage(
-        `계정 설정은 완료되었지만 관리자 세션을 등록하지 못했습니다. ${setupErrorMessage(error)}`,
-      );
-      setStage("error");
-    }
-  }
-
   async function submitPassword(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!flow || !context) return;
@@ -185,7 +158,9 @@ export default function AdminAccountSetupPage() {
         setStage("locked");
         return;
       }
-      await registerAndOpenConsole();
+      await signOutCurrentAdminSession(supabase);
+      setMessage(adminAccountSetupCompletionMessage(flow));
+      setStage("success");
     } catch (error) {
       setMessage(setupErrorMessage(error));
       setStage("password");
@@ -272,7 +247,12 @@ export default function AdminAccountSetupPage() {
           </form>
         ) : null}
 
-        {stage === "registering" ? <p>관리자 콘솔을 준비하고 있습니다.</p> : null}
+        {stage === "success" ? (
+          <div className="admin-setup-result">
+            <p>{message}</p>
+            <Link href="/">치카픽 어드민 로그인</Link>
+          </div>
+        ) : null}
 
         {stage === "locked" ? (
           <div className="admin-setup-result">
@@ -284,13 +264,7 @@ export default function AdminAccountSetupPage() {
         {stage === "error" ? (
           <div className="admin-setup-result" role="alert">
             <p>{message}</p>
-            {registrationPending ? (
-              <button type="button" onClick={() => void registerAndOpenConsole()}>
-                관리자 콘솔 연결 다시 시도
-              </button>
-            ) : (
-              <Link href="/">로그인 화면으로 이동</Link>
-            )}
+            <Link href="/">로그인 화면으로 이동</Link>
           </div>
         ) : null}
       </section>

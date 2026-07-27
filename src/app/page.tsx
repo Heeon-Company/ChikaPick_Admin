@@ -239,6 +239,7 @@ const primaryTabs = [
   { id: "admin-accounts", label: "어드민 계정 관리", icon: "/Type=Mypage.svg" },
   { id: "external-connectors", label: "외부 연결자 관리", icon: "/Type=Share.svg" },
   { id: "audit-log", label: "감사 로그", icon: "/Type=Log.svg" },
+  { id: "settings", label: "설정", icon: "/Type=Settings.svg" },
 ] as const;
 
 type PrimaryAdminTab = (typeof primaryTabs)[number]["id"];
@@ -263,6 +264,7 @@ const primaryTabContentLayouts: Record<PrimaryAdminTab, AdminContentLayout> = {
   "admin-accounts": "fluid",
   "external-connectors": "fluid",
   "audit-log": "fluid",
+  settings: "fluid",
 };
 
 const primaryTabDescriptions: Record<PrimaryAdminTab, string> = {
@@ -296,6 +298,7 @@ const primaryTabDescriptions: Record<PrimaryAdminTab, string> = {
   "external-connectors":
     "외부 연결자 정보를 등록하면 치과 및 영업 관련 담당자 정보에서 활용하게 됩니다.",
   "audit-log": "어드민의 주요 변경 작업과 처리 결과를 시간순으로 확인합니다.",
+  settings: "계정 및 관리자 서비스 설정을 관리합니다.",
 };
 
 const emptyConsole: AdminConsolePayload = {
@@ -332,6 +335,7 @@ export default function AdminHome() {
   const [isLoadingConsole, setIsLoadingConsole] = useState(false);
   const [hasLoadedConsole, setHasLoadedConsole] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -353,6 +357,16 @@ export default function AdminHome() {
     consoleData.users,
     session?.user.id,
   );
+  const currentAdmin =
+    consoleData.users.find((user) => user.id === session?.user.id) ?? null;
+  const currentAdminRole: Exclude<AdminAccountDirectoryRole, "all"> | null =
+    currentAdmin?.isSuperAdmin
+      ? "super_admin"
+      : currentAdmin?.adminAccountType === "sales"
+        ? "sales"
+        : currentAdmin
+          ? "admin"
+          : null;
   const visiblePrimaryTabs = primaryTabs.filter(
     (tab) => tab.id !== "sales-performance" || isSuperAdmin,
   );
@@ -558,9 +572,23 @@ export default function AdminHome() {
   }
 
   async function signOut() {
-    await signOutCurrentAdminSession(supabase);
-    lastAutoLoadedAccessTokenRef.current = null;
-    setSession(null);
+    if (isSigningOut) return;
+    setIsSigningOut(true);
+    setMessage("");
+    try {
+      const { error } = await signOutCurrentAdminSession(supabase);
+      if (error) throw error;
+      lastAutoLoadedAccessTokenRef.current = null;
+      setSession(null);
+      setConsoleData(emptyConsole);
+      setHasLoadedConsole(false);
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "로그아웃하지 못했습니다.",
+      );
+    } finally {
+      setIsSigningOut(false);
+    }
   }
 
   async function runAction(action: (accessToken: string) => Promise<unknown>) {
@@ -833,8 +861,8 @@ export default function AdminHome() {
                 <button type="button" onClick={() => loadConsole(session)}>
                   {isLoadingConsole ? "새로고침 중" : "새로고침"}
                 </button>
-                <button type="button" onClick={signOut}>
-                  로그아웃
+                <button type="button" disabled={isSigningOut} onClick={signOut}>
+                  {isSigningOut ? "로그아웃 중" : "로그아웃"}
                 </button>
               </div>
             ) : null}
@@ -898,6 +926,8 @@ export default function AdminHome() {
             activePrimaryTab === "external-connectors"
               ? " admin-content--external-connectors"
               : ""
+          }${
+            activePrimaryTab === "settings" ? " admin-content--settings" : ""
           }${
             activePrimaryTab === "dashboard" ? " admin-content--overview" : ""
           }${isDentalSalesDetailView ? " admin-content--sales-detail" : ""}${
@@ -1052,6 +1082,18 @@ export default function AdminHome() {
             />
           ) : activePrimaryTab === "audit-log" ? (
             <AdminAuditLogTab accessToken={session?.access_token ?? ""} />
+          ) : activePrimaryTab === "settings" ? (
+            <AdminSettingsTab
+              displayName={currentAdmin?.fullName ?? null}
+              email={session?.user.email ?? currentAdmin?.email ?? null}
+              isSigningOut={isSigningOut}
+              onSignOut={signOut}
+              roleLabel={
+                currentAdminRole
+                  ? adminAccountDirectoryRoleLabel(currentAdminRole)
+                  : null
+              }
+            />
           ) : activePrimaryTab === "dashboard" ? (
             <OverviewTab
               data={consoleData}
@@ -1063,6 +1105,58 @@ export default function AdminHome() {
         </div>
       </section>
     </main>
+  );
+}
+
+function AdminSettingsTab({
+  displayName,
+  email,
+  isSigningOut,
+  onSignOut,
+  roleLabel,
+}: {
+  displayName: string | null;
+  email: string | null;
+  isSigningOut: boolean;
+  onSignOut: () => Promise<void>;
+  roleLabel: string | null;
+}) {
+  return (
+    <section className="admin-settings" aria-label="설정">
+      <div className="admin-settings-grid">
+        <article className="admin-settings-card">
+          <div className="admin-settings-card-head">
+            <h2>계정</h2>
+            <p>현재 로그인한 어드민 계정입니다.</p>
+          </div>
+          <dl className="admin-settings-list">
+            {displayName ? (
+              <div>
+                <dt>이름</dt>
+                <dd>{displayName}</dd>
+              </div>
+            ) : null}
+            <div>
+              <dt>로그인 이메일</dt>
+              <dd>{email || "-"}</dd>
+            </div>
+            <div>
+              <dt>계정 권한</dt>
+              <dd>{roleLabel || "-"}</dd>
+            </div>
+          </dl>
+          <div className="admin-settings-actions">
+            <button
+              type="button"
+              disabled={isSigningOut}
+              onClick={() => void onSignOut()}
+            >
+              {isSigningOut ? "로그아웃 중" : "로그아웃"}
+            </button>
+          </div>
+        </article>
+      </div>
+    </section>
   );
 }
 

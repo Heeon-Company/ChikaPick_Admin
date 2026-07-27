@@ -7,6 +7,14 @@ export const adminPasswordRequirementMessage =
 
 const supportedSymbolPattern = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/;
 
+export function adminAccountSetupCompletionMessage(
+  flow: AdminAccountSetupFlow,
+) {
+  return flow === "invitation"
+    ? "어드민 계정이 성공적으로 생성되었습니다."
+    : "비밀번호가 성공적으로 변경되었습니다.";
+}
+
 export function validateAdminSetupPassword(password: string) {
   return (
     password.length >= 8 &&
