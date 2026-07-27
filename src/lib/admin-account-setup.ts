@@ -3,14 +3,14 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 import type { AdminAccountSetupFlow } from "./admin-api.ts";
 
 export const adminPasswordRequirementMessage =
-  "비밀번호는 10~72자이며 숫자와 특수문자를 각각 하나 이상 포함해야 합니다.";
+  "비밀번호는 8~16자이며 숫자와 특수문자를 각각 하나 이상 포함해야 합니다.";
 
 const supportedSymbolPattern = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/;
 
 export function validateAdminSetupPassword(password: string) {
   return (
-    password.length >= 10 &&
-    password.length <= 72 &&
+    password.length >= 8 &&
+    password.length <= 16 &&
     /\d/.test(password) &&
     supportedSymbolPattern.test(password)
   );

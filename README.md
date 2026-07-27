@@ -56,7 +56,7 @@ admin API calls will be rejected.
 
 Admin invitations do not provision authorization when mail is sent. The
 recipient opens `/account/setup`, explicitly confirms the email link, and sets
-a 10–72 character password containing a digit and a supported symbol. Only the
+an 8–16 character password containing a digit and a supported symbol. Only the
 API's transactional completion step adds the Admin role. The same page handles
 password recovery and registers an active, unlocked Admin browser session
 before opening the console. A locked account stays locked after its password is

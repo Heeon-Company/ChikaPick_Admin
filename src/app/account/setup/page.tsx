@@ -246,8 +246,8 @@ export default function AdminAccountSetupPage() {
                 required
                 type="password"
                 autoComplete="new-password"
-                minLength={10}
-                maxLength={72}
+                minLength={8}
+                maxLength={16}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
               />
@@ -258,8 +258,8 @@ export default function AdminAccountSetupPage() {
                 required
                 type="password"
                 autoComplete="new-password"
-                minLength={10}
-                maxLength={72}
+                minLength={8}
+                maxLength={16}
                 value={confirmation}
                 onChange={(event) => setConfirmation(event.target.value)}
               />

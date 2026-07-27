@@ -6,12 +6,13 @@ import {
   validateAdminSetupPassword,
 } from "./admin-account-setup.ts";
 
-test("admin setup password requires length, a digit, and a supported symbol", () => {
-  assert.equal(validateAdminSetupPassword("StrongPass1!"), true);
+test("admin setup password requires 8-16 characters, a digit, and a supported symbol", () => {
+  assert.equal(validateAdminSetupPassword(`${"a".repeat(6)}1!`), true);
+  assert.equal(validateAdminSetupPassword(`${"a".repeat(14)}1!`), true);
   assert.equal(validateAdminSetupPassword("NoNumber!!!!"), false);
   assert.equal(validateAdminSetupPassword("NoSymbol123"), false);
   assert.equal(validateAdminSetupPassword("Short1!"), false);
-  assert.equal(validateAdminSetupPassword(`${"a".repeat(71)}1!`), false);
+  assert.equal(validateAdminSetupPassword(`${"a".repeat(15)}1!`), false);
 });
 
 test("admin invitation links accept only the matching explicit flow and OTP type", () => {
