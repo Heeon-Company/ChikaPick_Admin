@@ -23,6 +23,7 @@ import {
   fetchAdminConsultationDirectory,
   fetchAdminConsole,
   fetchAdminDentalSales,
+  fetchAdminDentalSalesDistricts,
   fetchAdminDentalSalesDetail,
   fetchAdminExternalConnectors,
   fetchAdminInviteDirectory,
@@ -5580,6 +5581,10 @@ function DentalSalesTab({
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [listData, setListData] = useState<DentalSalesListPayload | null>(null);
+  const [districtOptions, setDistrictOptions] = useState<string[]>([]);
+  const [isDistrictLoading, setIsDistrictLoading] = useState(false);
+  const [districtErrorMessage, setDistrictErrorMessage] = useState("");
+  const districtRequestIdRef = useRef(0);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -5707,9 +5712,43 @@ function DentalSalesTab({
     setDraftFilters((filters) => ({ ...filters, [key]: value }));
   }
 
+  async function loadDistrictOptions(city: string) {
+    const requestId = ++districtRequestIdRef.current;
+    setDistrictErrorMessage("");
+
+    if (!city) {
+      setDistrictOptions([]);
+      setIsDistrictLoading(false);
+      return;
+    }
+
+    setDistrictOptions([]);
+    setIsDistrictLoading(true);
+    try {
+      const districts = await fetchAdminDentalSalesDistricts(accessToken, city);
+      if (districtRequestIdRef.current === requestId) {
+        setDistrictOptions(districts);
+      }
+    } catch (error) {
+      if (districtRequestIdRef.current === requestId) {
+        setDistrictErrorMessage(
+          error instanceof Error ? error.message : "구 목록을 불러오지 못했습니다.",
+        );
+      }
+    } finally {
+      if (districtRequestIdRef.current === requestId) {
+        setIsDistrictLoading(false);
+      }
+    }
+  }
+
   function resetFilters() {
+    districtRequestIdRef.current += 1;
     setDraftFilters({ ...emptyDentalSalesFilters });
     setAppliedFilters({ ...emptyDentalSalesFilters });
+    setDistrictOptions([]);
+    setIsDistrictLoading(false);
+    setDistrictErrorMessage("");
     setCurrentPage(1);
   }
 
@@ -5950,17 +5989,19 @@ function DentalSalesTab({
           onChange={(value) => {
             updateFilter("city", value);
             updateFilter("district", "");
+            void loadDistrictOptions(value);
           }}
         />
         <SalesFilterSelect
+          disabled={!draftFilters.city || isDistrictLoading}
           label="구 선택"
           value={draftFilters.district}
           options={[
-            { value: "", label: "전체" },
-            ...(listData?.filterOptions.districts.map((district) => ({
+            { value: "", label: isDistrictLoading ? "불러오는 중..." : "전체" },
+            ...districtOptions.map((district) => ({
               value: district,
               label: district,
-            })) ?? []),
+            })),
           ]}
           onChange={(value) => updateFilter("district", value)}
         />
@@ -6016,6 +6057,18 @@ function DentalSalesTab({
         <div className="admin-sales-feedback admin-sales-feedback--error" role="alert">
           <span>{errorMessage}</span>
           <button type="button" onClick={() => void loadList()}>다시 시도</button>
+        </div>
+      ) : null}
+
+      {districtErrorMessage ? (
+        <div className="admin-sales-feedback admin-sales-feedback--error" role="alert">
+          <span>{districtErrorMessage}</span>
+          <button
+            type="button"
+            onClick={() => void loadDistrictOptions(draftFilters.city)}
+          >
+            다시 시도
+          </button>
         </div>
       ) : null}
 
@@ -6983,11 +7036,13 @@ function DetailInfoRow({
 }
 
 function SalesFilterSelect({
+  disabled = false,
   label,
   onChange,
   options,
   value,
 }: {
+  disabled?: boolean;
   label: string;
   onChange: (value: string) => void;
   options: Array<string | { value: string; label: string }>;
@@ -6998,6 +7053,7 @@ function SalesFilterSelect({
       <span>{label}</span>
       <span className="admin-sales-select-wrap">
         <AdminSelect
+          disabled={disabled}
           label={label}
           value={value}
           onChange={onChange}

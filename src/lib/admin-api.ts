@@ -649,6 +649,25 @@ export async function fetchAdminDentalSales(
   );
 }
 
+export async function fetchAdminDentalSalesDistricts(
+  accessToken: string,
+  city: string,
+) {
+  const cleanCity = city.trim();
+  if (!cleanCity) return [];
+
+  const params = new URLSearchParams({
+    city: cleanCity,
+    page: "1",
+    pageSize: "1",
+  });
+  const payload = await adminFetch<DentalSalesListPayload>(
+    `/api/v1/admin/dental-sales?${params.toString()}`,
+    accessToken,
+  );
+  return payload.filterOptions.districts;
+}
+
 export async function fetchAdminSalesPerformance(
   accessToken: string,
   filters: SalesPerformanceFilters,

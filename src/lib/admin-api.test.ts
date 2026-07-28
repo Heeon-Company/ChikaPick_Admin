@@ -17,6 +17,7 @@ import {
   fetchAdminClinicMembershipRequests,
   fetchAdminConsultationDirectory,
   fetchAdminDentalSales,
+  fetchAdminDentalSalesDistricts,
   fetchAdminDentalSalesDetail,
   fetchAdminExternalConnectors,
   fetchAdminInviteDirectory,
@@ -686,6 +687,44 @@ test("fetchAdminDentalSales sends server-side filters and pagination", async () 
   assert.equal(url.searchParams.get("clinicName"), "서울");
   assert.equal(url.searchParams.get("status"), "VISITING");
   assert.equal(url.searchParams.has("salespersonId"), false);
+});
+
+test("fetchAdminDentalSalesDistricts requests options for only the selected city", async () => {
+  const calls: Array<{ input: string | URL | Request; init?: RequestInit }> = [];
+  const originalFetch = globalThis.fetch;
+  process.env.NEXT_PUBLIC_CHIKAPICK_API_BASE_URL = "https://api.example.com";
+  globalThis.fetch = async (input, init) => {
+    calls.push({ input, init });
+    return new Response(
+      JSON.stringify({
+        items: [],
+        pagination: { page: 1, pageSize: 1, totalItems: 0, totalPages: 1 },
+        filterOptions: {
+          regions: [],
+          districts: ["강남구", "서초구"],
+          salespeople: [],
+        },
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  };
+
+  try {
+    assert.deepEqual(
+      await fetchAdminDentalSalesDistricts("access-token", " 서울특별시 "),
+      ["강남구", "서초구"],
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  const url = new URL(calls[0]?.input.toString() ?? "");
+  assert.equal(url.pathname, "/api/v1/admin/dental-sales");
+  assert.equal(url.searchParams.get("city"), "서울특별시");
+  assert.equal(url.searchParams.get("page"), "1");
+  assert.equal(url.searchParams.get("pageSize"), "1");
+  assert.equal(url.searchParams.has("district"), false);
+  assert.equal(url.searchParams.has("clinicName"), false);
 });
 
 test("fetchAdminDentalSalesDetail requests the selected profile and visit page", async () => {
