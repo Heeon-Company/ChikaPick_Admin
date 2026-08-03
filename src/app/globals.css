@@ -10064,7 +10064,7 @@ td span {
   transform: rotate(180deg);
 }
 
-.admin-select .admin-select-options {
+.admin-select-options {
   position: absolute;
   top: calc(100% + 7px);
   left: 0;
@@ -10084,7 +10084,13 @@ td span {
   padding: 4px;
 }
 
-.admin-select .admin-select-option {
+.admin-select-options--floating {
+  position: fixed;
+  z-index: 1600;
+  min-width: 0;
+}
+
+.admin-select-option {
   width: 100%;
   min-height: 36px;
   border: 0;
@@ -10104,14 +10110,14 @@ td span {
   white-space: nowrap;
 }
 
-.admin-select .admin-select-option:hover,
-.admin-select .admin-select-option:focus-visible {
+.admin-select-option:hover,
+.admin-select-option:focus-visible {
   background: var(--chika-secondary-0);
   color: var(--text-primary);
   outline: 0;
 }
 
-.admin-select .admin-select-option--selected {
+.admin-select-option--selected {
   background: var(--chika-secondary-1);
   color: var(--chika-secondary-6);
   font-weight: 500;

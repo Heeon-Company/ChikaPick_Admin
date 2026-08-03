@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
-import type { KeyboardEvent } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import type { CSSProperties, KeyboardEvent } from "react";
+import { createPortal } from "react-dom";
 
 export type AdminSelectOption<T extends string = string> = {
   label: string;
@@ -14,6 +15,7 @@ type AdminSelectProps<T extends string> = {
   label: string;
   onChange: (value: T) => void;
   options: readonly AdminSelectOption<T>[];
+  renderOptionsInPortal?: boolean;
   required?: boolean;
   value: T;
 };
@@ -24,15 +26,18 @@ export function AdminSelect<T extends string>({
   label,
   onChange,
   options,
+  renderOptionsInPortal = false,
   required = false,
   value,
 }: AdminSelectProps<T>) {
   const listboxId = useId();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const listboxRef = useRef<HTMLDivElement | null>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [portalStyle, setPortalStyle] = useState<CSSProperties | null>(null);
   const selectedIndex = Math.max(
     0,
     options.findIndex((option) => option.value === value),
@@ -43,7 +48,12 @@ export function AdminSelect<T extends string>({
     if (!isOpen) return;
 
     function handlePointerDown(event: PointerEvent) {
-      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        rootRef.current &&
+        !rootRef.current.contains(target) &&
+        !listboxRef.current?.contains(target)
+      ) {
         setIsOpen(false);
       }
     }
@@ -56,8 +66,60 @@ export function AdminSelect<T extends string>({
     if (isOpen) optionRefs.current[activeIndex]?.focus();
   }, [activeIndex, isOpen]);
 
+  const updatePortalPosition = useCallback(() => {
+    const trigger = triggerRef.current;
+    if (!trigger || typeof window === "undefined") return;
+
+    const viewportMargin = 8;
+    const panelGap = 7;
+    const triggerRect = trigger.getBoundingClientRect();
+    const estimatedHeight = Math.min(240, options.length * 36 + 10);
+    const availableBelow = Math.max(
+      0,
+      window.innerHeight - triggerRect.bottom - panelGap - viewportMargin,
+    );
+    const availableAbove = Math.max(
+      0,
+      triggerRect.top - panelGap - viewportMargin,
+    );
+    const openAbove =
+      availableBelow < Math.min(estimatedHeight, 120) &&
+      availableAbove > availableBelow;
+    const availableHeight = openAbove ? availableAbove : availableBelow;
+    const panelHeight = Math.min(estimatedHeight, Math.max(72, availableHeight));
+    const width = Math.min(
+      triggerRect.width,
+      window.innerWidth - viewportMargin * 2,
+    );
+    const left = Math.min(
+      Math.max(viewportMargin, triggerRect.left),
+      Math.max(viewportMargin, window.innerWidth - width - viewportMargin),
+    );
+
+    setPortalStyle({
+      top: openAbove
+        ? Math.max(viewportMargin, triggerRect.top - panelGap - panelHeight)
+        : triggerRect.bottom + panelGap,
+      left,
+      width,
+      maxHeight: panelHeight,
+    });
+  }, [options.length]);
+
+  useEffect(() => {
+    if (!isOpen || !renderOptionsInPortal) return;
+
+    window.addEventListener("resize", updatePortalPosition);
+    window.addEventListener("scroll", updatePortalPosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePortalPosition);
+      window.removeEventListener("scroll", updatePortalPosition, true);
+    };
+  }, [isOpen, renderOptionsInPortal, updatePortalPosition]);
+
   function openAt(index: number) {
     if (disabled || options.length === 0) return;
+    if (renderOptionsInPortal) updatePortalPosition();
     setActiveIndex(index);
     setIsOpen(true);
   }
@@ -110,6 +172,51 @@ export function AdminSelect<T extends string>({
     }
   }
 
+  const optionsList = (
+    <div
+      aria-label={label}
+      className={[
+        "admin-select-options",
+        renderOptionsInPortal ? "admin-select-options--floating" : null,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      id={listboxId}
+      ref={listboxRef}
+      role="listbox"
+      style={renderOptionsInPortal ? (portalStyle ?? undefined) : undefined}
+    >
+      {options.map((option, index) => {
+        const selected = option.value === value;
+
+        return (
+          <button
+            aria-selected={selected}
+            className={[
+              "admin-select-option",
+              selected ? "admin-select-option--selected" : null,
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            key={`${option.value}:${option.label}`}
+            onClick={() => {
+              onChange(option.value);
+              closeAndFocusTrigger();
+            }}
+            onKeyDown={(event) => handleOptionKeyDown(event, index)}
+            ref={(element) => {
+              optionRefs.current[index] = element;
+            }}
+            role="option"
+            type="button"
+          >
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div
       className={["admin-select", className].filter(Boolean).join(" ")}
@@ -143,43 +250,13 @@ export function AdminSelect<T extends string>({
         <span>{selectedLabel}</span>
         <ChevronDownIcon />
       </button>
-      {isOpen && !disabled ? (
-        <div
-          aria-label={label}
-          className="admin-select-options"
-          id={listboxId}
-          role="listbox"
-        >
-          {options.map((option, index) => {
-            const selected = option.value === value;
-
-            return (
-              <button
-                aria-selected={selected}
-                className={[
-                  "admin-select-option",
-                  selected ? "admin-select-option--selected" : null,
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                key={`${option.value}:${option.label}`}
-                onClick={() => {
-                  onChange(option.value);
-                  closeAndFocusTrigger();
-                }}
-                onKeyDown={(event) => handleOptionKeyDown(event, index)}
-                ref={(element) => {
-                  optionRefs.current[index] = element;
-                }}
-                role="option"
-                type="button"
-              >
-                {option.label}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
+      {isOpen && !disabled
+        ? renderOptionsInPortal
+          ? portalStyle && typeof document !== "undefined"
+            ? createPortal(optionsList, document.body)
+            : null
+          : optionsList
+        : null}
     </div>
   );
 }

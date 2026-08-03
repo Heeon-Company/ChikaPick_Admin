@@ -401,6 +401,7 @@ function PartnershipRequestDialog({
                 label="처리 상태"
                 value={status}
                 disabled={isSaving}
+                renderOptionsInPortal
                 onChange={(value) => onStatusChange(value as ClinicPartnershipRequestStatus)}
                 options={clinicPartnershipRequestStatusOptions.filter(
                   (option) => option.value !== "all",
