@@ -329,6 +329,17 @@ function PartnershipRequestDialog({
   status: ClinicPartnershipRequestStatus;
 }) {
   const placeUrl = safeClinicPartnershipUrl(request.placeUrl);
+  const [copyFeedback, setCopyFeedback] = useState("");
+
+  async function copyExternalPlaceId() {
+    try {
+      await navigator.clipboard.writeText(request.externalPlaceId);
+      setCopyFeedback("외부 병원 ID를 복사했습니다.");
+    } catch {
+      setCopyFeedback("외부 병원 ID를 복사하지 못했습니다.");
+    }
+  }
+
   return (
     <div className="admin-partnership-request-dialog-layer">
       <button
@@ -359,7 +370,6 @@ function PartnershipRequestDialog({
             <dl>
               <div><dt>주소</dt><dd>{request.address ?? "—"}</dd></div>
               <div><dt>전화번호</dt><dd>{request.phone ?? "—"}</dd></div>
-              <div><dt>외부 병원 ID</dt><dd>{request.externalPlaceId}</dd></div>
               <div><dt>최초 신청</dt><dd>{formatClinicPartnershipRequestDate(request.firstRequestedAt)}</dd></div>
               <div><dt>최근 신청</dt><dd>{formatClinicPartnershipRequestDate(request.lastRequestedAt)}</dd></div>
             </dl>
@@ -368,6 +378,19 @@ function PartnershipRequestDialog({
                 외부 병원 정보 열기
               </a>
             ) : null}
+            <details className="admin-partnership-request-technical-info">
+              <summary>기술 정보</summary>
+              <div>
+                <span>
+                  <strong>외부 병원 ID</strong>
+                  <code>{request.externalPlaceId}</code>
+                </span>
+                <button type="button" onClick={() => void copyExternalPlaceId()}>
+                  복사
+                </button>
+              </div>
+              {copyFeedback ? <p role="status">{copyFeedback}</p> : null}
+            </details>
           </section>
 
           <section className="admin-partnership-request-requesters">
