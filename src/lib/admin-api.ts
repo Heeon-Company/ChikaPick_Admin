@@ -392,6 +392,35 @@ export async function fetchAdminSecretFeedback(
   );
 }
 
+export async function fetchAdminClinicPartnershipRequests(
+  accessToken: string,
+  filters: ClinicPartnershipRequestFilters,
+  page: number,
+  pageSize = 10,
+) {
+  const params = directoryParams(filters, page, pageSize);
+  return adminFetch<ClinicPartnershipRequestPayload>(
+    `/api/v1/admin/clinic-partnership-requests?${params.toString()}`,
+    accessToken,
+  );
+}
+
+export async function updateAdminClinicPartnershipRequest(
+  accessToken: string,
+  placeProvider: string,
+  externalPlaceId: string,
+  body: {
+    adminNote: string | null;
+    status: ClinicPartnershipRequestStatus;
+  },
+) {
+  return adminFetch<AdminActionResult & { updatedCount: number }>(
+    `/api/v1/admin/clinic-partnership-requests/${encodeURIComponent(placeProvider)}/${encodeURIComponent(externalPlaceId)}`,
+    accessToken,
+    { method: "PATCH", body: JSON.stringify(body) },
+  );
+}
+
 export async function lookupAdminChikapickAccount(
   accessToken: string,
   body: { email: string; unmask?: boolean },
@@ -923,6 +952,11 @@ import type {
 } from "./admin-accounts";
 import type { ExternalConnectorDirectoryPayload } from "./external-connectors";
 import type { SecretFeedbackPayload } from "./secret-feedback";
+import type {
+  ClinicPartnershipRequestFilters,
+  ClinicPartnershipRequestPayload,
+  ClinicPartnershipRequestStatus,
+} from "./clinic-partnership-requests";
 import type { ChikapickAccountLookupPayload } from "./chikapick-accounts";
 import type {
   AdminPartnerAccountDetailPayload,

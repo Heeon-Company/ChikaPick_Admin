@@ -15,6 +15,7 @@ import {
   fetchAdminAccountDirectory,
   fetchAdminAuditLog,
   fetchAdminClinicMembershipRequests,
+  fetchAdminClinicPartnershipRequests,
   fetchAdminConsultationDirectory,
   fetchAdminDentalSales,
   fetchAdminDentalSalesDistricts,
@@ -43,6 +44,7 @@ import {
   sendAdminPasswordReset,
   unlockAdminAccount,
   updateAdminMembershipPartner,
+  updateAdminClinicPartnershipRequest,
   uploadAdminDentalSalesBusinessLicense,
   withdrawAdminAccount,
 } from "./admin-api.ts";
@@ -172,6 +174,49 @@ test("fetchAdminExternalConnectors requests server pagination", async () => {
     calls[0]?.input,
     "https://api.example.com/api/v1/admin/external-connectors?page=2&pageSize=10",
   );
+});
+
+test("clinic partnership request API sends filters and encoded status updates", async () => {
+  const calls: Array<{ input: string | URL | Request; init?: RequestInit }> = [];
+  const originalFetch = globalThis.fetch;
+  process.env.NEXT_PUBLIC_CHIKAPICK_API_BASE_URL = "https://api.example.com";
+  globalThis.fetch = async (input, init) => {
+    calls.push({ input, init });
+    return new Response(JSON.stringify({ ok: true, message: "saved", updatedCount: 2 }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+
+  try {
+    await fetchAdminClinicPartnershipRequests(
+      "access-token",
+      { query: " 강남 ", status: "contacting" },
+      2,
+    );
+    await updateAdminClinicPartnershipRequest(
+      "access-token",
+      "hira/source",
+      "clinic/id",
+      { status: "completed", adminNote: "입점 확인" },
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(
+    calls[0]?.input,
+    "https://api.example.com/api/v1/admin/clinic-partnership-requests?page=2&pageSize=10&query=%EA%B0%95%EB%82%A8&status=contacting",
+  );
+  assert.equal(
+    calls[1]?.input,
+    "https://api.example.com/api/v1/admin/clinic-partnership-requests/hira%2Fsource/clinic%2Fid",
+  );
+  assert.equal(calls[1]?.init?.method, "PATCH");
+  assert.deepEqual(JSON.parse(calls[1]?.init?.body as string), {
+    status: "completed",
+    adminNote: "입점 확인",
+  });
 });
 
 test("membership management API sends server filters and row mutations", async () => {

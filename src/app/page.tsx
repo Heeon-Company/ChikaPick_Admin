@@ -6,6 +6,7 @@ import type { FormEvent, ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 
 import { AdminSelect } from "@/components/AdminSelect";
+import { ClinicPartnershipRequestsTab } from "@/components/ClinicPartnershipRequestsTab";
 import {
   approveManualHospitalSubmission,
   assignAdminDentalSalesperson,
@@ -233,6 +234,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase";
 const primaryTabs = [
   { id: "dashboard", label: "운영 현황", icon: "/Type=Dashboard.svg" },
   { id: "dental-sales", label: "치과 영업 관리", icon: "/Type=Graph.svg" },
+  { id: "clinic-partnership-requests", label: "입점 신청 관리", icon: "/Type=Hospital.svg" },
   { id: "partner-clinics", label: "파트너 치과 관리", icon: "/Type=Hospital.svg" },
   { id: "hospital-review", label: "병원 가입 심사", icon: "/Type=Accept.svg" },
   { id: "license-review", label: "치과의사 면허 인증", icon: "/Type=Accept.svg" },
@@ -258,6 +260,7 @@ type AdminContentLayout = "fluid" | "compact" | "form";
 const primaryTabContentLayouts: Record<PrimaryAdminTab, AdminContentLayout> = {
   dashboard: "fluid",
   "dental-sales": "fluid",
+  "clinic-partnership-requests": "fluid",
   "partner-clinics": "fluid",
   "hospital-review": "fluid",
   "license-review": "fluid",
@@ -281,6 +284,8 @@ const primaryTabDescriptions: Record<PrimaryAdminTab, string> = {
   dashboard: "치카픽의 주요 운영 지표를 확인하고 각 관리 메뉴로 바로 이동할 수 있습니다.",
   "dental-sales":
     "전국 치과를 지역별로 조회하고 초대 코드를 확인 할 수 있으며 영업 현황을 관리합니다.",
+  "clinic-partnership-requests":
+    "치카픽 사용자가 요청한 외부 치과의 입점 수요를 확인하고 연락 및 처리 상태를 관리합니다.",
   "partner-clinics":
     "가입 완료한 파트너 치과의 운영 상태를 모니터링하고 필요한 지원을 빠르게 진행할 수 있습니다.",
   "hospital-review": "직접 입력한 병원 정보와 사업자등록증 제출 건을 검토합니다.",
@@ -1041,6 +1046,10 @@ export default function AdminHome() {
                   ? openAdminDetail({ tab: "dental-sales", id: profileId })
                   : closeAdminDetail("dental-sales")
               }
+            />
+          ) : activePrimaryTab === "clinic-partnership-requests" ? (
+            <ClinicPartnershipRequestsTab
+              accessToken={session?.access_token ?? ""}
             />
           ) : activePrimaryTab === "partner-clinics" ? (
             <PartnerClinicsTab
@@ -8332,6 +8341,12 @@ function OverviewTab({
           label: "치과 영업 관리",
           description: "전국 치과 영업 현황과 담당자 배정을 관리합니다.",
           icon: "/Type=Graph.svg",
+        },
+        {
+          tab: "clinic-partnership-requests",
+          label: "입점 신청 관리",
+          description: "사용자가 요청한 외부 치과의 입점 수요와 처리 상태를 관리합니다.",
+          icon: "/Type=Hospital.svg",
         },
         {
           tab: "partner-clinics",
