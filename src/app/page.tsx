@@ -4,6 +4,8 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 import { AdminSelect } from "@/components/AdminSelect";
 import { ClinicPartnershipRequestsTab } from "@/components/ClinicPartnershipRequestsTab";
@@ -43,6 +45,7 @@ import {
   lookupAdminChikapickAccount,
   lookupAdminPartnerAccount,
   publishAdminTermVersion,
+  previewAdminTermVersion,
   rejectManualHospitalSubmission,
   resendAdminAccountInvitation,
   revealInviteCode,
@@ -116,8 +119,10 @@ import {
   type AdminReservationDirectoryFilters,
   type AdminReservationDirectoryPayload,
   type AdminTermsManagementPayload,
+  type AdminTermPreview,
 } from "@/lib/admin-platform-operations";
 import { shouldExpireAdminIdleSession } from "@/lib/admin-idle";
+import { adminApiBaseUrl } from "@/lib/public-env";
 import {
   registerCurrentAdminBrowserSession,
   signOutCurrentAdminSession,
@@ -7964,6 +7969,9 @@ function TermsManagementTab({
   const [changeSummary, setChangeSummary] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
+  const [preview, setPreview] = useState<AdminTermPreview | null>(null);
+  const [dialogError, setDialogError] = useState("");
   const [error, setError] = useState("");
 
   const loadTerms = useCallback(async () => {
@@ -7990,8 +7998,37 @@ function TermsManagementTab({
 
   function openPublish(document: AdminManagedTermDocument) {
     setSelectedDocument(document);
-    setContentUrl(document.activeVersion?.contentUrl ?? "");
+    setContentUrl(
+      document.activeVersion?.sourceUrl ??
+        (document.activeVersion?.contentUrl.includes("notion")
+          ? document.activeVersion.contentUrl
+          : ""),
+    );
     setChangeSummary("");
+    setPreview(null);
+    setDialogError("");
+  }
+
+  async function handlePreview() {
+    if (!selectedDocument || !contentUrl.trim() || isPreviewing) return;
+    setIsPreviewing(true);
+    setDialogError("");
+    try {
+      const result = await previewAdminTermVersion(
+        accessToken,
+        selectedDocument.id,
+        contentUrl.trim(),
+      );
+      setPreview(result.preview);
+    } catch (previewError) {
+      setDialogError(
+        previewError instanceof Error
+          ? previewError.message
+          : "약관 미리보기를 불러오지 못했습니다.",
+      );
+    } finally {
+      setIsPreviewing(false);
+    }
   }
 
   async function handlePublish(event: FormEvent<HTMLFormElement>) {
@@ -8005,6 +8042,7 @@ function TermsManagementTab({
       return;
     }
     setIsPublishing(true);
+    setDialogError("");
     const succeeded = await onPublish(selectedDocument.id, {
       contentUrl: contentUrl.trim(),
       changeSummary: changeSummary.trim(),
@@ -8048,7 +8086,11 @@ function TermsManagementTab({
             {document.activeVersion ? (
               <a
                 className="admin-term-content-link"
-                href={document.activeVersion.contentUrl}
+                href={
+                  document.activeVersion.contentUrl.startsWith("/")
+                    ? `${adminApiBaseUrl()}${document.activeVersion.contentUrl}`
+                    : document.activeVersion.contentUrl
+                }
                 target="_blank"
                 rel="noreferrer"
               >
@@ -8089,71 +8131,131 @@ function TermsManagementTab({
       ) : null}
 
       {selectedDocument ? (
-        <div
-          className="admin-dialog-backdrop"
-          role="presentation"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !isPublishing) {
-              setSelectedDocument(null);
-            }
-          }}
-        >
-          <section
-            className="admin-dialog admin-term-publish-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="term-publish-title"
+        <>
+          <div
+            className="admin-dialog-backdrop"
+            role="presentation"
+            onMouseDown={(event) => {
+              if (
+                event.target === event.currentTarget &&
+                !isPublishing &&
+                !isPreviewing
+              ) {
+                setSelectedDocument(null);
+              }
+            }}
           >
-            <div className="admin-dialog-heading">
-              <div>
-                <h2 id="term-publish-title">새 약관 버전 게시</h2>
-                <p>{selectedDocument.title}</p>
-              </div>
-              <button
-                type="button"
-                aria-label="닫기"
-                disabled={isPublishing}
-                onClick={() => setSelectedDocument(null)}
-              >
-                ×
-              </button>
-            </div>
-            <form className="admin-term-publish-form" onSubmit={handlePublish}>
-              <label>
-                <span>약관 콘텐츠 URL</span>
-                <input
-                  required
-                  type="text"
-                  value={contentUrl}
-                  placeholder="https://... 또는 /terms/..."
-                  onChange={(event) => setContentUrl(event.target.value)}
-                />
-              </label>
-              <label>
-                <span>변경 요약</span>
-                <textarea
-                  maxLength={500}
-                  value={changeSummary}
-                  placeholder="사용자에게 적용되는 주요 변경 사항을 입력해 주세요."
-                  onChange={(event) => setChangeSummary(event.target.value)}
-                />
-                <small>{changeSummary.length}/500</small>
-              </label>
-              <div className="admin-dialog-actions">
+            <section
+              className="admin-dialog admin-term-publish-dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="term-publish-title"
+            >
+              <div className="admin-dialog-heading">
+                <div>
+                  <h2 id="term-publish-title">새 약관 버전 게시</h2>
+                  <p>{selectedDocument.title}</p>
+                </div>
                 <button
                   type="button"
-                  disabled={isPublishing}
+                  aria-label="닫기"
+                  disabled={isPublishing || isPreviewing}
                   onClick={() => setSelectedDocument(null)}
                 >
-                  취소
-                </button>
-                <button type="submit" disabled={isPublishing || !contentUrl.trim()}>
-                  {isPublishing ? "게시 중" : "즉시 게시"}
+                  ×
                 </button>
               </div>
-            </form>
-          </section>
-        </div>
+              <form className="admin-term-publish-form" onSubmit={handlePublish}>
+                <label>
+                  <span>약관 콘텐츠 URL</span>
+                  <input
+                    required
+                    type="text"
+                    value={contentUrl}
+                    placeholder="https://...notion.site/..."
+                    onChange={(event) => {
+                      setContentUrl(event.target.value);
+                      setPreview(null);
+                      setDialogError("");
+                    }}
+                  />
+                </label>
+                <label>
+                  <span>변경 요약</span>
+                  <textarea
+                    maxLength={500}
+                    value={changeSummary}
+                    placeholder="사용자에게 적용되는 주요 변경 사항을 입력해 주세요."
+                    onChange={(event) => setChangeSummary(event.target.value)}
+                  />
+                  <small>{changeSummary.length}/500</small>
+                </label>
+                {dialogError ? (
+                  <p className="admin-term-dialog-error" role="alert">
+                    {dialogError}
+                  </p>
+                ) : null}
+                <div className="admin-dialog-actions">
+                  <button
+                    type="button"
+                    disabled={isPublishing || isPreviewing}
+                    onClick={() => setSelectedDocument(null)}
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isPublishing || isPreviewing || !contentUrl.trim()}
+                    onClick={() => void handlePreview()}
+                  >
+                    {isPreviewing ? "불러오는 중" : "미리보기"}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={
+                      isPublishing || isPreviewing || !contentUrl.trim()
+                    }
+                  >
+                    {isPublishing ? "게시 중" : "즉시 게시"}
+                  </button>
+                </div>
+              </form>
+            </section>
+          </div>
+          {preview ? (
+            <div
+              className="admin-dialog-backdrop admin-term-preview-backdrop"
+              role="presentation"
+              onMouseDown={(event) => {
+                if (event.target === event.currentTarget) setPreview(null);
+              }}
+            >
+              <section
+                className="admin-dialog admin-term-preview-dialog"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="term-preview-title"
+              >
+                <header className="admin-term-preview-header">
+                  <button
+                    type="button"
+                    aria-label="미리보기 닫기"
+                    onClick={() => setPreview(null)}
+                  >
+                    ←
+                  </button>
+                  <h2 id="term-preview-title">{preview.title}</h2>
+                  <span aria-hidden="true" />
+                </header>
+                <article className="admin-term-preview-content">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {preview.markdown}
+                  </ReactMarkdown>
+                </article>
+              </section>
+            </div>
+          ) : null}
+        </>
       ) : null}
     </section>
   );

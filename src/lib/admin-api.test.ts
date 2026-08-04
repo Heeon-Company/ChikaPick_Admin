@@ -37,6 +37,7 @@ import {
   lookupAdminChikapickAccount,
   lookupAdminPartnerAccount,
   publishAdminTermVersion,
+  previewAdminTermVersion,
   resendAdminAccountInvitation,
   revealInviteCode,
   revokeAdminAccountInvitation,
@@ -1158,8 +1159,13 @@ test("terms management loads history and publishes a new immutable version", asy
 
   try {
     await fetchAdminTerms("access-token");
+    await previewAdminTermVersion(
+      "access-token",
+      "document/id",
+      "https://workspace.notion.site/page-id",
+    );
     await publishAdminTermVersion("access-token", "document/id", {
-      contentUrl: "https://example.com/terms/v2",
+      contentUrl: "https://workspace.notion.site/page-id",
       changeSummary: "예약 취소 조항 변경",
     });
   } finally {
@@ -1169,11 +1175,19 @@ test("terms management loads history and publishes a new immutable version", asy
   assert.equal(calls[0]?.input, "https://api.example.com/api/v1/admin/terms");
   assert.equal(
     calls[1]?.input,
-    "https://api.example.com/api/v1/admin/terms/document%2Fid/versions",
+    "https://api.example.com/api/v1/admin/terms/document%2Fid/preview",
   );
   assert.equal(calls[1]?.init?.method, "POST");
   assert.deepEqual(JSON.parse(calls[1]?.init?.body as string), {
-    contentUrl: "https://example.com/terms/v2",
+    contentUrl: "https://workspace.notion.site/page-id",
+  });
+  assert.equal(
+    calls[2]?.input,
+    "https://api.example.com/api/v1/admin/terms/document%2Fid/versions",
+  );
+  assert.equal(calls[2]?.init?.method, "POST");
+  assert.deepEqual(JSON.parse(calls[2]?.init?.body as string), {
+    contentUrl: "https://workspace.notion.site/page-id",
     changeSummary: "예약 취소 조항 변경",
   });
 });

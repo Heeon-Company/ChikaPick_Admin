@@ -10027,6 +10027,16 @@ td span {
   font-size: 11px;
 }
 
+.admin-term-dialog-error {
+  margin: 0;
+  border-radius: 8px;
+  background: #fff0f0;
+  color: #c81e1e;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
 .admin-term-publish-form .admin-dialog-actions {
   display: flex;
   justify-content: flex-end;
@@ -10054,6 +10064,88 @@ td span {
 .admin-operational-filters button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+.admin-term-preview-backdrop {
+  z-index: 130;
+}
+
+.admin-term-preview-dialog {
+  width: min(680px, 100%);
+  max-height: min(860px, calc(100dvh - 40px));
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 24px 72px rgb(0 11 38 / 24%);
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-term-preview-header {
+  min-height: 64px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: grid;
+  grid-template-columns: 40px 1fr 40px;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.admin-term-preview-header h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.admin-term-preview-header button {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 24px;
+}
+
+.admin-term-preview-content {
+  overflow-y: auto;
+  padding: 24px 28px 40px;
+  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.admin-term-preview-content h1 {
+  margin: 0 0 20px;
+  font-size: 22px;
+  line-height: 1.4;
+}
+
+.admin-term-preview-content h2 {
+  margin: 28px 0 12px;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+.admin-term-preview-content p,
+.admin-term-preview-content ul,
+.admin-term-preview-content ol {
+  margin: 0 0 14px;
+}
+
+.admin-term-preview-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0;
+}
+
+.admin-term-preview-content th,
+.admin-term-preview-content td {
+  border: 1px solid var(--border);
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
 }
 
 @media (max-width: 860px) {

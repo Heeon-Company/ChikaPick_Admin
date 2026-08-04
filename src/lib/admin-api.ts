@@ -167,6 +167,7 @@ export interface ManualHospitalApprovalResult extends AdminActionResult {
 }
 
 import { adminApiBaseUrl } from "./public-env.ts";
+import type { AdminTermPreview } from "./admin-platform-operations.ts";
 
 export async function fetchAdminConsole(accessToken: string) {
   return adminFetch<AdminConsolePayload>("/api/v1/admin/console", accessToken);
@@ -256,6 +257,18 @@ export async function revealInviteCode(accessToken: string, inviteId: string) {
 
 export async function fetchAdminTerms(accessToken: string) {
   return adminFetch<AdminTermsManagementPayload>("/api/v1/admin/terms", accessToken);
+}
+
+export async function previewAdminTermVersion(
+  accessToken: string,
+  documentId: string,
+  contentUrl: string,
+) {
+  return adminFetch<{ preview: AdminTermPreview }>(
+    `/api/v1/admin/terms/${encodeURIComponent(documentId)}/preview`,
+    accessToken,
+    { method: "POST", body: JSON.stringify({ contentUrl }) },
+  );
 }
 
 export async function publishAdminTermVersion(

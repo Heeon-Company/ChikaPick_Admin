@@ -21,10 +21,21 @@ export interface AdminTermVersion {
   version: number;
   effectiveAt: string;
   contentUrl: string;
+  sourceUrl: string | null;
+  sourcePageId: string | null;
   checksum: string | null;
   isActive: boolean;
   changeSummary: string | null;
   createdAt: string;
+}
+
+export interface AdminTermPreview {
+  documentId: string;
+  title: string;
+  sourceUrl: string;
+  sourcePageId: string;
+  markdown: string;
+  checksum: string;
 }
 
 export interface AdminManagedTermDocument {
