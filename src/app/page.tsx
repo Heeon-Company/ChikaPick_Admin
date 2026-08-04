@@ -8248,7 +8248,16 @@ function TermsManagementTab({
                   <span aria-hidden="true" />
                 </header>
                 <article className="admin-term-preview-content">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      table: ({ children, ...props }) => (
+                        <div className="admin-term-preview-table-scroll">
+                          <table {...props}>{children}</table>
+                        </div>
+                      ),
+                    }}
+                  >
                     {preview.markdown}
                   </ReactMarkdown>
                 </article>
