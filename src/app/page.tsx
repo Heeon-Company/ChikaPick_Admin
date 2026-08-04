@@ -101,6 +101,7 @@ import {
   adminInviteStatusLabel,
   adminMembershipRoleLabel,
   adminTermAudienceLabel,
+  sortAdminTermsByKoreanTitle,
   defaultAdminAuditLogFilters,
   defaultAdminClinicMembershipRequestFilters,
   defaultAdminConsultationDirectoryFilters,
@@ -8066,7 +8067,7 @@ function TermsManagementTab({
       {error ? <p className="admin-operational-error">{error}</p> : null}
       {isLoading ? <p className="admin-operational-loading">약관을 불러오는 중입니다.</p> : null}
       <div className="admin-terms-grid">
-        {data?.items.map((document) => (
+        {sortAdminTermsByKoreanTitle(data?.items ?? []).map((document) => (
           <article className="admin-term-card" key={document.id}>
             <div className="admin-term-card-heading">
               <div>
@@ -8114,7 +8115,7 @@ function TermsManagementTab({
                 </ol>
               ) : <p>게시 이력이 없습니다.</p>}
             </details>
-            {data.canManage ? (
+            {data?.canManage ? (
               <button
                 type="button"
                 className="admin-term-publish-trigger"

@@ -291,3 +291,17 @@ export function adminTermAudienceLabel(appliesTo: string | null) {
     }[appliesTo ?? ""] ?? appliesTo ?? "전체 서비스"
   );
 }
+
+const koreanTermTitleCollator = new Intl.Collator("ko-KR", {
+  sensitivity: "base",
+});
+
+export function sortAdminTermsByKoreanTitle(
+  items: AdminManagedTermDocument[],
+) {
+  return [...items].sort(
+    (left, right) =>
+      koreanTermTitleCollator.compare(left.title, right.title) ||
+      left.code.localeCompare(right.code),
+  );
+}

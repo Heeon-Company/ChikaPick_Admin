@@ -8,6 +8,8 @@ import {
   adminInviteStatusLabel,
   adminMembershipRoleLabel,
   adminTermAudienceLabel,
+  sortAdminTermsByKoreanTitle,
+  type AdminManagedTermDocument,
 } from "./admin-platform-operations.ts";
 
 test("platform operation labels distinguish invite, role, audit, and audience values", () => {
@@ -70,3 +72,42 @@ test("consultation category labels localize every canonical Partners category", 
   );
   assert.equal(adminConsultationCategoryLabel(null), "미분류");
 });
+
+test("terms are sorted by Korean title instead of update order", () => {
+  const documents = [
+    termDocument("LOCATION_TERMS", "위치기반서비스 이용약관"),
+    termDocument("PRIVACY_CONSENT", "개인정보처리방침"),
+    termDocument("MARKETING_OPTIN", "마케팅 정보 수신 동의"),
+    termDocument("SERVICE_TERMS", "서비스 이용약관"),
+    termDocument("FAMILY_ACCOUNT_TERMS", "가족 계정 이용약관"),
+  ];
+
+  assert.deepEqual(
+    sortAdminTermsByKoreanTitle(documents).map((document) => document.code),
+    [
+      "FAMILY_ACCOUNT_TERMS",
+      "PRIVACY_CONSENT",
+      "MARKETING_OPTIN",
+      "SERVICE_TERMS",
+      "LOCATION_TERMS",
+    ],
+  );
+  assert.equal(documents[0]?.code, "LOCATION_TERMS");
+});
+
+function termDocument(
+  code: string,
+  title: string,
+): AdminManagedTermDocument {
+  return {
+    id: code,
+    code,
+    title,
+    isRequired: true,
+    appliesTo: "patient",
+    locale: "ko-KR",
+    updatedAt: "2026-08-04T00:00:00.000Z",
+    activeVersion: null,
+    versions: [],
+  };
+}
