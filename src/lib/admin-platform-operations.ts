@@ -296,12 +296,20 @@ const koreanTermTitleCollator = new Intl.Collator("ko-KR", {
   sensitivity: "base",
 });
 
-export function sortAdminTermsByKoreanTitle(
+export function sortAdminTermsByAudienceAndKoreanTitle(
   items: AdminManagedTermDocument[],
 ) {
   return [...items].sort(
     (left, right) =>
+      adminTermAudienceSortRank(left.appliesTo) -
+        adminTermAudienceSortRank(right.appliesTo) ||
       koreanTermTitleCollator.compare(left.title, right.title) ||
       left.code.localeCompare(right.code),
   );
+}
+
+function adminTermAudienceSortRank(appliesTo: string | null) {
+  if (appliesTo === "client" || appliesTo === "patient") return 0;
+  if (appliesTo === "partner" || appliesTo === "partners") return 1;
+  return 2;
 }

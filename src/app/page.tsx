@@ -101,7 +101,7 @@ import {
   adminInviteStatusLabel,
   adminMembershipRoleLabel,
   adminTermAudienceLabel,
-  sortAdminTermsByKoreanTitle,
+  sortAdminTermsByAudienceAndKoreanTitle,
   defaultAdminAuditLogFilters,
   defaultAdminClinicMembershipRequestFilters,
   defaultAdminConsultationDirectoryFilters,
@@ -8055,6 +8055,10 @@ function TermsManagementTab({
     }
   }
 
+  const sortedDocuments = sortAdminTermsByAudienceAndKoreanTitle(
+    data?.items ?? [],
+  );
+
   return (
     <section className="admin-terms-management">
       <div className="admin-terms-guidance">
@@ -8067,7 +8071,7 @@ function TermsManagementTab({
       {error ? <p className="admin-operational-error">{error}</p> : null}
       {isLoading ? <p className="admin-operational-loading">약관을 불러오는 중입니다.</p> : null}
       <div className="admin-terms-grid">
-        {sortAdminTermsByKoreanTitle(data?.items ?? []).map((document) => (
+        {sortedDocuments.map((document) => (
           <article className="admin-term-card" key={document.id}>
             <div className="admin-term-card-heading">
               <div>
