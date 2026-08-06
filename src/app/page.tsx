@@ -1010,7 +1010,7 @@ export default function AdminHome() {
                   {activePrimaryTab === "partner-accounts"
                     ? isPartnerAccountSearchView
                       ? "치카픽 파트너스 계정 조회"
-                      : "파트너스 계정 관리"
+                      : "파트너스 계정 조회"
                     : activePrimaryTab === "memberships"
                       ? "치카픽 멤버십 관리"
                       : primaryTabs.find((tab) => tab.id === activePrimaryTab)?.label}
@@ -3684,14 +3684,18 @@ function SecretFeedbackTab({ accessToken }: { accessToken: string }) {
           <tbody>
             {data?.items.map((feedback) => (
               <tr key={feedback.id}>
-                <td>{formatSecretFeedbackDate(feedback.submittedAt)}</td>
-                <td title={feedback.clinicName}>{feedback.clinicName}</td>
-                <td>
+                <td data-label="접수일시">
+                  {formatSecretFeedbackDate(feedback.submittedAt)}
+                </td>
+                <td data-label="병원명" title={feedback.clinicName}>
+                  {feedback.clinicName}
+                </td>
+                <td data-label="만족도">
                   <strong className={`is-${feedback.rating}`}>
                     {secretFeedbackRatingLabel(feedback.rating, true)}
                   </strong>
                 </td>
-                <td>
+                <td data-label="상세보기">
                   <button type="button" onClick={() => setSelectedFeedback(feedback)}>
                     상세보기
                   </button>
@@ -3699,14 +3703,14 @@ function SecretFeedbackTab({ accessToken }: { accessToken: string }) {
               </tr>
             ))}
             {!isLoading && (data?.items.length ?? 0) === 0 ? (
-              <tr>
+              <tr className="admin-secret-feedback-empty-row">
                 <td className="admin-sales-empty" colSpan={4}>
                   접수된 시크릿 피드백이 없습니다.
                 </td>
               </tr>
             ) : null}
             {isLoading && !data ? (
-              <tr>
+              <tr className="admin-secret-feedback-empty-row">
                 <td className="admin-sales-empty" colSpan={4}>
                   시크릿 피드백을 불러오는 중입니다.
                 </td>
