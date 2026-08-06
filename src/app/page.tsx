@@ -54,12 +54,14 @@ import {
   sendAdminPasswordReset,
   searchAdminPartnerAccounts,
   unlockAdminAccount,
+  updateAdminAccountRole,
   updateAdminMembershipPartner,
   withdrawAdminAccount,
   updateClinicMembership,
   updateLicenseVerification,
   uploadAdminDentalSalesBusinessLicense,
   type AdminAccountRole,
+  type MutableAdminAccountRole,
   type AdminConsolePayload,
   type AdminManualHospitalSubmissionsPayload,
   type ManualHospitalApprovalResult,
@@ -70,11 +72,14 @@ import {
   adminAccountDirectoryStatusLabel,
   adminAccountWithdrawalConfirmation,
   adminInviteDisplayName,
+  canSwitchAdminAccountRole,
   defaultAdminAccountDirectoryFilters,
   formatAdminAccountDirectoryDate,
   type AdminAccountDirectoryFilters,
+  type AdminAccountDirectoryItem,
   type AdminAccountDirectoryPayload,
   type AdminAccountDirectoryRole,
+  type SwitchableAdminAccountRole,
 } from "@/lib/admin-accounts";
 import {
   adminSessionRejectionMessage,
@@ -1138,6 +1143,9 @@ export default function AdminHome() {
               }
               onLock={(userId) =>
                 runAction((token) => lockAdminAccount(token, userId))
+              }
+              onRoleChange={(userId, role) =>
+                runAction((token) => updateAdminAccountRole(token, userId, role))
               }
               onWithdraw={withdrawAccount}
             />
@@ -2494,6 +2502,7 @@ function AdminAccountsTab({
   onInvitationRevoke,
   onLock,
   onPasswordReset,
+  onRoleChange,
   onUnlock,
   onWithdraw,
 }: {
@@ -2510,6 +2519,10 @@ function AdminAccountsTab({
   onInvitationRevoke: (invitationId: string) => Promise<boolean>;
   onLock: (userId: string) => Promise<boolean>;
   onPasswordReset: (userId: string) => Promise<boolean>;
+  onRoleChange: (
+    userId: string,
+    role: MutableAdminAccountRole,
+  ) => Promise<boolean>;
   onUnlock: (userId: string) => Promise<boolean>;
   onWithdraw: (userId: string) => Promise<boolean>;
 }) {
@@ -2526,8 +2539,13 @@ function AdminAccountsTab({
   const [actionUserId, setActionUserId] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<AdminAccountRole>("super_admin");
+  const [roleDialogAccount, setRoleDialogAccount] =
+    useState<AdminAccountDirectoryItem | null>(null);
+  const [roleDraft, setRoleDraft] =
+    useState<SwitchableAdminAccountRole>("admin");
   const [dialogError, setDialogError] = useState("");
   const [isDialogSubmitting, setIsDialogSubmitting] = useState(false);
+  const [isRoleSubmitting, setIsRoleSubmitting] = useState(false);
 
   const loadAccounts = useCallback(async () => {
     if (!accessToken) return;
@@ -2602,6 +2620,30 @@ function AdminAccountsTab({
     if (isDialogSubmitting) return;
     onDialogChange(null);
     setDialogError("");
+  }
+
+  function openRoleDialog(account: AdminAccountDirectoryItem) {
+    if (!canSwitchAdminAccountRole(canManage, account)) return;
+    setRoleDialogAccount(account);
+    setRoleDraft(account.role === "sales" ? "sales" : "admin");
+    setOpenActionId(null);
+  }
+
+  function closeRoleDialog() {
+    if (isRoleSubmitting) return;
+    setRoleDialogAccount(null);
+  }
+
+  async function submitRoleChange(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!roleDialogAccount?.userId || roleDraft === roleDialogAccount.role) return;
+    setIsRoleSubmitting(true);
+    const succeeded = await onRoleChange(roleDialogAccount.userId, roleDraft);
+    if (succeeded) {
+      setRoleDialogAccount(null);
+      await loadAccounts();
+    }
+    setIsRoleSubmitting(false);
   }
 
   async function submitInvite(event: FormEvent<HTMLFormElement>) {
@@ -2709,6 +2751,7 @@ function AdminAccountsTab({
   function toggleActionMenu(
     accountId: string,
     button: HTMLButtonElement,
+    includesRoleChange: boolean,
   ) {
     if (openActionId === accountId) {
       setOpenActionId(null);
@@ -2719,7 +2762,7 @@ function AdminAccountsTab({
     const viewportPadding = 8;
     const menuGap = 4;
     const menuWidth = 224;
-    const menuHeight = 126;
+    const menuHeight = includesRoleChange ? 162 : 126;
     const left = Math.min(
       window.innerWidth - menuWidth - viewportPadding,
       Math.max(viewportPadding, rect.right - menuWidth),
@@ -2841,7 +2884,11 @@ function AdminAccountsTab({
                         aria-controls={`admin-account-actions-${account.id}`}
                         aria-expanded={openActionId === account.id}
                         onClick={(event) =>
-                          toggleActionMenu(account.id, event.currentTarget)
+                          toggleActionMenu(
+                            account.id,
+                            event.currentTarget,
+                            canSwitchAdminAccountRole(canManage, account),
+                          )
                         }
                       >
                         <span aria-hidden="true">⋮</span>
@@ -2886,6 +2933,18 @@ function AdminAccountsTab({
                             </>
                           ) : account.userId ? (
                             <>
+                              {canSwitchAdminAccountRole(canManage, account) ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    role="menuitem"
+                                    onClick={() => openRoleDialog(account)}
+                                  >
+                                    역할 변경
+                                  </button>
+                                  <span aria-hidden="true" />
+                                </>
+                              ) : null}
                               <button
                                 type="button"
                                 role="menuitem"
@@ -3050,6 +3109,69 @@ function AdminAccountsTab({
                 </button>
                 <button type="submit" disabled={isDialogSubmitting}>
                   {isDialogSubmitting ? "발송 중" : "초대 메일 발송"}
+                </button>
+              </footer>
+            </form>
+          </section>
+        </div>
+      ) : null}
+
+      {roleDialogAccount && canManage ? (
+        <div className="admin-account-dialog-layer">
+          <button
+            type="button"
+            className="admin-account-dialog-backdrop"
+            aria-label="역할 변경 창 닫기"
+            onClick={closeRoleDialog}
+          />
+          <section
+            className="admin-account-dialog admin-account-dialog--invite admin-account-dialog--role"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-account-role-dialog-title"
+          >
+            <header>
+              <h2 id="admin-account-role-dialog-title">역할 변경</h2>
+            </header>
+            <form className="admin-account-invite-form" onSubmit={submitRoleChange}>
+              <div className="admin-account-dialog-body">
+                <div className="admin-account-role-target">
+                  <strong>{roleDialogAccount.fullName ?? "이름 없는 관리자"}</strong>
+                  <span>{roleDialogAccount.email ?? roleDialogAccount.accountId}</span>
+                </div>
+                <label className="admin-account-invite-role">
+                  <span>변경할 역할</span>
+                  <span className="admin-account-role-select">
+                    <AdminSelect
+                      label="변경할 역할"
+                      value={roleDraft}
+                      onChange={setRoleDraft}
+                      options={[
+                        { value: "sales", label: "영업 담당자" },
+                        { value: "admin", label: "운영 관리자" },
+                      ] satisfies Array<{
+                        value: SwitchableAdminAccountRole;
+                        label: string;
+                      }>}
+                    />
+                  </span>
+                </label>
+              </div>
+              <footer className="admin-account-dialog-footer">
+                <button
+                  type="button"
+                  disabled={isRoleSubmitting}
+                  onClick={closeRoleDialog}
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  disabled={
+                    isRoleSubmitting || roleDraft === roleDialogAccount.role
+                  }
+                >
+                  {isRoleSubmitting ? "변경 중" : "변경하기"}
                 </button>
               </footer>
             </form>

@@ -4899,6 +4899,32 @@ td span {
   letter-spacing: -0.44px;
 }
 
+.admin-account-dialog--role {
+  min-height: 0;
+}
+
+.admin-account-dialog--role .admin-account-dialog-body {
+  min-height: 174px;
+}
+
+.admin-account-role-target {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--text-primary);
+}
+
+.admin-account-role-target strong {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.admin-account-role-target span {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  line-height: 17px;
+}
+
 .admin-account-dialog .admin-account-invite-form {
   gap: 0;
   margin-top: 0;

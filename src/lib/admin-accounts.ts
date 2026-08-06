@@ -3,6 +3,10 @@ export type AdminAccountDirectoryRole =
   | "super_admin"
   | "sales"
   | "admin";
+export type SwitchableAdminAccountRole = Exclude<
+  AdminAccountDirectoryRole,
+  "all" | "super_admin"
+>;
 
 export interface AdminAccountDirectoryFilters {
   role: AdminAccountDirectoryRole;
@@ -53,6 +57,22 @@ export function adminAccountDirectoryRoleLabel(
   if (role === "super_admin") return "최고 관리자";
   if (role === "sales") return "영업 담당자";
   return "운영 관리자";
+}
+
+export function canSwitchAdminAccountRole(
+  canManage: boolean,
+  account: Pick<
+    AdminAccountDirectoryItem,
+    "kind" | "role" | "status" | "userId"
+  >,
+) {
+  return (
+    canManage &&
+    account.kind === "account" &&
+    !!account.userId &&
+    account.status === "active" &&
+    account.role !== "super_admin"
+  );
 }
 
 export function adminAccountDirectoryStatusLabel(status: string) {

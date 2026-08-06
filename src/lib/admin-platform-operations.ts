@@ -264,6 +264,7 @@ export function adminAuditActionLabel(action: string) {
       "admin.account.lock": "어드민 계정 잠금",
       "admin.account.unlock": "어드민 계정 잠금 해제",
       "admin.account.withdraw": "어드민 권한 회수",
+      "admin_account.role_change": "어드민 계정 역할 변경",
       "admin_account.invitation.setup_attempt": "어드민 초대 설정 시도",
       "admin_account.invitation.setup_failure": "어드민 초대 설정 실패",
       "admin_account.recovery.setup_attempt": "어드민 비밀번호 재설정 시도",

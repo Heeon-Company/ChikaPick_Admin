@@ -7,6 +7,7 @@ export type AdminAccountRole =
   | "admin"
   | "super_admin"
   | "sales";
+export type MutableAdminAccountRole = Exclude<AdminAccountRole, "super_admin">;
 export type MembershipRole = "owner" | "doctor" | "manager" | "staff";
 export type MembershipStatus = "active" | "pending" | "revoked";
 
@@ -644,6 +645,18 @@ export async function lockAdminAccount(accessToken: string, userId: string) {
     `/api/v1/admin/accounts/${userId}/lock`,
     accessToken,
     { method: "POST" },
+  );
+}
+
+export async function updateAdminAccountRole(
+  accessToken: string,
+  userId: string,
+  role: MutableAdminAccountRole,
+) {
+  return adminFetch<AdminActionResult>(
+    `/api/v1/admin/accounts/${encodeURIComponent(userId)}/role`,
+    accessToken,
+    { method: "PATCH", body: JSON.stringify({ role }) },
   );
 }
 

@@ -6,6 +6,7 @@ import {
   adminAccountDirectoryStatusLabel,
   adminAccountWithdrawalConfirmation,
   adminInviteDisplayName,
+  canSwitchAdminAccountRole,
   formatAdminAccountDirectoryDate,
 } from "./admin-accounts.ts";
 
@@ -47,5 +48,36 @@ test("admin account withdrawal warns when the current account will be signed out
   assert.doesNotMatch(
     adminAccountWithdrawalConfirmation(false),
     /로그인 화면/,
+  );
+});
+
+test("only Super Admins can switch active non-super account roles", () => {
+  const activeAccount = {
+    kind: "account" as const,
+    role: "admin" as const,
+    status: "active",
+    userId: "admin-1",
+  };
+
+  assert.equal(canSwitchAdminAccountRole(true, activeAccount), true);
+  assert.equal(canSwitchAdminAccountRole(false, activeAccount), false);
+  assert.equal(
+    canSwitchAdminAccountRole(true, {
+      ...activeAccount,
+      role: "super_admin",
+    }),
+    false,
+  );
+  assert.equal(
+    canSwitchAdminAccountRole(true, { ...activeAccount, status: "locked" }),
+    false,
+  );
+  assert.equal(
+    canSwitchAdminAccountRole(true, {
+      ...activeAccount,
+      kind: "invitation",
+      userId: null,
+    }),
+    false,
   );
 });

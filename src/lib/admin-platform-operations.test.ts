@@ -17,6 +17,10 @@ test("platform operation labels distinguish invite, role, audit, and audience va
   assert.equal(adminMembershipRoleLabel("doctor"), "치과의사");
   assert.equal(adminAuditActionLabel("terms.version.publish"), "약관 버전 게시");
   assert.equal(
+    adminAuditActionLabel("admin_account.role_change"),
+    "어드민 계정 역할 변경",
+  );
+  assert.equal(
     adminAuditActionLabel("admin_account.invitation.setup_failure"),
     "어드민 초대 설정 실패",
   );
