@@ -27,6 +27,7 @@
   --border: var(--chika-base-3);
   --border-subtle: var(--chika-base-2);
   --danger: #f90003;
+  --admin-list-viewport-height: clamp(420px, calc(100dvh - 360px), 620px);
 }
 
 .sr-only {
@@ -10655,4 +10656,74 @@ td span {
   min-height: 40px;
   padding: 9px 12px;
   font-size: 14px;
+}
+
+/* Shared desktop viewport for paginated list surfaces. */
+@media (min-width: 761px) {
+  .admin-membership-table-shell,
+  .admin-partner-accounts-table-scroll,
+  .admin-account-directory-table-scroll,
+  .admin-external-connectors-table-scroll,
+  .admin-secret-feedback-table-scroll,
+  .admin-sales-table-scroll,
+  .admin-partner-clinics-table-scroll,
+  .admin-hospital-review-table-card,
+  .admin-operational-table-card {
+    height: var(--admin-list-viewport-height);
+    min-height: var(--admin-list-viewport-height);
+  }
+
+  .admin-membership-table-shell,
+  .admin-partner-accounts-table-scroll,
+  .admin-account-directory-table-scroll,
+  .admin-external-connectors-table-scroll,
+  .admin-secret-feedback-table-scroll,
+  .admin-sales-table-scroll,
+  .admin-partner-clinics-table-scroll {
+    overflow: auto;
+  }
+
+  .admin-membership-table-shell thead th,
+  .admin-partner-accounts-table-scroll thead th,
+  .admin-account-directory-table-scroll thead th,
+  .admin-external-connectors-table-scroll thead th,
+  .admin-secret-feedback-table-scroll thead th,
+  .admin-sales-table-scroll thead th,
+  .admin-partner-clinics-table-scroll thead th,
+  .admin-hospital-review-table-scroll thead th,
+  .admin-operational-table-card > .admin-table-wrap thead th {
+    position: sticky;
+    z-index: 2;
+    top: 0;
+  }
+
+  .admin-hospital-review-table-card,
+  .admin-operational-table-card {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .admin-hospital-review-table-scroll,
+  .admin-operational-table-card > .admin-table-wrap {
+    min-height: 0;
+    flex: 1;
+    overflow: auto;
+  }
+
+  .admin-hospital-review-table-card > header,
+  .admin-hospital-review-table-card > .admin-sales-pagination,
+  .admin-operational-table-card > .admin-operational-table-heading,
+  .admin-operational-table-card > .admin-operational-guidance,
+  .admin-operational-table-card > .admin-operational-error,
+  .admin-operational-table-card > .admin-operational-loading,
+  .admin-operational-table-card > .admin-sales-pagination {
+    flex: 0 0 auto;
+  }
+}
+
+@media (min-width: 1361px) {
+  .admin-membership-inquiry-list {
+    height: calc(var(--admin-list-viewport-height) - 40px);
+    max-height: none;
+  }
 }
