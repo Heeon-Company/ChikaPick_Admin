@@ -229,7 +229,7 @@ Partner invite codes are revealed only through the authenticated, audited `POST 
 
 병원 가입 승인 성공 시 API가 반환하는 재사용 가능 직원/의료진 초대코드와 `유효기간 없음` 안내를 즉시 복사 모달에 표시합니다. 이 코드는 여러 병원 구성원이 사용할 수 있고 병원 대표자가 Partners `직원 관리`에서 새 코드를 발급하거나 Admin이 폐기하기 전까지 유지됩니다.
 
-Paginated desktop list surfaces share one responsive viewport-height token (`--admin-list-viewport-height`) so membership, account, operational, clinic, sales, feedback, connector, and hospital-review tables present a consistent vertical rhythm regardless of the current row count. Rows scroll inside the bounded surface with sticky headers; pagination and card headings remain reachable outside the scrolling row region. At `760px` and below, this fixed desktop height contract does not apply, preserving each tab's existing mobile card/overflow flow without forced empty space.
+Paginated desktop list surfaces share one responsive viewport-height token (`--admin-list-viewport-height`) so membership, account, operational, clinic, sales, feedback, connector, and hospital-review tables present a consistent vertical rhythm regardless of the current row count. Rows scroll inside the bounded surface with sticky headers; pagination and card headings remain reachable outside the scrolling row region. Tabs with additional metric and filter blocks (`입점 신청 관리` and `영업 성과 관리`) use the shorter `--admin-summary-list-viewport-height` token so the dashboard page itself does not scroll at ordinary desktop viewport heights. At `760px` and below, these fixed desktop height contracts do not apply, preserving each tab's existing mobile card/overflow flow without forced empty space.
 
 ## Environment Variables
 

@@ -28,6 +28,7 @@
   --border-subtle: var(--chika-base-2);
   --danger: #f90003;
   --admin-list-viewport-height: clamp(420px, calc(100dvh - 360px), 620px);
+  --admin-summary-list-viewport-height: clamp(320px, calc(100dvh - 500px), 480px);
 }
 
 .sr-only {
@@ -10718,6 +10719,27 @@ td span {
   .admin-operational-table-card > .admin-operational-loading,
   .admin-operational-table-card > .admin-sales-pagination {
     flex: 0 0 auto;
+  }
+
+  .admin-partnership-requests .admin-operational-table-card,
+  .admin-performance-table-card {
+    height: var(--admin-summary-list-viewport-height);
+    min-height: var(--admin-summary-list-viewport-height);
+  }
+
+  .admin-performance-table-card {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .admin-performance-table-card > header {
+    flex: 0 0 auto;
+  }
+
+  .admin-performance-table-card > .admin-performance-table-scroll {
+    height: auto;
+    min-height: 0;
+    flex: 1;
   }
 }
 
