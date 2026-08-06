@@ -69,6 +69,7 @@ import {
 } from "@/lib/admin-api";
 import {
   adminAccountDirectoryRoleLabel,
+  adminAccountDirectoryRoleSummary,
   adminAccountDirectoryStatusLabel,
   adminAccountWithdrawalConfirmation,
   adminInviteDisplayName,
@@ -203,8 +204,11 @@ import {
 } from "@/lib/external-connectors";
 import {
   formatSecretFeedbackDate,
+  defaultSecretFeedbackFilters,
   secretFeedbackImpressionTags,
   secretFeedbackRatingLabel,
+  validateSecretFeedbackFilters,
+  type SecretFeedbackFilters,
   secretFeedbackRatings,
   type SecretFeedbackItem,
   type SecretFeedbackPayload,
@@ -239,6 +243,10 @@ import {
   summarizeLicenseVerifications,
   type LicenseVerificationFilter,
 } from "@/lib/license-verifications";
+import {
+  licenseReviewRefreshIntervalMs,
+  shouldRefreshLicenseReview,
+} from "@/lib/license-review-refresh";
 import { signInWithAdminPassword } from "@/lib/password-auth";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 
@@ -488,6 +496,57 @@ export default function AdminHome() {
     },
     [supabase],
   );
+
+  useEffect(() => {
+    if (
+      !shouldRefreshLicenseReview({
+        activeTab: activePrimaryTab,
+        hasLoadedConsole,
+        hasSession: !!session?.access_token,
+        visibilityState: document.visibilityState,
+      })
+    ) {
+      return;
+    }
+
+    let isRefreshing = false;
+    const refresh = async () => {
+      if (
+        isRefreshing ||
+        !shouldRefreshLicenseReview({
+          activeTab: activePrimaryTab,
+          hasLoadedConsole,
+          hasSession: !!session?.access_token,
+          visibilityState: document.visibilityState,
+        })
+      ) {
+        return;
+      }
+      isRefreshing = true;
+      try {
+        await loadConsole(session);
+      } finally {
+        isRefreshing = false;
+      }
+    };
+    const initialRefreshId = window.setTimeout(() => void refresh(), 0);
+    const intervalId = window.setInterval(
+      () => void refresh(),
+      licenseReviewRefreshIntervalMs,
+    );
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    const handleFocus = () => void refresh();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      window.clearTimeout(initialRefreshId);
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [activePrimaryTab, hasLoadedConsole, loadConsole, session]);
 
   const autoLoadConsole = useCallback(
     (nextSession: Session | null) => {
@@ -2625,7 +2684,7 @@ function AdminAccountsTab({
   function openRoleDialog(account: AdminAccountDirectoryItem) {
     if (!canSwitchAdminAccountRole(canManage, account)) return;
     setRoleDialogAccount(account);
-    setRoleDraft(account.role === "sales" ? "sales" : "admin");
+    setRoleDraft(account.adminAccountType);
     setOpenActionId(null);
   }
 
@@ -2636,7 +2695,10 @@ function AdminAccountsTab({
 
   async function submitRoleChange(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!roleDialogAccount?.userId || roleDraft === roleDialogAccount.role) return;
+    if (
+      !roleDialogAccount?.userId ||
+      roleDraft === roleDialogAccount.adminAccountType
+    ) return;
     setIsRoleSubmitting(true);
     const succeeded = await onRoleChange(roleDialogAccount.userId, roleDraft);
     if (succeeded) {
@@ -2864,7 +2926,7 @@ function AdminAccountsTab({
                 <td title={account.fullName ?? undefined}>{account.fullName ?? "-"}</td>
                 <td title={account.email ?? undefined}>{account.email ?? "-"}</td>
                 <td title={account.accountId}>{account.accountId}</td>
-                <td>{adminAccountDirectoryRoleLabel(account.role)}</td>
+                <td>{adminAccountDirectoryRoleSummary(account)}</td>
                 <td>
                   <span
                     className={`admin-account-status admin-account-status--${account.status}`}
@@ -2940,7 +3002,7 @@ function AdminAccountsTab({
                                     role="menuitem"
                                     onClick={() => openRoleDialog(account)}
                                   >
-                                    역할 변경
+                                    업무 역할 변경
                                   </button>
                                   <span aria-hidden="true" />
                                 </>
@@ -3131,7 +3193,7 @@ function AdminAccountsTab({
             aria-labelledby="admin-account-role-dialog-title"
           >
             <header>
-              <h2 id="admin-account-role-dialog-title">역할 변경</h2>
+              <h2 id="admin-account-role-dialog-title">업무 역할 변경</h2>
             </header>
             <form className="admin-account-invite-form" onSubmit={submitRoleChange}>
               <div className="admin-account-dialog-body">
@@ -3140,10 +3202,10 @@ function AdminAccountsTab({
                   <span>{roleDialogAccount.email ?? roleDialogAccount.accountId}</span>
                 </div>
                 <label className="admin-account-invite-role">
-                  <span>변경할 역할</span>
+                  <span>변경할 업무 역할</span>
                   <span className="admin-account-role-select">
                     <AdminSelect
-                      label="변경할 역할"
+                      label="변경할 업무 역할"
                       value={roleDraft}
                       onChange={setRoleDraft}
                       options={[
@@ -3168,7 +3230,8 @@ function AdminAccountsTab({
                 <button
                   type="submit"
                   disabled={
-                    isRoleSubmitting || roleDraft === roleDialogAccount.role
+                    isRoleSubmitting ||
+                    roleDraft === roleDialogAccount.adminAccountType
                   }
                 >
                   {isRoleSubmitting ? "변경 중" : "변경하기"}
@@ -3457,6 +3520,13 @@ function ExternalConnectorsTab({
 function SecretFeedbackTab({ accessToken }: { accessToken: string }) {
   const [data, setData] = useState<SecretFeedbackPayload | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [filters, setFilters] = useState<SecretFeedbackFilters>(
+    defaultSecretFeedbackFilters,
+  );
+  const [draftFilters, setDraftFilters] = useState<SecretFeedbackFilters>(
+    defaultSecretFeedbackFilters,
+  );
+  const [filterError, setFilterError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedFeedback, setSelectedFeedback] = useState<SecretFeedbackItem | null>(
@@ -3468,7 +3538,7 @@ function SecretFeedbackTab({ accessToken }: { accessToken: string }) {
     setIsLoading(true);
     setErrorMessage("");
     try {
-      setData(await fetchAdminSecretFeedback(accessToken, currentPage));
+      setData(await fetchAdminSecretFeedback(accessToken, filters, currentPage));
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -3478,7 +3548,7 @@ function SecretFeedbackTab({ accessToken }: { accessToken: string }) {
     } finally {
       setIsLoading(false);
     }
-  }, [accessToken, currentPage]);
+  }, [accessToken, currentPage, filters]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => void loadFeedback(), 0);
@@ -3513,6 +3583,76 @@ function SecretFeedbackTab({ accessToken }: { accessToken: string }) {
 
   return (
     <section className="admin-secret-feedback">
+      <form
+        className="admin-secret-feedback-filters"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const validationMessage = validateSecretFeedbackFilters(draftFilters);
+          setFilterError(validationMessage);
+          if (validationMessage) return;
+          setCurrentPage(1);
+          setFilters(draftFilters);
+        }}
+      >
+        <label>
+          <span>치과</span>
+          <AdminSelect
+            label="시크릿 피드백 치과"
+            value={draftFilters.clinicId}
+            onChange={(clinicId) =>
+              setDraftFilters((current) => ({ ...current, clinicId }))
+            }
+            options={[
+              { value: "all", label: "전체 치과" },
+              ...(data?.filterOptions.clinics ?? []).map((clinic) => ({
+                value: clinic.id,
+                label: clinic.name,
+              })),
+            ]}
+          />
+        </label>
+        <label>
+          <span>시작일</span>
+          <input
+            type="date"
+            value={draftFilters.startDate}
+            onChange={(event) =>
+              setDraftFilters((current) => ({
+                ...current,
+                startDate: event.target.value,
+              }))
+            }
+          />
+        </label>
+        <label>
+          <span>종료일</span>
+          <input
+            type="date"
+            value={draftFilters.endDate}
+            onChange={(event) =>
+              setDraftFilters((current) => ({
+                ...current,
+                endDate: event.target.value,
+              }))
+            }
+          />
+        </label>
+        <div className="admin-secret-feedback-filter-actions">
+          <button
+            type="button"
+            onClick={() => {
+              setDraftFilters(defaultSecretFeedbackFilters);
+              setFilters(defaultSecretFeedbackFilters);
+              setCurrentPage(1);
+              setFilterError("");
+            }}
+          >
+            초기화
+          </button>
+          <button type="submit">조회</button>
+        </div>
+        {filterError ? <p role="alert">{filterError}</p> : null}
+      </form>
       <div className="admin-secret-feedback-metrics">
         {metrics.map((metric) => (
           <article key={metric.label}>

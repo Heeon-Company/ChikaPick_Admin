@@ -393,6 +393,7 @@ export async function fetchAdminExternalConnectors(
 
 export async function fetchAdminSecretFeedback(
   accessToken: string,
+  filters: SecretFeedbackFilters,
   page: number,
   pageSize = 10,
 ) {
@@ -400,6 +401,9 @@ export async function fetchAdminSecretFeedback(
     page: String(page),
     pageSize: String(pageSize),
   });
+  if (filters.clinicId !== "all") params.set("clinicId", filters.clinicId);
+  if (filters.startDate) params.set("startDate", filters.startDate);
+  if (filters.endDate) params.set("endDate", filters.endDate);
   return adminFetch<SecretFeedbackPayload>(
     `/api/v1/admin/secret-feedback?${params.toString()}`,
     accessToken,
@@ -977,7 +981,10 @@ import type {
   AdminAccountDirectoryPayload,
 } from "./admin-accounts";
 import type { ExternalConnectorDirectoryPayload } from "./external-connectors";
-import type { SecretFeedbackPayload } from "./secret-feedback";
+import type {
+  SecretFeedbackFilters,
+  SecretFeedbackPayload,
+} from "./secret-feedback";
 import type {
   ClinicPartnershipRequestFilters,
   ClinicPartnershipRequestPayload,

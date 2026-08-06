@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   formatSecretFeedbackDate,
+  validateSecretFeedbackFilters,
   secretFeedbackImpressionTags,
   secretFeedbackRatingLabel,
   secretFeedbackRatings,
@@ -23,6 +24,25 @@ test("secret feedback labels and assets preserve the Client survey contract", ()
   assert.equal(secretFeedbackRatingLabel("very_dissatisfied"), "매우 아쉬움");
   assert.equal(secretFeedbackImpressionTags.length, 6);
   assert.match(secretFeedbackRatings[0].assetPath, /piki_rate_very_satisfied/);
+});
+
+test("secret feedback filters reject an inverted period", () => {
+  assert.equal(
+    validateSecretFeedbackFilters({
+      clinicId: "all",
+      startDate: "2026-08-02",
+      endDate: "2026-08-01",
+    }),
+    "조회 종료일은 시작일보다 빠를 수 없습니다.",
+  );
+  assert.equal(
+    validateSecretFeedbackFilters({
+      clinicId: "all",
+      startDate: "2026-08-01",
+      endDate: "2026-08-01",
+    }),
+    "",
+  );
 });
 
 test("secret feedback received dates use the Korea calendar day", () => {

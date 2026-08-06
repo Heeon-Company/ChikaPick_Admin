@@ -352,6 +352,7 @@ test("fetchAdminSecretFeedback requests the anonymous feedback directory", async
     return new Response(
       JSON.stringify({
         metrics: { total: 0, positive: 0, neutral: 0, negative: 0 },
+        filterOptions: { clinics: [] },
         items: [],
         pagination: { page: 2, pageSize: 10, totalItems: 0, totalPages: 1 },
       }),
@@ -360,14 +361,22 @@ test("fetchAdminSecretFeedback requests the anonymous feedback directory", async
   };
 
   try {
-    await fetchAdminSecretFeedback("access-token", 2);
+    await fetchAdminSecretFeedback(
+      "access-token",
+      {
+        clinicId: "42000000-0000-4000-8000-000000000001",
+        startDate: "2026-07-01",
+        endDate: "2026-07-31",
+      },
+      2,
+    );
   } finally {
     globalThis.fetch = originalFetch;
   }
 
   assert.equal(
     calls[0]?.input,
-    "https://api.example.com/api/v1/admin/secret-feedback?page=2&pageSize=10",
+    "https://api.example.com/api/v1/admin/secret-feedback?page=2&pageSize=10&clinicId=42000000-0000-4000-8000-000000000001&startDate=2026-07-01&endDate=2026-07-31",
   );
 });
 

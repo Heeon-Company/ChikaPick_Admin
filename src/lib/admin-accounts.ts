@@ -21,6 +21,8 @@ export interface AdminAccountDirectoryItem {
   fullName: string | null;
   email: string | null;
   accountId: string;
+  adminAccountType: SwitchableAdminAccountRole;
+  isSuperAdmin: boolean;
   role: Exclude<AdminAccountDirectoryRole, "all">;
   status: string;
   lastLoginAt: string | null;
@@ -59,19 +61,26 @@ export function adminAccountDirectoryRoleLabel(
   return "운영 관리자";
 }
 
+export function adminAccountDirectoryRoleSummary(
+  account: Pick<AdminAccountDirectoryItem, "adminAccountType" | "isSuperAdmin">,
+) {
+  const duty =
+    account.adminAccountType === "sales" ? "영업 담당자" : "운영 관리자";
+  return account.isSuperAdmin ? `최고 관리자 · ${duty}` : duty;
+}
+
 export function canSwitchAdminAccountRole(
   canManage: boolean,
   account: Pick<
     AdminAccountDirectoryItem,
-    "kind" | "role" | "status" | "userId"
+    "kind" | "status" | "userId"
   >,
 ) {
   return (
     canManage &&
     account.kind === "account" &&
     !!account.userId &&
-    account.status === "active" &&
-    account.role !== "super_admin"
+    account.status === "active"
   );
 }
 

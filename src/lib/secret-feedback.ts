@@ -24,6 +24,9 @@ export interface SecretFeedbackPayload {
     neutral: number;
     negative: number;
   };
+  filterOptions: {
+    clinics: Array<{ id: string; name: string }>;
+  };
   items: SecretFeedbackItem[];
   pagination: {
     page: number;
@@ -31,6 +34,25 @@ export interface SecretFeedbackPayload {
     totalItems: number;
     totalPages: number;
   };
+}
+
+export interface SecretFeedbackFilters {
+  clinicId: string;
+  startDate: string;
+  endDate: string;
+}
+
+export const defaultSecretFeedbackFilters: SecretFeedbackFilters = {
+  clinicId: "all",
+  startDate: "",
+  endDate: "",
+};
+
+export function validateSecretFeedbackFilters(filters: SecretFeedbackFilters) {
+  if (filters.startDate && filters.endDate && filters.startDate > filters.endDate) {
+    return "조회 종료일은 시작일보다 빠를 수 없습니다.";
+  }
+  return "";
 }
 
 export const secretFeedbackRatings: Array<{

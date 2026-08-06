@@ -66,10 +66,11 @@ password recovery. After a successful invitation or recovery, the setup page
 clears the verification session and directs the recipient to sign in manually.
 A locked account stays locked after its password is changed.
 
-For active, unlocked non-super accounts, a Super Admin can use the account-row
-menu to switch between `영업 담당자` and `운영 관리자`. Super Admin accounts
-never expose this action, and the API rejects every attempt to change their
-role.
+For every active, unlocked Admin account, a Super Admin can use the account-row
+menu to switch the duty between `영업 담당자` and `운영 관리자`. The immutable
+Super Admin authority is displayed separately and can coexist with either duty,
+so a representative may remain a Super Admin while also appearing in sales
+assignment lists.
 
 The Admin sidebar includes a Partners-aligned `설정` tab. It shows the current
 Admin account summary and signs out only the current browser session before

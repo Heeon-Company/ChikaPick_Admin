@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   adminAccountDirectoryRoleLabel,
+  adminAccountDirectoryRoleSummary,
   adminAccountDirectoryStatusLabel,
   adminAccountWithdrawalConfirmation,
   adminInviteDisplayName,
@@ -25,6 +26,23 @@ test("admin account directory uses the Figma role and status labels", () => {
   assert.equal(adminAccountDirectoryStatusLabel("invite_failed"), "전송 실패");
   assert.equal(adminAccountDirectoryStatusLabel("locked"), "잠금");
   assert.equal(adminAccountDirectoryStatusLabel("suspended"), "비활성");
+});
+
+test("Super Admin authority and the assigned duty are displayed independently", () => {
+  assert.equal(
+    adminAccountDirectoryRoleSummary({
+      adminAccountType: "sales",
+      isSuperAdmin: true,
+    }),
+    "최고 관리자 · 영업 담당자",
+  );
+  assert.equal(
+    adminAccountDirectoryRoleSummary({
+      adminAccountType: "admin",
+      isSuperAdmin: false,
+    }),
+    "운영 관리자",
+  );
 });
 
 test("admin account directory dates render in Korea time", () => {
@@ -51,7 +69,7 @@ test("admin account withdrawal warns when the current account will be signed out
   );
 });
 
-test("only Super Admins can switch active non-super account roles", () => {
+test("only Super Admins can switch active account duties", () => {
   const activeAccount = {
     kind: "account" as const,
     role: "admin" as const,
@@ -66,7 +84,7 @@ test("only Super Admins can switch active non-super account roles", () => {
       ...activeAccount,
       role: "super_admin",
     }),
-    false,
+    true,
   );
   assert.equal(
     canSwitchAdminAccountRole(true, { ...activeAccount, status: "locked" }),
