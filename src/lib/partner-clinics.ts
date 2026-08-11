@@ -29,7 +29,8 @@ export interface AdminPartnerClinicDetailPayload {
     isAppVisible: boolean;
   };
   metrics: {
-    consultations: PartnerClinicResponseMetrics;
+    // 전문의 소견 관련 코드
+    // consultations: PartnerClinicResponseMetrics;
     resultRecords: PartnerClinicResponseMetrics;
     reservations: {
       requests: number;

@@ -76,6 +76,8 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ChikaPick Admin is the internal administrator web console for ChikaPick operations. It is a Next.js 16 App Router application deployed to Vercel and backed by Supabase Auth in the browser.
 
+The Korean `main` branch intentionally disables all specialist-consultation directories, counters, clinic metrics, and operational views. The former implementation is preserved in the pushed remote `origin/abroad` branch at baseline commit `45dd944bdfce7f7a22c9a2c8478598193b35ab04`; restore it only for the overseas product line. Do not reconnect the disabled API consultation routes from Korean Admin.
+
 The canonical GitHub repository is `Heeon-Company/ChikaPick_Admin`, and its default branch is `main`. Keep the local `origin` and the Vercel production project connected to that organization repository and branch.
 
 This repository owns only the admin web UI and browser-side integration glue. All privileged data access and mutations must go through the sibling `../ChikaPick_API` backend under `/api/v1/admin/*` and `/api/v1/auth/session/*`. Database schema, service-role access, RLS policies, RPCs, storage signing, cron jobs, and privileged business logic belong in `../ChikaPick_API`, not this app.

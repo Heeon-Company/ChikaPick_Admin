@@ -16,7 +16,8 @@ import {
   fetchAdminAuditLog,
   fetchAdminClinicMembershipRequests,
   fetchAdminClinicPartnershipRequests,
-  fetchAdminConsultationDirectory,
+  // 전문의 소견 관련 코드
+  // fetchAdminConsultationDirectory,
   fetchAdminDentalSales,
   fetchAdminDentalSalesDistricts,
   fetchAdminDentalSalesDetail,
@@ -1101,11 +1102,12 @@ test("operational directory clients send only applied server filters", async () 
       { query: "  서울 치과  ", status: "confirmed", bookingSource: "all" },
       2,
     );
-    await fetchAdminConsultationDirectory(
-      "access-token",
-      { query: "", status: "pending" },
-      1,
-    );
+    // 전문의 소견 관련 코드
+    // await fetchAdminConsultationDirectory(
+    //   "access-token",
+    //   { query: "", status: "pending" },
+    //   1,
+    // );
     await fetchAdminInviteDirectory(
       "access-token",
       { query: "강남", status: "active", role: "doctor" },
@@ -1132,20 +1134,21 @@ test("operational directory clients send only applied server filters", async () 
   assert.equal(reservationUrl.searchParams.get("status"), "confirmed");
   assert.equal(reservationUrl.searchParams.has("bookingSource"), false);
 
+  // 전문의 소견 관련 코드
+  // assert.equal(
+  //   calls[1]?.input,
+  //   "https://api.example.com/api/v1/admin/consultations?page=1&pageSize=10&status=pending",
+  // );
   assert.equal(
     calls[1]?.input,
-    "https://api.example.com/api/v1/admin/consultations?page=1&pageSize=10&status=pending",
-  );
-  assert.equal(
-    calls[2]?.input,
     "https://api.example.com/api/v1/admin/invites?page=3&pageSize=10&query=%EA%B0%95%EB%82%A8&status=active&role=doctor",
   );
   assert.equal(
-    calls[3]?.input,
+    calls[2]?.input,
     "https://api.example.com/api/v1/admin/clinic-memberships?page=4&pageSize=10&query=%ED%99%8D%EA%B8%B8%EB%8F%99&role=staff",
   );
   assert.equal(
-    calls[4]?.input,
+    calls[3]?.input,
     "https://api.example.com/api/v1/admin/audit-log?page=5&pageSize=20&action=terms.version&result=success",
   );
 });

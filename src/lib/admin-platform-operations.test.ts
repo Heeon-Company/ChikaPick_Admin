@@ -3,7 +3,8 @@ import test from "node:test";
 
 import {
   adminAuditActionLabel,
-  adminConsultationCategoryLabel,
+  // 전문의 소견 관련 코드
+  // adminConsultationCategoryLabel,
   adminDirectoryDateTime,
   adminInviteStatusLabel,
   adminMembershipRoleLabel,
@@ -39,6 +40,8 @@ test("platform operation timestamps render in Korea time and handle missing valu
   assert.equal(adminDirectoryDateTime("not-a-date"), "—");
 });
 
+// 전문의 소견 관련 코드
+/*
 test("consultation category labels localize every canonical Partners category", () => {
   assert.deepEqual(
     [
@@ -76,6 +79,7 @@ test("consultation category labels localize every canonical Partners category", 
   );
   assert.equal(adminConsultationCategoryLabel(null), "미분류");
 });
+*/
 
 test("terms show Client then Partners groups in Korean title order", () => {
   const documents = [

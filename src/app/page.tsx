@@ -23,7 +23,8 @@ import {
   fetchAdminAccountDirectory,
   fetchAdminAuditLog,
   fetchAdminClinicMembershipRequests,
-  fetchAdminConsultationDirectory,
+  // 전문의 소견 관련 코드
+  // fetchAdminConsultationDirectory,
   fetchAdminConsole,
   fetchAdminDentalSales,
   fetchAdminDentalSalesDistricts,
@@ -101,7 +102,8 @@ import {
 import {
   adminAuditActionLabel,
   adminAuditResultLabel,
-  adminConsultationCategoryLabel,
+  // 전문의 소견 관련 코드
+  // adminConsultationCategoryLabel,
   adminDirectoryDateTime,
   adminDirectoryPersonLabel,
   adminInviteStatusLabel,
@@ -110,15 +112,17 @@ import {
   sortAdminTermsByAudienceAndKoreanTitle,
   defaultAdminAuditLogFilters,
   defaultAdminClinicMembershipRequestFilters,
-  defaultAdminConsultationDirectoryFilters,
+  // 전문의 소견 관련 코드
+  // defaultAdminConsultationDirectoryFilters,
   defaultAdminInviteDirectoryFilters,
   defaultAdminReservationDirectoryFilters,
   type AdminAuditLogFilters,
   type AdminAuditLogPayload,
   type AdminClinicMembershipRequestFilters,
   type AdminClinicMembershipRequestPayload,
-  type AdminConsultationDirectoryFilters,
-  type AdminConsultationDirectoryPayload,
+  // 전문의 소견 관련 코드
+  // type AdminConsultationDirectoryFilters,
+  // type AdminConsultationDirectoryPayload,
   type AdminDirectoryPagination,
   type AdminInviteDirectoryFilters,
   type AdminInviteDirectoryPayload,
@@ -219,7 +223,8 @@ import {
   partnerClinicDurationLabel,
   partnerClinicRatingLabel,
   partnerClinicRegistrationLabel,
-  partnerClinicResponseRate,
+  // 전문의 소견 관련 코드
+  // partnerClinicResponseRate,
   type AdminPartnerClinicDetailPayload,
   type AdminPartnerClinicsPayload,
 } from "@/lib/partner-clinics";
@@ -259,7 +264,8 @@ const primaryTabs = [
   { id: "license-review", label: "치과의사 면허 인증", icon: "/Type=Accept.svg" },
   { id: "clinic-membership-requests", label: "소속 신청 관리", icon: "/Type=Staff.svg" },
   { id: "reservations", label: "예약 운영 관리", icon: "/Type=Diary.svg" },
-  { id: "consultations", label: "전문의 소견 운영", icon: "/Type=Response.svg" },
+  // 전문의 소견 관련 코드
+  // { id: "consultations", label: "전문의 소견 운영", icon: "/Type=Response.svg" },
   { id: "secret-feedback", label: "시크릿 피드백", icon: "/Type=Opinion.svg" },
   { id: "chikapick-accounts", label: "치카픽 계정 조회", icon: "/Type=Family.svg" },
   { id: "partner-accounts", label: "파트너스 계정 조회", icon: "/Type=Family.svg" },
@@ -285,7 +291,8 @@ const primaryTabContentLayouts: Record<PrimaryAdminTab, AdminContentLayout> = {
   "license-review": "fluid",
   "clinic-membership-requests": "fluid",
   reservations: "fluid",
-  consultations: "fluid",
+  // 전문의 소견 관련 코드
+  // consultations: "fluid",
   "secret-feedback": "compact",
   "chikapick-accounts": "fluid",
   "partner-accounts": "fluid",
@@ -314,8 +321,9 @@ const primaryTabDescriptions: Record<PrimaryAdminTab, string> = {
     "치카픽 파트너스 사용자의 치과 소속 신청을 병원 구분 없이 검토하고 처리합니다.",
   reservations:
     "치카픽에서 접수된 일반 예약과 즉시 예약의 처리 상태를 전체 치과 기준으로 조회합니다.",
-  consultations:
-    "전문의 소견 요청과 답변 상태를 전체 치과 기준으로 조회합니다.",
+  // 전문의 소견 관련 코드
+  // consultations:
+  //   "전문의 소견 요청과 답변 상태를 전체 치과 기준으로 조회합니다.",
   "secret-feedback": "어드민 관리자에게만 전송되는 시크릿 피드백 입니다.",
   "chikapick-accounts":
     "치카픽 서비스에 가입한 환자 계정을 이메일로 조회하고 계정 상태를 확인합니다.",
@@ -348,7 +356,8 @@ const emptyConsole: AdminConsolePayload = {
   clinics: [],
   users: [],
   operations: {
-    aiPendingCount: 0,
+    // 전문의 소견 관련 코드
+    // aiPendingCount: 0,
     hiraOperatingHoursPendingCount: 0,
     recentJobNote: null,
   },
@@ -1241,8 +1250,9 @@ export default function AdminHome() {
             />
           ) : activePrimaryTab === "reservations" ? (
             <AdminReservationsTab accessToken={session?.access_token ?? ""} />
-          ) : activePrimaryTab === "consultations" ? (
-            <AdminConsultationsTab accessToken={session?.access_token ?? ""} />
+          // 전문의 소견 관련 코드
+          // ) : activePrimaryTab === "consultations" ? (
+          //   <AdminConsultationsTab accessToken={session?.access_token ?? ""} />
           ) : activePrimaryTab === "partner-invites" ? (
             <PartnerInviteDirectoryTab
               accessToken={session?.access_token ?? ""}
@@ -5216,9 +5226,10 @@ function PartnerClinicDetailPage({
   if (!detail) return null;
 
   const { clinic, hospitalInformation, metrics } = detail;
-  const consultationDuration = partnerClinicDurationLabel(
-    metrics.consultations.averageResponseMinutes,
-  );
+  // 전문의 소견 관련 코드
+  // const consultationDuration = partnerClinicDurationLabel(
+  //   metrics.consultations.averageResponseMinutes,
+  // );
   const resultDuration = partnerClinicDurationLabel(
     metrics.resultRecords.averageResponseMinutes,
   );
@@ -5305,7 +5316,8 @@ function PartnerClinicDetailPage({
       </section>
 
       <section className="admin-partner-detail-metric-grid" aria-label="파트너 치과 주요 지표">
-        <PartnerClinicMetricCard
+        {/* 전문의 소견 관련 코드 */}
+        {/* <PartnerClinicMetricCard
           label="누적 전문의 소견 요청 수"
           value={metrics.consultations.requests}
           unit="건"
@@ -5322,7 +5334,7 @@ function PartnerClinicDetailPage({
           label="전문의 소견 평균 답변 속도"
           value={consultationDuration.value}
           unit={consultationDuration.unit}
-        />
+        /> */}
         <PartnerClinicMetricCard
           label="누적 병원 결과 기록 답변 수"
           value={metrics.resultRecords.responses}
@@ -5356,7 +5368,8 @@ function PartnerClinicDetailPage({
       </section>
 
       <div className="admin-partner-detail-two-column admin-partner-detail-two-column--compact">
-        <section className="admin-partner-detail-section-card">
+        {/* 전문의 소견 관련 코드 */}
+        {/* <section className="admin-partner-detail-section-card">
           <PartnerClinicSectionHeading title="전문의 소견 현황" badge="실시간 업데이트" />
           <div className="admin-partner-detail-status-grid">
             <PartnerClinicStatusValue
@@ -5376,7 +5389,7 @@ function PartnerClinicDetailPage({
               value={`${formatPartnerMetric(metrics.consultations.recent30Days)} 건`}
             />
           </div>
-        </section>
+        </section> */}
 
         <section className="admin-partner-detail-section-card">
           <PartnerClinicSectionHeading title="병원 결과 기록 현황" badge="기록 동기화" />
@@ -7588,6 +7601,8 @@ function AdminReservationsTab({ accessToken }: { accessToken: string }) {
   );
 }
 
+// 전문의 소견 관련 코드
+/*
 function AdminConsultationsTab({ accessToken }: { accessToken: string }) {
   const [draftFilters, setDraftFilters] =
     useState<AdminConsultationDirectoryFilters>(
@@ -7728,6 +7743,8 @@ function AdminConsultationsTab({ accessToken }: { accessToken: string }) {
     </section>
   );
 }
+
+*/
 
 function PartnerInviteDirectoryTab({
   accessToken,
@@ -8760,12 +8777,13 @@ function OverviewTab({
           description: "전체 예약의 접수 유형과 처리 상태를 조회합니다.",
           icon: "/Type=Diary.svg",
         },
-        {
-          tab: "consultations",
-          label: "전문의 소견 운영",
-          description: "전문의 소견 요청과 답변 상태를 조회합니다.",
-          icon: "/Type=Response.svg",
-        },
+        // 전문의 소견 관련 코드
+        // {
+        //   tab: "consultations",
+        //   label: "전문의 소견 운영",
+        //   description: "전문의 소견 요청과 답변 상태를 조회합니다.",
+        //   icon: "/Type=Response.svg",
+        // },
       ],
     },
     {
@@ -8927,10 +8945,11 @@ function OverviewTab({
           </div>
         </div>
         <div className="admin-overview-operation-grid">
-          <div>
+          {/* 전문의 소견 관련 코드 */}
+          {/* <div>
             <span>AI 설명 생성 대기</span>
             <strong>{data.operations.aiPendingCount.toLocaleString("ko-KR")}건</strong>
-          </div>
+          </div> */}
           <div>
             <span>진료시간 보강 대기</span>
             <strong>

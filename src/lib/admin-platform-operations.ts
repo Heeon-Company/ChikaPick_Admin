@@ -72,6 +72,8 @@ export interface AdminReservationDirectoryItem {
   recentTreatmentNote: string | null;
 }
 
+// 전문의 소견 관련 코드
+/*
 export interface AdminConsultationDirectoryItem {
   id: string;
   clinic: AdminDirectoryIdentity;
@@ -83,6 +85,7 @@ export interface AdminConsultationDirectoryItem {
   respondedAt: string | null;
   responsePreview: string | null;
 }
+*/
 
 export interface AdminInviteDirectoryItem {
   id: string;
@@ -122,10 +125,13 @@ export interface AdminReservationDirectoryFilters {
   bookingSource: string;
 }
 
+// 전문의 소견 관련 코드
+/*
 export interface AdminConsultationDirectoryFilters {
   query: string;
   status: string;
 }
+*/
 
 export interface AdminInviteDirectoryFilters {
   query: string;
@@ -148,10 +154,13 @@ export interface AdminReservationDirectoryPayload {
   pagination: AdminDirectoryPagination;
 }
 
+// 전문의 소견 관련 코드
+/*
 export interface AdminConsultationDirectoryPayload {
   items: AdminConsultationDirectoryItem[];
   pagination: AdminDirectoryPagination;
 }
+*/
 
 export interface AdminInviteDirectoryPayload {
   items: AdminInviteDirectoryItem[];
@@ -174,10 +183,13 @@ export const defaultAdminReservationDirectoryFilters: AdminReservationDirectoryF
   bookingSource: "all",
 };
 
+// 전문의 소견 관련 코드
+/*
 export const defaultAdminConsultationDirectoryFilters: AdminConsultationDirectoryFilters = {
   query: "",
   status: "all",
 };
+*/
 
 export const defaultAdminInviteDirectoryFilters: AdminInviteDirectoryFilters = {
   query: "",
@@ -229,6 +241,8 @@ export function adminInviteStatusLabel(status: string) {
   );
 }
 
+// 전문의 소견 관련 코드
+/*
 export function adminConsultationCategoryLabel(categoryCode: string | null) {
   if (!categoryCode) return "미분류";
   return (
@@ -253,6 +267,7 @@ export function adminConsultationCategoryLabel(categoryCode: string | null) {
     }[categoryCode] ?? categoryCode
   );
 }
+*/
 
 export function adminAuditActionLabel(action: string) {
   return (

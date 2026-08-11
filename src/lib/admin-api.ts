@@ -112,7 +112,8 @@ export interface AdminUser {
 }
 
 export interface AdminOperations {
-  aiPendingCount: number;
+  // 전문의 소견 관련 코드
+  // aiPendingCount: number;
   hiraOperatingHoursPendingCount: number;
   recentJobNote: string | null;
 }
@@ -297,6 +298,8 @@ export async function fetchAdminReservationDirectory(
   );
 }
 
+// 전문의 소견 관련 코드
+/*
 export async function fetchAdminConsultationDirectory(
   accessToken: string,
   filters: AdminConsultationDirectoryFilters,
@@ -309,6 +312,7 @@ export async function fetchAdminConsultationDirectory(
     accessToken,
   );
 }
+*/
 
 export async function fetchAdminInviteDirectory(
   accessToken: string,
@@ -1021,8 +1025,9 @@ import type {
   AdminAuditLogPayload,
   AdminClinicMembershipRequestFilters,
   AdminClinicMembershipRequestPayload,
-  AdminConsultationDirectoryFilters,
-  AdminConsultationDirectoryPayload,
+  // 전문의 소견 관련 코드
+  // AdminConsultationDirectoryFilters,
+  // AdminConsultationDirectoryPayload,
   AdminInviteDirectoryFilters,
   AdminInviteDirectoryPayload,
   AdminReservationDirectoryFilters,
