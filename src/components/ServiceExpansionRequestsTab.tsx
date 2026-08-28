@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import Image from "next/image";
 
+import { ServiceAreaCopyManagementView } from "@/components/ServiceAreaCopyManagementView";
 import {
   fetchAdminClinicPartnershipRequests,
   fetchAdminServiceExpansionRequests,
@@ -18,7 +19,7 @@ import {
   type ServiceExpansionOverviewPayload,
 } from "@/lib/service-expansion-requests";
 
-type RequestView = "area" | "clinic";
+type RequestView = "area" | "clinic" | "copy";
 
 export function ServiceExpansionRequestsTab({ accessToken }: { accessToken: string }) {
   const [activeView, setActiveView] = useState<RequestView>("area");
@@ -134,7 +135,12 @@ export function ServiceExpansionRequestsTab({ accessToken }: { accessToken: stri
     setClinicQuery(clinicDraftQuery.trim());
   }
 
-  const isLoading = activeView === "area" ? isOverviewLoading : isClinicLoading;
+  const isLoading =
+    activeView === "area"
+      ? isOverviewLoading
+      : activeView === "clinic"
+        ? isClinicLoading
+        : false;
 
   return (
     <section className="admin-service-expansion" aria-busy={isLoading}>
@@ -151,20 +157,27 @@ export function ServiceExpansionRequestsTab({ accessToken }: { accessToken: stri
           label="치과 제휴 요청"
           onClick={() => setActiveView("clinic")}
         />
+        <RequestTypeTab
+          active={activeView === "copy"}
+          label="앱 문구 관리"
+          onClick={() => setActiveView("copy")}
+        />
       </div>
 
-      <div className="admin-service-expansion-metrics">
-        {metrics.map((metric) => (
-          <article key={metric.label}>
-            <span>{metric.label}</span>
-            <div>
-              <strong>{typeof metric.value === "number" ? metric.value.toLocaleString("ko-KR") : metric.value}</strong>
-              {metric.unit ? <small>{metric.unit}</small> : null}
-              {metric.suffix ? <small>{metric.suffix}</small> : null}
-            </div>
-          </article>
-        ))}
-      </div>
+      {activeView !== "copy" ? (
+        <div className="admin-service-expansion-metrics">
+          {metrics.map((metric) => (
+            <article key={metric.label}>
+              <span>{metric.label}</span>
+              <div>
+                <strong>{typeof metric.value === "number" ? metric.value.toLocaleString("ko-KR") : metric.value}</strong>
+                {metric.unit ? <small>{metric.unit}</small> : null}
+                {metric.suffix ? <small>{metric.suffix}</small> : null}
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : null}
 
       {activeView === "area" ? (
         <AreaRequestView
@@ -176,7 +189,7 @@ export function ServiceExpansionRequestsTab({ accessToken }: { accessToken: stri
           onPageChange={setAreaPage}
           onSearch={submitAreaSearch}
         />
-      ) : (
+      ) : activeView === "clinic" ? (
         <ClinicRequestView
           data={clinicData}
           draftQuery={clinicDraftQuery}
@@ -187,6 +200,8 @@ export function ServiceExpansionRequestsTab({ accessToken }: { accessToken: stri
           onSearch={submitClinicSearch}
           onSelectClinic={setSelectedClinic}
         />
+      ) : (
+        <ServiceAreaCopyManagementView accessToken={accessToken} />
       )}
 
       {selectedClinic ? (
@@ -203,7 +218,7 @@ function RequestTypeTab({
   onClick,
 }: {
   active: boolean;
-  count: number;
+  count?: number;
   label: string;
   onClick: () => void;
 }) {
@@ -216,7 +231,7 @@ function RequestTypeTab({
       onClick={onClick}
     >
       <span>{label}</span>
-      <small>{count.toLocaleString("ko-KR")}</small>
+      {count !== undefined ? <small>{count.toLocaleString("ko-KR")}</small> : null}
     </button>
   );
 }

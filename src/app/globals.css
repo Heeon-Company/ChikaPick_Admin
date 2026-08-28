@@ -11268,3 +11268,524 @@ td span {
     padding: 24px 20px;
   }
 }
+
+.admin-service-copy-layout {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) minmax(360px, 417px);
+  align-items: start;
+  gap: 32px;
+}
+
+.admin-service-copy-editor,
+.admin-service-copy-preview,
+.admin-service-copy-state {
+  min-width: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.admin-service-copy-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+}
+
+.admin-service-copy-editor > header,
+.admin-service-copy-preview > header {
+  padding: 20px 24px;
+}
+
+.admin-service-copy-editor > header,
+.admin-service-copy-preview > header {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.admin-service-copy-editor h2,
+.admin-service-copy-preview h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 28px;
+}
+
+.admin-service-copy-editor > header p,
+.admin-service-copy-preview > header p {
+  margin: 4px 0 0;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.admin-service-copy-field {
+  min-width: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 24px;
+}
+
+.admin-service-copy-field-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.admin-service-copy-field-heading > div {
+  min-width: 0;
+}
+
+.admin-service-copy-field-heading span,
+.admin-service-copy-field-heading label {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+.admin-service-copy-field-heading p {
+  margin: 3px 0 0;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 17px;
+}
+
+.admin-service-copy-field-heading small {
+  flex: 0 0 auto;
+  color: var(--text-quaternary);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.admin-service-copy-field > input,
+.admin-service-copy-field > textarea,
+.admin-service-copy-provinces input,
+.admin-service-copy-provinces textarea {
+  width: 100%;
+  border: 1px solid var(--chika-base-4);
+  border-radius: 8px;
+  outline: 0;
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  resize: vertical;
+}
+
+.admin-service-copy-field > input,
+.admin-service-copy-provinces input {
+  min-height: 40px;
+}
+
+.admin-service-copy-field > input:focus,
+.admin-service-copy-field > textarea:focus,
+.admin-service-copy-provinces input:focus,
+.admin-service-copy-provinces textarea:focus {
+  border-color: var(--chika-secondary-6);
+  box-shadow: 0 0 0 2px rgba(2, 61, 199, 0.1);
+}
+
+.admin-service-copy-area-editor {
+  gap: 14px;
+}
+
+.admin-service-copy-field-heading > button {
+  min-width: 84px;
+  height: 32px;
+  border: 1px solid var(--chika-secondary-6);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--chika-secondary-6);
+  cursor: pointer;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.admin-service-copy-provinces {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-service-copy-provinces article {
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: var(--chika-bg-base);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+}
+
+.admin-service-copy-provinces article > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-service-copy-provinces article > header strong {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 18px;
+}
+
+.admin-service-copy-provinces article > header button {
+  border: 0;
+  background: transparent;
+  color: #b91c1c;
+  cursor: pointer;
+  padding: 3px 5px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.admin-service-copy-provinces article > header button:disabled {
+  color: var(--text-quaternary);
+  cursor: not-allowed;
+}
+
+.admin-service-copy-provinces label {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-service-copy-provinces label > span {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.admin-service-copy-province-names {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
+  gap: 12px;
+}
+
+.admin-service-copy-error,
+.admin-service-copy-feedback {
+  margin: 16px 24px 0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.admin-service-copy-error {
+  background: #fff1f2;
+  color: #b91c1c;
+}
+
+.admin-service-copy-feedback {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.admin-service-copy-editor > footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 20px 24px;
+}
+
+.admin-service-copy-editor > footer button {
+  min-width: 88px;
+  height: 40px;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 0 18px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.admin-service-copy-editor > footer button:first-child {
+  border: 1px solid var(--chika-base-4);
+  background: var(--surface);
+  color: var(--text-secondary);
+}
+
+.admin-service-copy-editor > footer button:last-child {
+  border: 1px solid var(--chika-secondary-6);
+  background: var(--chika-secondary-6);
+  color: #fff;
+}
+
+.admin-service-copy-editor > footer button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.admin-service-copy-preview {
+  position: sticky;
+  top: 24px;
+  overflow: hidden;
+}
+
+.admin-service-copy-phone {
+  background: var(--chika-base-1);
+  display: flex;
+  justify-content: center;
+  padding: 24px 12px;
+}
+
+.admin-service-copy-phone-screen {
+  width: min(393px, 100%);
+  height: 760px;
+  border: 9px solid #252a34;
+  border-radius: 34px;
+  background: var(--chika-bg-base);
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0, 11, 38, 0.16);
+}
+
+.admin-service-copy-app-header {
+  position: relative;
+  height: 56px;
+  background: var(--chika-bg-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-service-copy-app-header > span {
+  position: absolute;
+  left: 16px;
+  top: 10px;
+  color: var(--text-tertiary);
+  font-family: Arial, sans-serif;
+  font-size: 40px;
+  font-weight: 300;
+  line-height: 30px;
+}
+
+.admin-service-copy-app-header strong {
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.admin-service-copy-app-scroll {
+  height: calc(100% - 56px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.admin-service-copy-app-intro {
+  padding: 24px 20px;
+}
+
+.admin-service-copy-app-intro h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.56px;
+  line-height: 1.21;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.admin-service-copy-app-intro p {
+  margin: 8px 0 0;
+  color: var(--text-tertiary);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.38;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.admin-service-copy-app-tabs {
+  min-width: 100%;
+  display: flex;
+  overflow-x: auto;
+  padding: 0 20px;
+  scrollbar-width: none;
+}
+
+.admin-service-copy-app-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.admin-service-copy-app-tabs button {
+  min-width: 112px;
+  height: 43px;
+  border: 0;
+  border-bottom: 2px solid var(--chika-base-4);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 12px 8px 8px;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 22px;
+  white-space: nowrap;
+}
+
+.admin-service-copy-app-tabs button.is-active {
+  border-bottom-color: var(--chika-primary-5);
+  color: var(--chika-primary-5);
+  font-weight: 600;
+}
+
+.admin-service-copy-app-tabs.is-single button {
+  width: 100%;
+  min-width: 100%;
+}
+
+.admin-service-copy-app-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px 20px 40px;
+}
+
+.admin-service-copy-app-region,
+.admin-service-copy-app-request {
+  border: 1px solid var(--chika-base-3);
+  border-radius: 16px;
+  background: var(--surface);
+  padding: 20px;
+}
+
+.admin-service-copy-app-region {
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-service-copy-app-region > strong {
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 24px;
+  overflow-wrap: anywhere;
+}
+
+.admin-service-copy-app-region > span {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: rgba(245, 110, 0, 0.1);
+  color: var(--chika-primary-5);
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.admin-service-copy-app-region > i {
+  margin-left: auto;
+  color: var(--text-tertiary);
+  font-family: Arial, sans-serif;
+  font-size: 32px;
+  font-style: normal;
+  font-weight: 300;
+  line-height: 24px;
+}
+
+.admin-service-copy-app-request p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.38;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.admin-service-copy-app-request button {
+  width: 100%;
+  height: 48px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--chika-primary-5);
+  color: #fff;
+  margin-top: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  pointer-events: none;
+}
+
+.admin-service-copy-state {
+  min-height: 240px;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.admin-service-copy-state--error {
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-service-copy-state--error p {
+  margin: 0;
+  color: #b91c1c;
+}
+
+.admin-service-copy-state--error button {
+  min-width: 100px;
+  height: 40px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--chika-secondary-6);
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+@media (max-width: 1180px) {
+  .admin-service-copy-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-service-copy-preview {
+    position: static;
+  }
+}
+
+@media (max-width: 620px) {
+  .admin-service-copy-editor > header,
+  .admin-service-copy-preview > header,
+  .admin-service-copy-field,
+  .admin-service-copy-editor > footer {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .admin-service-copy-province-names {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-service-copy-phone {
+    padding: 16px 4px;
+  }
+
+  .admin-service-copy-phone-screen {
+    height: 700px;
+    border-width: 6px;
+  }
+}

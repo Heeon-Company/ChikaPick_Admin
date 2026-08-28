@@ -42,6 +42,30 @@ export interface ServiceExpansionOverviewPayload {
   };
 }
 
+export interface AdminServiceAreaProvince {
+  sido: string;
+  sidoLabel: string;
+  sigungu: string[];
+}
+
+export interface AdminServiceAreaConfig {
+  header: string;
+  content: string;
+  buttonInfo: string;
+  buttonText: string;
+  area: AdminServiceAreaProvince[];
+}
+
+export interface AdminServiceAreaConfigPayload {
+  config: AdminServiceAreaConfig;
+}
+
+export interface AdminServiceAreaConfigUpdatePayload
+  extends AdminServiceAreaConfigPayload {
+  ok: boolean;
+  message: string;
+}
+
 export function formatServiceExpansionDate(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
@@ -65,4 +89,16 @@ export function serviceExpansionPageNumbers(currentPage: number, totalPages: num
   return Array.from({ length: Math.max(0, end - start + 1) }, (_, index) =>
     start + index,
   );
+}
+
+export function parseServiceAreaDistricts(value: string) {
+  const seen = new Set<string>();
+  return value
+    .split(/[,\n]/)
+    .map((district) => district.trim())
+    .filter((district) => {
+      if (!district || seen.has(district)) return false;
+      seen.add(district);
+      return true;
+    });
 }

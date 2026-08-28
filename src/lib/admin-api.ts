@@ -445,6 +445,24 @@ export async function fetchAdminServiceExpansionRequests(
   );
 }
 
+export async function fetchAdminServiceAreaConfig(accessToken: string) {
+  return adminFetch<AdminServiceAreaConfigPayload>(
+    "/api/v1/admin/service-expansion-requests/config",
+    accessToken,
+  );
+}
+
+export async function updateAdminServiceAreaConfig(
+  accessToken: string,
+  config: AdminServiceAreaConfig,
+) {
+  return adminFetch<AdminServiceAreaConfigUpdatePayload>(
+    "/api/v1/admin/service-expansion-requests/config",
+    accessToken,
+    { method: "PUT", body: JSON.stringify(config) },
+  );
+}
+
 export async function updateAdminClinicPartnershipRequest(
   accessToken: string,
   placeProvider: string,
@@ -1012,7 +1030,12 @@ import type {
   ClinicPartnershipRequestPayload,
   ClinicPartnershipRequestStatus,
 } from "./clinic-partnership-requests";
-import type { ServiceExpansionOverviewPayload } from "./service-expansion-requests";
+import type {
+  AdminServiceAreaConfig,
+  AdminServiceAreaConfigPayload,
+  AdminServiceAreaConfigUpdatePayload,
+  ServiceExpansionOverviewPayload,
+} from "./service-expansion-requests";
 import type { ChikapickAccountLookupPayload } from "./chikapick-accounts";
 import type {
   AdminPartnerAccountDetailPayload,

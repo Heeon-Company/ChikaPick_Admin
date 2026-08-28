@@ -32,6 +32,7 @@ import {
   fetchAdminSalesPerformance,
   fetchAdminSecretFeedback,
   fetchAdminServiceExpansionRequests,
+  fetchAdminServiceAreaConfig,
   fetchAdminTerms,
   inviteAdminAccount,
   isAdminApiNotFound,
@@ -49,6 +50,7 @@ import {
   updateAdminAccountRole,
   updateAdminMembershipPartner,
   updateAdminClinicPartnershipRequest,
+  updateAdminServiceAreaConfig,
   uploadAdminDentalSalesBusinessLicense,
   withdrawAdminAccount,
 } from "./admin-api.ts";
@@ -273,6 +275,43 @@ test("service expansion request API sends trimmed search and pagination", async 
     calls[0]?.input,
     "https://api.example.com/api/v1/admin/service-expansion-requests?page=3&pageSize=10&query=%EA%B0%95%EB%82%A8",
   );
+});
+
+test("service area copy management reads and replaces the protected config", async () => {
+  const calls: Array<{ input: string | URL | Request; init?: RequestInit }> = [];
+  const originalFetch = globalThis.fetch;
+  process.env.NEXT_PUBLIC_CHIKAPICK_API_BASE_URL = "https://api.example.com";
+  globalThis.fetch = async (input, init) => {
+    calls.push({ input, init });
+    return new Response(JSON.stringify({ config: {}, ok: true, message: "saved" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+  const config = {
+    header: "제목",
+    content: "내용",
+    buttonInfo: "안내",
+    buttonText: "요청하기",
+    area: [
+      { sido: "서울특별시", sidoLabel: "서울", sigungu: ["강남구"] },
+    ],
+  };
+
+  try {
+    await fetchAdminServiceAreaConfig("access-token");
+    await updateAdminServiceAreaConfig("access-token", config);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(
+    calls[0]?.input,
+    "https://api.example.com/api/v1/admin/service-expansion-requests/config",
+  );
+  assert.equal(calls[1]?.input, calls[0]?.input);
+  assert.equal(calls[1]?.init?.method, "PUT");
+  assert.deepEqual(JSON.parse(calls[1]?.init?.body as string), config);
 });
 
 test("membership management API sends server filters and row mutations", async () => {
