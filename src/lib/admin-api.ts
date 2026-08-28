@@ -427,6 +427,24 @@ export async function fetchAdminClinicPartnershipRequests(
   );
 }
 
+export async function fetchAdminServiceExpansionRequests(
+  accessToken: string,
+  query: string,
+  page: number,
+  pageSize = 10,
+) {
+  const params = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+  });
+  const normalizedQuery = query.trim();
+  if (normalizedQuery) params.set("query", normalizedQuery);
+  return adminFetch<ServiceExpansionOverviewPayload>(
+    `/api/v1/admin/service-expansion-requests?${params.toString()}`,
+    accessToken,
+  );
+}
+
 export async function updateAdminClinicPartnershipRequest(
   accessToken: string,
   placeProvider: string,
@@ -994,6 +1012,7 @@ import type {
   ClinicPartnershipRequestPayload,
   ClinicPartnershipRequestStatus,
 } from "./clinic-partnership-requests";
+import type { ServiceExpansionOverviewPayload } from "./service-expansion-requests";
 import type { ChikapickAccountLookupPayload } from "./chikapick-accounts";
 import type {
   AdminPartnerAccountDetailPayload,

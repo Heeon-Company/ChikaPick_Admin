@@ -31,6 +31,7 @@ import {
   fetchAdminReservationDirectory,
   fetchAdminSalesPerformance,
   fetchAdminSecretFeedback,
+  fetchAdminServiceExpansionRequests,
   fetchAdminTerms,
   inviteAdminAccount,
   isAdminApiNotFound,
@@ -248,6 +249,30 @@ test("clinic partnership request API sends filters and encoded status updates", 
     status: "completed",
     adminNote: "입점 확인",
   });
+});
+
+test("service expansion request API sends trimmed search and pagination", async () => {
+  const calls: Array<{ input: string | URL | Request; init?: RequestInit }> = [];
+  const originalFetch = globalThis.fetch;
+  process.env.NEXT_PUBLIC_CHIKAPICK_API_BASE_URL = "https://api.example.com";
+  globalThis.fetch = async (input, init) => {
+    calls.push({ input, init });
+    return new Response(JSON.stringify({ items: [], pagination: {} }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+
+  try {
+    await fetchAdminServiceExpansionRequests("access-token", " 강남 ", 3);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(
+    calls[0]?.input,
+    "https://api.example.com/api/v1/admin/service-expansion-requests?page=3&pageSize=10&query=%EA%B0%95%EB%82%A8",
+  );
 });
 
 test("membership management API sends server filters and row mutations", async () => {

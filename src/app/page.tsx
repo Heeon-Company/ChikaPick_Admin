@@ -9,6 +9,7 @@ import remarkGfm from "remark-gfm";
 
 import { AdminSelect } from "@/components/AdminSelect";
 import { ClinicPartnershipRequestsTab } from "@/components/ClinicPartnershipRequestsTab";
+import { ServiceExpansionRequestsTab } from "@/components/ServiceExpansionRequestsTab";
 import {
   approveManualHospitalSubmission,
   assignAdminDentalSalesperson,
@@ -267,6 +268,7 @@ const primaryTabs = [
   // 전문의 소견 관련 코드
   // { id: "consultations", label: "전문의 소견 운영", icon: "/Type=Response.svg" },
   { id: "secret-feedback", label: "시크릿 피드백", icon: "/Type=Opinion.svg" },
+  { id: "service-expansion-requests", label: "서비스 확대 요청 관리", icon: "/Type=Dashboard.svg" },
   { id: "chikapick-accounts", label: "치카픽 계정 조회", icon: "/Type=Family.svg" },
   { id: "partner-accounts", label: "파트너스 계정 조회", icon: "/Type=Family.svg" },
   { id: "partner-invites", label: "파트너 초대코드 관리", icon: "/Type=Settings.svg" },
@@ -294,6 +296,7 @@ const primaryTabContentLayouts: Record<PrimaryAdminTab, AdminContentLayout> = {
   // 전문의 소견 관련 코드
   // consultations: "fluid",
   "secret-feedback": "compact",
+  "service-expansion-requests": "fluid",
   "chikapick-accounts": "fluid",
   "partner-accounts": "fluid",
   "partner-invites": "fluid",
@@ -325,6 +328,8 @@ const primaryTabDescriptions: Record<PrimaryAdminTab, string> = {
   // consultations:
   //   "전문의 소견 요청과 답변 상태를 전체 치과 기준으로 조회합니다.",
   "secret-feedback": "어드민 관리자에게만 전송되는 시크릿 피드백 입니다.",
+  "service-expansion-requests":
+    "사용자들이 요청한 예약 가능 지역과 치과 제휴 요청을 확인하고 서비스 확대 우선순위를 관리합니다.",
   "chikapick-accounts":
     "치카픽 서비스에 가입한 환자 계정을 이메일로 조회하고 계정 상태를 확인합니다.",
   "partner-accounts":
@@ -1159,6 +1164,8 @@ export default function AdminHome() {
             />
           ) : activePrimaryTab === "secret-feedback" ? (
             <SecretFeedbackTab accessToken={session?.access_token ?? ""} />
+          ) : activePrimaryTab === "service-expansion-requests" ? (
+            <ServiceExpansionRequestsTab accessToken={session?.access_token ?? ""} />
           ) : activePrimaryTab === "chikapick-accounts" ? (
             <ChikapickAccountsTab accessToken={session?.access_token ?? ""} />
           ) : activePrimaryTab === "partner-accounts" ? (
@@ -8795,6 +8802,12 @@ function OverviewTab({
           label: "시크릿 피드백",
           description: "예약 후 제출된 익명 피드백을 확인합니다.",
           icon: "/Type=Opinion.svg",
+        },
+        {
+          tab: "service-expansion-requests",
+          label: "서비스 확대 요청 관리",
+          description: "지역 서비스와 치과 제휴 요청 수요를 확인합니다.",
+          icon: "/Type=Dashboard.svg",
         },
         {
           tab: "chikapick-accounts",
