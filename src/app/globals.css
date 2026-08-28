@@ -10752,6 +10752,7 @@ td span {
 
 .admin-service-expansion {
   width: 100%;
+  max-width: 1008px;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -11184,8 +11185,9 @@ td span {
   text-align: left;
 }
 
-.admin-service-expansion-dialog th:last-child {
-  width: 120px;
+.admin-service-expansion-dialog th:last-child,
+.admin-service-expansion-dialog td:last-child {
+  width: 144px;
 }
 
 .admin-service-expansion-dialog td {
