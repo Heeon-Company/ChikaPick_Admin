@@ -10752,7 +10752,7 @@ td span {
 
 .admin-service-expansion {
   width: 100%;
-  max-width: 1008px;
+  max-width: none;
   min-width: 0;
   display: flex;
   flex-direction: column;
