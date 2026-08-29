@@ -170,9 +170,13 @@ export function ServiceExpansionRequestsTab({ accessToken }: { accessToken: stri
             <article key={metric.label}>
               <span>{metric.label}</span>
               <div>
-                <strong>{typeof metric.value === "number" ? metric.value.toLocaleString("ko-KR") : metric.value}</strong>
-                {metric.unit ? <small>{metric.unit}</small> : null}
-                {metric.suffix ? <small>{metric.suffix}</small> : null}
+                <strong>
+                  {typeof metric.value === "number"
+                    ? metric.value.toLocaleString("ko-KR")
+                    : metric.value}
+                  {metric.unit ?? ""}
+                  {metric.suffix ? ` ${metric.suffix}` : ""}
+                </strong>
               </div>
             </article>
           ))}

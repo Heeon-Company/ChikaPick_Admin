@@ -10837,27 +10837,17 @@ td span {
 
 .admin-service-expansion-metrics article > div {
   min-width: 0;
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
 }
 
 .admin-service-expansion-metrics strong {
   min-width: 0;
   overflow: hidden;
   color: var(--text-primary);
+  display: block;
   font-size: 24px;
   font-weight: 700;
   line-height: 32px;
   text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.admin-service-expansion-metrics small {
-  color: var(--text-secondary);
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 18px;
   white-space: nowrap;
 }
 
@@ -10984,13 +10974,10 @@ td span {
   font-weight: 600;
 }
 
-.admin-service-expansion-area-table {
+.admin-service-expansion table.admin-service-expansion-area-table {
   min-width: 620px;
+  table-layout: auto;
 }
-
-.admin-service-expansion-area-table th:nth-child(1) { width: 150px; }
-.admin-service-expansion-area-table th:nth-child(2) { width: 100px; }
-.admin-service-expansion-area-table th:nth-child(3) { width: 120px; }
 
 .admin-service-expansion-list-card > .admin-sales-pagination {
   margin-top: 20px;
@@ -11035,6 +11022,10 @@ td span {
 .admin-service-expansion-clinic-table td { height: 64px; }
 .admin-service-expansion-clinic-table td:nth-child(4),
 .admin-service-expansion-clinic-table td:nth-child(5) { text-align: center; }
+.admin-service-expansion-clinic-table td:nth-child(5) {
+  overflow: visible;
+  text-overflow: clip;
+}
 
 .admin-service-expansion-clinic-table button {
   min-width: 72px;
@@ -11044,6 +11035,9 @@ td span {
   background: var(--chika-secondary-1);
   color: var(--chika-secondary-6);
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0 12px;
   font-size: 13px;
   font-weight: 600;
@@ -11096,7 +11090,7 @@ td span {
 .admin-service-expansion-dialog {
   position: relative;
   z-index: 1;
-  width: min(480px, 100%);
+  width: min(640px, 100%);
   max-height: min(720px, calc(100dvh - 48px));
   border-radius: 16px;
   background: var(--surface);
@@ -11161,12 +11155,16 @@ td span {
 }
 
 .admin-service-expansion-dialog-table-wrap {
+  width: 100%;
+  min-width: 0;
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
 }
 
 .admin-service-expansion-dialog table {
   width: 100%;
+  min-width: 0;
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -11185,9 +11183,18 @@ td span {
   text-align: left;
 }
 
+.admin-service-expansion-dialog th:first-child,
+.admin-service-expansion-dialog td:first-child {
+  width: 180px;
+  white-space: nowrap;
+}
+
 .admin-service-expansion-dialog th:last-child,
 .admin-service-expansion-dialog td:last-child {
-  width: 144px;
+  width: auto;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .admin-service-expansion-dialog td {
