@@ -4030,34 +4030,10 @@ td span {
 
 .admin-chika-talk-table {
   width: 100%;
-  min-width: 960px;
-  table-layout: fixed;
+  min-width: 860px;
+  table-layout: auto;
   border-collapse: collapse;
   border-spacing: 0;
-}
-
-.admin-chika-talk-type-column {
-  width: 80px;
-}
-
-.admin-chika-talk-reason-column {
-  width: 160px;
-}
-
-.admin-chika-talk-count-column {
-  width: 80px;
-}
-
-.admin-chika-talk-date-column {
-  width: 140px;
-}
-
-.admin-chika-talk-status-column {
-  width: 100px;
-}
-
-.admin-chika-talk-action-column {
-  width: 80px;
 }
 
 .admin-chika-talk-table th {
@@ -4065,7 +4041,7 @@ td span {
   border-bottom: 1px solid #d4d6da;
   background: #f4f6f8;
   color: #596072;
-  padding: 0 20px;
+  padding: 0 16px;
   font-size: 13px;
   font-weight: 600;
   line-height: 18px;
@@ -4077,7 +4053,7 @@ td span {
   height: 64px;
   border-bottom: 1px solid #ececec;
   color: #000b26;
-  padding: 0 20px;
+  padding: 0 16px;
   font-size: 14px;
   font-weight: 400;
   line-height: 20px;
@@ -4111,8 +4087,8 @@ td span {
 
 .admin-chika-talk-table th:last-child,
 .admin-chika-talk-action-cell {
-  padding-right: 4px;
-  padding-left: 4px;
+  padding-right: 16px;
+  padding-left: 16px;
   text-align: center;
 }
 

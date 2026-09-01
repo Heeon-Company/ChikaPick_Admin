@@ -1481,15 +1481,6 @@ function ChikaTalkManagementTab() {
       <div className="admin-chika-talk-table-scroll">
         <table className="admin-chika-talk-table">
           <caption className="sr-only">치아톡 신고 목록</caption>
-          <colgroup>
-            <col className="admin-chika-talk-content-column" />
-            <col className="admin-chika-talk-type-column" />
-            <col className="admin-chika-talk-reason-column" />
-            <col className="admin-chika-talk-count-column" />
-            <col className="admin-chika-talk-date-column" />
-            <col className="admin-chika-talk-status-column" />
-            <col className="admin-chika-talk-action-column" />
-          </colgroup>
           <thead>
             <tr>
               <th scope="col">신고 콘텐츠</th>
