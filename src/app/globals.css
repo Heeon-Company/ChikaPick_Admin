@@ -4037,7 +4037,7 @@ td span {
 }
 
 .admin-chika-talk-content-column {
-  width: 45%;
+  width: calc(55.5% - 100px);
 }
 
 .admin-chika-talk-type-column {
@@ -4061,7 +4061,7 @@ td span {
 }
 
 .admin-chika-talk-action-column {
-  width: 10.5%;
+  width: 100px;
 }
 
 .admin-chika-talk-table th {
@@ -4134,9 +4134,10 @@ td span {
   background: #e6ecf9;
   color: #023dc7;
   cursor: pointer;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
+  margin-left: auto;
   padding: 0 10px;
   font: inherit;
   font-size: 13px;
