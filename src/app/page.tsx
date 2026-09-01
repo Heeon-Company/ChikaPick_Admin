@@ -1319,14 +1319,16 @@ type ChikaTalkReportReason =
   | "광고·홍보";
 type ChikaTalkReasonFilter = "all" | ChikaTalkReportReason;
 
-const chikaTalkReports: ReadonlyArray<{
+type ChikaTalkReport = {
   content: string;
   type: "게시글" | "댓글";
   reason: ChikaTalkReportReason;
   reportCount: number;
   latestReportAt: string;
   status: ChikaTalkReportStatus;
-}> = [
+};
+
+const chikaTalkReports: ReadonlyArray<ChikaTalkReport> = [
   {
     content: "임플란트하고 계속 아픈데...",
     type: "게시글",
@@ -1375,6 +1377,22 @@ function ChikaTalkManagementTab() {
   const [reasonFilter, setReasonFilter] =
     useState<ChikaTalkReasonFilter>("all");
   const [query, setQuery] = useState("");
+  const [selectedReport, setSelectedReport] =
+    useState<ChikaTalkReport | null>(null);
+
+  useEffect(() => {
+    if (!selectedReport) return;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelectedReport(null);
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [selectedReport]);
 
   const filteredReports = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("ko-KR");
@@ -1500,7 +1518,13 @@ function ChikaTalkManagementTab() {
                     </span>
                   </td>
                   <td className="admin-chika-talk-action-cell">
-                    <button type="button">상세 보기</button>
+                    <button
+                      type="button"
+                      aria-label={`${report.content} 상세 보기`}
+                      onClick={() => setSelectedReport(report)}
+                    >
+                      상세 보기
+                    </button>
                   </td>
                 </tr>
               ))
@@ -1511,6 +1535,181 @@ function ChikaTalkManagementTab() {
                 </td>
               </tr>
             )}
+          </tbody>
+        </table>
+      </div>
+
+      {selectedReport ? (
+        <ChikaTalkReportDetail
+          report={selectedReport}
+          onClose={() => setSelectedReport(null)}
+        />
+      ) : null}
+    </section>
+  );
+}
+
+type ChikaTalkReportHistoryItem = {
+  reportedAt: string;
+  reason: string;
+  reporter: string;
+};
+
+const chikaTalkPostReportHistory: ReadonlyArray<ChikaTalkReportHistoryItem> = [
+  { reportedAt: "08.24 01:32", reason: "잘못된 의료정보", reporter: "user***21" },
+  { reportedAt: "08.24 00:51", reason: "질환을 단정하는 내용", reporter: "user***82" },
+  { reportedAt: "08.23 23:17", reason: "잘못된 의료정보", reporter: "user***14" },
+  { reportedAt: "08.23 22:44", reason: "기타", reporter: "user***35" },
+];
+
+const chikaTalkCommentReportHistory: ReadonlyArray<ChikaTalkReportHistoryItem> = [
+  { reportedAt: "08.24 02:10", reason: "광고·홍보", reporter: "user***45" },
+  { reportedAt: "08.23 23:50", reason: "광고·홍보", reporter: "user***67" },
+];
+
+function ChikaTalkReportDetail({
+  report,
+  onClose,
+}: {
+  report: ChikaTalkReport;
+  onClose: () => void;
+}) {
+  const isPost = report.type === "게시글";
+  const history = isPost
+    ? chikaTalkPostReportHistory
+    : chikaTalkCommentReportHistory;
+
+  return (
+    <div className="admin-chika-talk-detail-layer">
+      <button
+        type="button"
+        className="admin-chika-talk-detail-backdrop"
+        aria-label="신고 콘텐츠 상세 닫기"
+        tabIndex={-1}
+        onClick={onClose}
+      />
+      <aside
+        className="admin-chika-talk-detail"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="chika-talk-detail-title"
+      >
+        <header className="admin-chika-talk-detail-header">
+          <h2 id="chika-talk-detail-title">신고 콘텐츠 상세</h2>
+          <button type="button" aria-label="닫기" autoFocus onClick={onClose}>
+            <Image
+              src="/secret-feedback/Type=Close.png"
+              alt=""
+              width={16}
+              height={16}
+            />
+          </button>
+        </header>
+
+        <div className="admin-chika-talk-detail-scroll">
+          {isPost ? <ChikaTalkPostDetail /> : <ChikaTalkCommentDetail />}
+          <ChikaTalkReportHistory items={history} />
+        </div>
+
+        <footer className="admin-chika-talk-detail-actions">
+          <button type="button">문제없음</button>
+          <button type="button">콘텐츠 삭제</button>
+        </footer>
+      </aside>
+    </div>
+  );
+}
+
+function ChikaTalkPostDetail() {
+  return (
+    <section className="admin-chika-talk-detail-content" aria-label="신고된 게시글">
+      <div className="admin-chika-talk-detail-post-info">
+        <div className="admin-chika-talk-detail-badges">
+          <span>게시글</span>
+          <span>최근 제재 3회</span>
+        </div>
+        <ChikaTalkDetailMeta label="작성자" value="살짝당당한미어캣" />
+        <ChikaTalkDetailMeta label="작성일" value="2026.08.23 20:41" />
+      </div>
+      <div className="admin-chika-talk-detail-divider" aria-hidden="true" />
+      <div className="admin-chika-talk-detail-post-body">
+        <h3>신경치료 해야하나요 ㅠㅠ 갑자기 아파요</h3>
+        <p>
+          6월에 정기검진 갔다와서 괜찮다고 했는데 갑자기 이가 시려지더니 이젠
+          뜨거운 거 마시면 통증이 심해요. 이 정도면 신경치료 해야 하는 건가요?
+          일단 타이레놀 먹고 있는데 소용이 없어요. 인터넷에서 찾아보니 이런 경우
+          무조건 신경치료라고 하던데...
+        </p>
+        <div className="admin-chika-talk-detail-image-placeholder">
+          <Image src="/Type=Image.svg" alt="" width={24} height={24} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ChikaTalkCommentDetail() {
+  return (
+    <section className="admin-chika-talk-detail-content" aria-label="신고된 댓글">
+      <article className="admin-chika-talk-original-post">
+        <span>원문 게시글</span>
+        <h3>임플란트 비용이 너무 비싸요... 진짜로?</h3>
+        <ChikaTalkDetailMeta label="작성자" value="user***82" />
+      </article>
+      <div className="admin-chika-talk-detail-divider" aria-hidden="true" />
+      <div className="admin-chika-talk-reported-comment">
+        <span>신고된 댓글</span>
+        <blockquote>
+          저도 거기서 했는데 120만원이면 싼 거예요. 다른 데 가지 마시고 여기로
+          오세요. 원장님이 진짜 잘해요. 강남 ○○치과 추천합니다!
+        </blockquote>
+        <ChikaTalkDetailMeta label="작성자" value="빠른거북이123" />
+        <ChikaTalkDetailMeta label="작성일" value="2026.08.23 21:15" />
+      </div>
+    </section>
+  );
+}
+
+function ChikaTalkDetailMeta({ label, value }: { label: string; value: string }) {
+  return (
+    <dl className="admin-chika-talk-detail-meta">
+      <dt>{label}</dt>
+      <dd>{value}</dd>
+    </dl>
+  );
+}
+
+function ChikaTalkReportHistory({
+  items,
+}: {
+  items: ReadonlyArray<ChikaTalkReportHistoryItem>;
+}) {
+  return (
+    <section className="admin-chika-talk-report-history">
+      <h3>신고 내역 {items.length}건</h3>
+      <div>
+        <table>
+          <caption className="sr-only">신고 내역</caption>
+          <colgroup>
+            <col className="admin-chika-talk-history-date-column" />
+            <col />
+            <col className="admin-chika-talk-history-reporter-column" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th scope="col">신고일시</th>
+              <th scope="col">신고 사유</th>
+              <th scope="col">신고자</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={`${item.reportedAt}:${item.reporter}`}>
+                <td>{item.reportedAt}</td>
+                <td>{item.reason}</td>
+                <td>{item.reporter}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

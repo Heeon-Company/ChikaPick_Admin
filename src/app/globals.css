@@ -4146,6 +4146,362 @@ td span {
   text-align: center !important;
 }
 
+.admin-chika-talk-detail-layer {
+  position: fixed;
+  z-index: 120;
+  inset: 0;
+}
+
+.admin-chika-talk-detail-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: transparent;
+  cursor: default;
+}
+
+.admin-chika-talk-detail {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(468px, 100vw);
+  min-width: 0;
+  overflow: hidden;
+  border-left: 1px solid #b8bbc2;
+  border-radius: 12px 0 0 12px;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  font-family: "Pretendard", ui-sans-serif, system-ui, sans-serif;
+}
+
+.admin-chika-talk-detail-header {
+  width: 100%;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.admin-chika-talk-detail-header h2 {
+  margin: 0;
+  color: #000b26;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 32px;
+  letter-spacing: -0.48px;
+  white-space: nowrap;
+}
+
+.admin-chika-talk-detail-header button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #b8bbc2;
+  border-radius: 8px;
+  background: #fcfdfe;
+  cursor: pointer;
+  display: grid;
+  flex: 0 0 32px;
+  place-items: center;
+  padding: 7px;
+}
+
+.admin-chika-talk-detail-header button:hover,
+.admin-chika-talk-detail-header button:focus-visible {
+  background: #f4f6f8;
+}
+
+.admin-chika-talk-detail-header img {
+  width: 16px;
+  height: 16px;
+}
+
+.admin-chika-talk-detail-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 16px;
+  scrollbar-color: #b8bbc2 transparent;
+  scrollbar-width: thin;
+}
+
+.admin-chika-talk-detail-content,
+.admin-chika-talk-detail-post-info,
+.admin-chika-talk-detail-post-body,
+.admin-chika-talk-reported-comment,
+.admin-chika-talk-report-history {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-chika-talk-detail-content,
+.admin-chika-talk-detail-post-info {
+  gap: 12px;
+}
+
+.admin-chika-talk-detail-badges {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-chika-talk-detail-badges span {
+  border: 1px solid #b8bbc2;
+  border-radius: 999px;
+  background: var(--surface);
+  color: #596072;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.admin-chika-talk-detail-badges span:last-child {
+  border-color: #fecaca;
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.admin-chika-talk-detail-meta {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-chika-talk-detail-meta dt {
+  color: #596072;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 18px;
+}
+
+.admin-chika-talk-detail-meta dd {
+  min-width: 0;
+  margin: 0;
+  color: #000b26;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: -0.28px;
+  overflow-wrap: anywhere;
+}
+
+.admin-chika-talk-detail-divider {
+  width: 100%;
+  height: 1px;
+  flex: 0 0 1px;
+  background: #f5f8ff;
+}
+
+.admin-chika-talk-detail-post-body,
+.admin-chika-talk-reported-comment {
+  gap: 10px;
+}
+
+.admin-chika-talk-detail-post-body h3,
+.admin-chika-talk-original-post h3,
+.admin-chika-talk-report-history h3 {
+  margin: 0;
+  color: #000b26;
+}
+
+.admin-chika-talk-detail-post-body h3,
+.admin-chika-talk-original-post h3 {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 22px;
+  letter-spacing: -0.32px;
+  overflow-wrap: anywhere;
+}
+
+.admin-chika-talk-detail-post-body > p {
+  margin: 0;
+  color: #3b4358;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: -0.28px;
+  overflow-wrap: anywhere;
+}
+
+.admin-chika-talk-detail-image-placeholder {
+  width: 100%;
+  height: 140px;
+  border: 1px solid #b8bbc2;
+  border-radius: 12px;
+  background: #f3f4f6;
+  display: grid;
+  flex: 0 0 140px;
+  place-items: center;
+}
+
+.admin-chika-talk-detail-image-placeholder img {
+  width: 24px;
+  height: 24px;
+}
+
+.admin-chika-talk-original-post {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #b8bbc2;
+  border-radius: 12px;
+  background: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+
+.admin-chika-talk-original-post > span,
+.admin-chika-talk-reported-comment > span {
+  color: #596072;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 18px;
+}
+
+.admin-chika-talk-reported-comment blockquote {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  border: 1px solid #b8bbc2;
+  border-radius: 12px;
+  background: var(--surface);
+  color: #000b26;
+  padding: 12px 12px 12px 27px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: -0.28px;
+  overflow-wrap: anywhere;
+}
+
+.admin-chika-talk-reported-comment blockquote::before {
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 11px;
+  width: 3px;
+  border-radius: 2px;
+  background: #b91c1c;
+  content: "";
+}
+
+.admin-chika-talk-report-history {
+  gap: 12px;
+}
+
+.admin-chika-talk-report-history h3 {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 26px;
+}
+
+.admin-chika-talk-report-history > div {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #b8bbc2;
+  border-radius: 12px;
+}
+
+.admin-chika-talk-report-history table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.admin-chika-talk-history-date-column,
+.admin-chika-talk-history-reporter-column {
+  width: 120px;
+}
+
+.admin-chika-talk-report-history th,
+.admin-chika-talk-report-history td {
+  padding: 10px 12px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.admin-chika-talk-report-history th {
+  border-bottom: 1px solid #b8bbc2;
+  background: #f3f4f6;
+  color: #596072;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 18px;
+}
+
+.admin-chika-talk-report-history td {
+  overflow: hidden;
+  border-bottom: 1px solid #b8bbc2;
+  color: #3b4358;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: -0.28px;
+  text-overflow: ellipsis;
+}
+
+.admin-chika-talk-report-history tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.admin-chika-talk-detail-actions {
+  width: 100%;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 12px;
+}
+
+.admin-chika-talk-detail-actions button {
+  height: 48px;
+  min-width: 0;
+  border: 1px solid #b8bbc2;
+  border-radius: 12px;
+  background: #fcfdfe;
+  color: #3b4358;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: -0.28px;
+  white-space: nowrap;
+}
+
+.admin-chika-talk-detail-actions button:last-child {
+  border-color: #b91c1c;
+  background: #b91c1c;
+  color: #fff;
+}
+
+.admin-chika-talk-detail-actions button:hover,
+.admin-chika-talk-detail-actions button:focus-visible {
+  filter: brightness(0.96);
+}
+
 @media (max-width: 760px) {
   .admin-chika-talk-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4181,6 +4537,35 @@ td span {
   .admin-chika-talk-search {
     width: 100%;
     flex: 0 0 auto;
+  }
+
+  .admin-chika-talk-detail {
+    border-radius: 0;
+    padding: 16px;
+  }
+
+  .admin-chika-talk-detail-meta {
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .admin-chika-talk-history-date-column {
+    width: 96px;
+  }
+
+  .admin-chika-talk-history-reporter-column {
+    width: 88px;
+  }
+
+  .admin-chika-talk-report-history th,
+  .admin-chika-talk-report-history td {
+    padding-right: 8px;
+    padding-left: 8px;
+    font-size: 13px;
+  }
+
+  .admin-chika-talk-detail-actions {
+    gap: 8px;
   }
 }
 
