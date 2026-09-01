@@ -263,6 +263,7 @@ const primaryTabs = [
   { id: "license-review", label: "치과의사 면허 인증", icon: "/Type=Accept.svg" },
   { id: "clinic-membership-requests", label: "소속 신청 관리", icon: "/Type=Staff.svg" },
   { id: "reservations", label: "예약 운영 관리", icon: "/Type=Diary.svg" },
+  { id: "chika-talk", label: "치아톡 관리", icon: "/Type=Dashboard.svg" },
   // 전문의 소견 관련 코드
   // { id: "consultations", label: "전문의 소견 운영", icon: "/Type=Response.svg" },
   { id: "secret-feedback", label: "시크릿 피드백", icon: "/Type=Opinion.svg" },
@@ -290,6 +291,7 @@ const primaryTabContentLayouts: Record<PrimaryAdminTab, AdminContentLayout> = {
   "license-review": "fluid",
   "clinic-membership-requests": "fluid",
   reservations: "fluid",
+  "chika-talk": "fluid",
   // 전문의 소견 관련 코드
   // consultations: "fluid",
   "secret-feedback": "compact",
@@ -319,6 +321,8 @@ const primaryTabDescriptions: Record<PrimaryAdminTab, string> = {
     "치카픽 파트너스 사용자의 치과 소속 신청을 병원 구분 없이 검토하고 처리합니다.",
   reservations:
     "치카픽에서 접수된 일반 예약과 즉시 예약의 처리 상태를 전체 치과 기준으로 조회합니다.",
+  "chika-talk":
+    "치아톡에서 신고된 게시글과 댓글을 확인하고 처리합니다.",
   // 전문의 소견 관련 코드
   // consultations:
   //   "전문의 소견 요청과 답변 상태를 전체 치과 기준으로 조회합니다.",
@@ -988,12 +992,17 @@ export default function AdminHome() {
               activePrimaryTab === "sales-performance" ||
               activePrimaryTab === "hospital-review" ||
               activePrimaryTab === "license-review" ||
+              activePrimaryTab === "chika-talk" ||
               activePrimaryTab === "secret-feedback" ||
               activePrimaryTab === "chikapick-accounts" ||
               activePrimaryTab === "partner-accounts" ||
               activePrimaryTab === "memberships" ||
               activePrimaryTab === "external-connectors"
                 ? " admin-workspace-heading--sales"
+                : ""
+            }${
+              activePrimaryTab === "chika-talk"
+                ? " admin-workspace-heading--chika-talk"
                 : ""
             }${
               activePrimaryTab === "chikapick-accounts"
@@ -1081,6 +1090,10 @@ export default function AdminHome() {
               ? " admin-content--license-review"
               : ""
           }${
+            activePrimaryTab === "chika-talk"
+              ? " admin-content--chika-talk"
+              : ""
+          }${
             activePrimaryTab === "secret-feedback"
               ? " admin-content--secret-feedback"
               : ""
@@ -1153,6 +1166,8 @@ export default function AdminHome() {
                 runAction((token) => rejectManualHospitalSubmission(token, id, note))
               }
             />
+          ) : activePrimaryTab === "chika-talk" ? (
+            <ChikaTalkManagementTab />
           ) : activePrimaryTab === "secret-feedback" ? (
             <SecretFeedbackTab accessToken={session?.access_token ?? ""} />
           ) : activePrimaryTab === "service-expansion-requests" ? (
@@ -1292,6 +1307,214 @@ export default function AdminHome() {
         </div>
       </section>
     </main>
+  );
+}
+
+type ChikaTalkReportStatus = "unresolved" | "deleted";
+type ChikaTalkStatusFilter = "all" | "unresolved" | "resolved";
+type ChikaTalkReportReason =
+  | "잘못된 의료정보"
+  | "치료 단정·지시"
+  | "비방·욕설"
+  | "광고·홍보";
+type ChikaTalkReasonFilter = "all" | ChikaTalkReportReason;
+
+const chikaTalkReports: ReadonlyArray<{
+  content: string;
+  type: "게시글" | "댓글";
+  reason: ChikaTalkReportReason;
+  reportCount: number;
+  latestReportAt: string;
+  status: ChikaTalkReportStatus;
+}> = [
+  {
+    content: "임플란트하고 계속 아픈데...",
+    type: "게시글",
+    reason: "잘못된 의료정보",
+    reportCount: 4,
+    latestReportAt: "08.24 01:32",
+    status: "unresolved",
+  },
+  {
+    content: "무조건 신경치료 해야 합니다",
+    type: "댓글",
+    reason: "치료 단정·지시",
+    reportCount: 3,
+    latestReportAt: "08.23 22:15",
+    status: "unresolved",
+  },
+  {
+    content: "OO치과 절대 가지 마세요",
+    type: "게시글",
+    reason: "비방·욕설",
+    reportCount: 2,
+    latestReportAt: "08.23 17:40",
+    status: "unresolved",
+  },
+  {
+    content: "쪽지 주세요 싸게 해드려요",
+    type: "댓글",
+    reason: "광고·홍보",
+    reportCount: 6,
+    latestReportAt: "08.22 14:20",
+    status: "deleted",
+  },
+];
+
+const chikaTalkReasonOptions = [
+  { label: "신고 사유 전체", value: "all" },
+  { label: "잘못된 의료정보", value: "잘못된 의료정보" },
+  { label: "치료 단정·지시", value: "치료 단정·지시" },
+  { label: "비방·욕설", value: "비방·욕설" },
+  { label: "광고·홍보", value: "광고·홍보" },
+] as const;
+
+function ChikaTalkManagementTab() {
+  const [statusFilter, setStatusFilter] =
+    useState<ChikaTalkStatusFilter>("all");
+  const [reasonFilter, setReasonFilter] =
+    useState<ChikaTalkReasonFilter>("all");
+  const [query, setQuery] = useState("");
+
+  const filteredReports = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase("ko-KR");
+
+    return chikaTalkReports.filter((report) => {
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "unresolved" && report.status === "unresolved") ||
+        (statusFilter === "resolved" && report.status !== "unresolved");
+      const matchesReason =
+        reasonFilter === "all" || report.reason === reasonFilter;
+      const matchesQuery =
+        !normalizedQuery ||
+        report.content.toLocaleLowerCase("ko-KR").includes(normalizedQuery);
+
+      return matchesStatus && matchesReason && matchesQuery;
+    });
+  }, [query, reasonFilter, statusFilter]);
+
+  const statusFilters: ReadonlyArray<{
+    label: string;
+    value: ChikaTalkStatusFilter;
+  }> = [
+    { label: "전체", value: "all" },
+    { label: "미처리", value: "unresolved" },
+    { label: "처리완료", value: "resolved" },
+  ];
+
+  return (
+    <section className="admin-chika-talk" aria-label="치아톡 신고 관리">
+      <div className="admin-chika-talk-metrics" aria-label="신고 처리 현황">
+        {[
+          { label: "미처리 신고", value: "9건" },
+          { label: "오늘 접수", value: "3건" },
+          { label: "처리 완료", value: "28건" },
+          { label: "삭제", value: "7건" },
+        ].map((metric) => (
+          <article key={metric.label}>
+            <span>{metric.label}</span>
+            <strong>{metric.value}</strong>
+          </article>
+        ))}
+      </div>
+
+      <div className="admin-chika-talk-toolbar">
+        <div
+          className="admin-chika-talk-status-filters"
+          role="group"
+          aria-label="처리 상태"
+        >
+          {statusFilters.map((filter) => (
+            <button
+              key={filter.value}
+              type="button"
+              className={statusFilter === filter.value ? "is-active" : undefined}
+              aria-pressed={statusFilter === filter.value}
+              onClick={() => setStatusFilter(filter.value)}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="admin-chika-talk-filter-controls">
+          <AdminSelect
+            className="admin-chika-talk-reason-filter"
+            label="신고 사유"
+            onChange={setReasonFilter}
+            options={chikaTalkReasonOptions}
+            renderOptionsInPortal
+            value={reasonFilter}
+          />
+          <label className="admin-chika-talk-search">
+            <span className="sr-only">신고 제목 또는 내용 검색</span>
+            <Image src="/Type=Search.svg" alt="" width={16} height={16} />
+            <input
+              type="search"
+              placeholder="신고 제목 또는 내용 검색"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
+        </div>
+      </div>
+
+      <div className="admin-chika-talk-table-scroll">
+        <table className="admin-chika-talk-table">
+          <caption className="sr-only">치아톡 신고 목록</caption>
+          <colgroup>
+            <col className="admin-chika-talk-content-column" />
+            <col className="admin-chika-talk-type-column" />
+            <col className="admin-chika-talk-reason-column" />
+            <col className="admin-chika-talk-count-column" />
+            <col className="admin-chika-talk-date-column" />
+            <col className="admin-chika-talk-status-column" />
+            <col className="admin-chika-talk-action-column" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th scope="col">신고 콘텐츠</th>
+              <th scope="col">유형</th>
+              <th scope="col">신고 사유</th>
+              <th scope="col">신고 수</th>
+              <th scope="col">최근 신고일</th>
+              <th scope="col">상태</th>
+              <th scope="col"><span className="sr-only">관리</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredReports.length > 0 ? (
+              filteredReports.map((report) => (
+                <tr key={`${report.content}:${report.latestReportAt}`}>
+                  <td className="admin-chika-talk-content-cell" title={report.content}>
+                    {report.content}
+                  </td>
+                  <td>{report.type}</td>
+                  <td>{report.reason}</td>
+                  <td>{report.reportCount}</td>
+                  <td>{report.latestReportAt}</td>
+                  <td>
+                    <span className={`is-${report.status}`}>
+                      {report.status === "unresolved" ? "미처리" : "삭제"}
+                    </span>
+                  </td>
+                  <td className="admin-chika-talk-action-cell">
+                    <button type="button">상세 보기</button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td className="admin-chika-talk-empty" colSpan={7}>
+                  조건에 맞는 신고 내역이 없습니다.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
