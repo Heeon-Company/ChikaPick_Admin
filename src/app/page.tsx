@@ -263,10 +263,10 @@ const primaryTabs = [
   { id: "license-review", label: "치과의사 면허 인증", icon: "/Type=Accept.svg" },
   { id: "clinic-membership-requests", label: "소속 신청 관리", icon: "/Type=Staff.svg" },
   { id: "reservations", label: "예약 운영 관리", icon: "/Type=Diary.svg" },
-  { id: "chika-talk", label: "치아톡 관리", icon: "/Type=Dashboard.svg" },
   // 전문의 소견 관련 코드
   // { id: "consultations", label: "전문의 소견 운영", icon: "/Type=Response.svg" },
   { id: "secret-feedback", label: "시크릿 피드백", icon: "/Type=Opinion.svg" },
+  { id: "chika-talk", label: "치아톡 관리", icon: "/Type=Dashboard.svg" },
   { id: "service-expansion-requests", label: "서비스 확대 요청 관리", icon: "/Type=Dashboard.svg" },
   { id: "chikapick-accounts", label: "치카픽 계정 조회", icon: "/Type=Family.svg" },
   { id: "partner-accounts", label: "파트너스 계정 조회", icon: "/Type=Family.svg" },
