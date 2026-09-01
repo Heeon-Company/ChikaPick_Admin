@@ -4120,7 +4120,7 @@ td span {
 }
 
 .admin-chika-talk-table th:last-child,
-.admin-chika-talk-action-cell {
+.admin-chika-talk-table td.admin-chika-talk-action-cell {
   padding-right: 80px;
   padding-left: 8px;
   text-align: right;
