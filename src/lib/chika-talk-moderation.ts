@@ -71,6 +71,9 @@ export interface AdminChikaTalkReportsPayload {
 
 export interface AdminChikaTalkModerationMetrics {
   unresolvedReports: number;
+  reportsToday: number;
+  completedReports: number;
+  deletedContents: number;
   oldestUnresolvedAgeSeconds: number;
   actionsLast30Days: number;
   openAppeals: number;
@@ -79,6 +82,17 @@ export interface AdminChikaTalkModerationMetrics {
 
 export interface AdminChikaTalkModerationMetricsPayload {
   metrics: AdminChikaTalkModerationMetrics;
+}
+
+export function adminChikaTalkMetricCards(
+  metrics: AdminChikaTalkModerationMetrics | null,
+) {
+  return [
+    { label: "미처리 신고", value: `${metrics?.unresolvedReports ?? 0}건` },
+    { label: "오늘 접수", value: `${metrics?.reportsToday ?? 0}건` },
+    { label: "처리 완료", value: `${metrics?.completedReports ?? 0}건` },
+    { label: "삭제", value: `${metrics?.deletedContents ?? 0}건` },
+  ];
 }
 
 export interface AdminChikaTalkRelatedReport {

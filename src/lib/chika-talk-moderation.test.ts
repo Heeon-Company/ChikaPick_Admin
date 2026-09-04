@@ -3,6 +3,7 @@ import { test } from "node:test";
 
 import {
   adminChikaTalkActionLabel,
+  adminChikaTalkMetricCards,
   adminChikaTalkReasonLabel,
   adminChikaTalkRecordString,
   adminChikaTalkReportStatusLabel,
@@ -34,5 +35,26 @@ test("ChikaTalk moderation helpers preserve safe fallbacks", () => {
   assert.equal(
     formatAdminChikaTalkReportDate("2026-08-23T16:32:00.000Z"),
     "08.24 01:32",
+  );
+});
+
+test("ChikaTalk moderation cards match the Figma metric contract", () => {
+  assert.deepEqual(
+    adminChikaTalkMetricCards({
+      unresolvedReports: 9,
+      reportsToday: 3,
+      completedReports: 28,
+      deletedContents: 7,
+      oldestUnresolvedAgeSeconds: 3_600,
+      actionsLast30Days: 35,
+      openAppeals: 0,
+      activeSanctions: 2,
+    }),
+    [
+      { label: "미처리 신고", value: "9건" },
+      { label: "오늘 접수", value: "3건" },
+      { label: "처리 완료", value: "28건" },
+      { label: "삭제", value: "7건" },
+    ],
   );
 });

@@ -3873,40 +3873,38 @@ td span {
   width: 100%;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 20px;
+  gap: 16px;
 }
 
 .admin-chika-talk-metrics article {
   min-width: 0;
-  height: 112px;
+  height: 90px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: center;
-  gap: 4px;
+  gap: 8px;
   border: 1px solid #b8bbc2;
-  border-radius: 16px;
+  border-radius: 12px;
   background: var(--surface);
-  padding: 20px;
+  padding: 15px;
 }
 
 .admin-chika-talk-metrics span {
-  color: #3b4358;
+  color: #596072;
   font-family: "Pretendard", ui-sans-serif, system-ui, sans-serif;
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 400;
-  line-height: 24px;
-  letter-spacing: -0.32px;
+  line-height: 18px;
   white-space: nowrap;
 }
 
 .admin-chika-talk-metrics strong {
   color: #000b26;
   font-family: "Pretendard", ui-sans-serif, system-ui, sans-serif;
-  font-size: 32px;
+  font-size: 24px;
   font-weight: 700;
-  line-height: 40px;
-  letter-spacing: -0.64px;
+  line-height: 32px;
+  letter-spacing: -0.48px;
 }
 
 .admin-chika-talk-toolbar {

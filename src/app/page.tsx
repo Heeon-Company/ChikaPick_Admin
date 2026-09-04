@@ -153,12 +153,12 @@ import {
 } from "@/lib/chikapick-accounts";
 import {
   adminChikaTalkReasonLabel,
+  adminChikaTalkMetricCards,
   adminChikaTalkReasonOptions,
   adminChikaTalkRecordString,
   adminChikaTalkReportStatusLabel,
   adminChikaTalkTargetTypeLabel,
   formatAdminChikaTalkDate,
-  formatAdminChikaTalkQueueAge,
   formatAdminChikaTalkReportDate,
   type AdminChikaTalkModerationActionName,
   type AdminChikaTalkModerationMetrics,
@@ -1508,15 +1508,7 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
     });
   }, [query, reports]);
 
-  const metricCards = [
-    { label: "미처리 신고", value: `${metrics?.unresolvedReports ?? 0}건` },
-    {
-      label: "최장 대기",
-      value: formatAdminChikaTalkQueueAge(metrics?.oldestUnresolvedAgeSeconds ?? 0),
-    },
-    { label: "30일 처리", value: `${metrics?.actionsLast30Days ?? 0}건` },
-    { label: "제재 중 사용자", value: `${metrics?.activeSanctions ?? 0}명` },
-  ];
+  const metricCards = adminChikaTalkMetricCards(metrics);
 
   return (
     <section className="admin-chika-talk" aria-label="치아톡 신고 관리">
