@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
+import { createPortal } from "react-dom";
 import type { Session } from "@supabase/supabase-js";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -1359,6 +1360,7 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [isDetailActionPending, setIsDetailActionPending] = useState(false);
   const [detailActionError, setDetailActionError] = useState<string | null>(null);
+  const [evidenceImageUrl, setEvidenceImageUrl] = useState<string | null>(null);
   const reportRequestIdRef = useRef(0);
   const detailRequestIdRef = useRef(0);
   const actionRequestIdsRef = useRef(new Map<string, string>());
@@ -1408,6 +1410,7 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
       setSelectedReport(null);
       setDetailError(null);
       setDetailActionError(null);
+      setEvidenceImageUrl(null);
       setIsDetailLoading(true);
       try {
         const payload = await fetchAdminChikaTalkReportDetail(accessToken, reportId);
@@ -1433,6 +1436,7 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
     setSelectedReport(null);
     setDetailError(null);
     setDetailActionError(null);
+    setEvidenceImageUrl(null);
   }, []);
 
   const applyDetailAction = useCallback(
@@ -1472,6 +1476,7 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
         setSelectedReportId(null);
         setSelectedReport(null);
         setDetailError(null);
+        setEvidenceImageUrl(null);
         await loadReports();
       } catch (error) {
         setDetailActionError(
@@ -1488,7 +1493,12 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
     if (!selectedReportId) return;
     const previousOverflow = document.body.style.overflow;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeDetail();
+      if (event.key !== "Escape") return;
+      if (evidenceImageUrl) {
+        setEvidenceImageUrl(null);
+        return;
+      }
+      closeDetail();
     };
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", closeOnEscape);
@@ -1496,7 +1506,7 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", closeOnEscape);
     };
-  }, [closeDetail, selectedReportId]);
+  }, [closeDetail, evidenceImageUrl, selectedReportId]);
 
   const filteredReports = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("ko-KR");
@@ -1656,8 +1666,18 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
           onClose={closeDetail}
           onRetry={() => void loadDetail(selectedReportId)}
           onAction={applyDetailAction}
+          onOpenEvidenceImage={setEvidenceImageUrl}
         />
       ) : null}
+      {evidenceImageUrl && typeof document !== "undefined"
+        ? createPortal(
+            <ChikaTalkEvidenceImageViewer
+              imageUrl={evidenceImageUrl}
+              onClose={() => setEvidenceImageUrl(null)}
+            />,
+            document.body,
+          )
+        : null}
     </section>
   );
 }
@@ -1671,6 +1691,7 @@ function ChikaTalkReportDetail({
   onClose,
   onRetry,
   onAction,
+  onOpenEvidenceImage,
 }: {
   report: AdminChikaTalkReportDetailPayload | null;
   error: string | null;
@@ -1685,6 +1706,7 @@ function ChikaTalkReportDetail({
       "dismiss_report" | "hide_content"
     >,
   ) => Promise<void>;
+  onOpenEvidenceImage: (imageUrl: string) => void;
 }) {
   const canResolve = report?.report.status === "unresolved";
   const canRemove =
@@ -1733,7 +1755,10 @@ function ChikaTalkReportDetail({
             </div>
           ) : report ? (
             <>
-              <ChikaTalkReportedContent detail={report} />
+              <ChikaTalkReportedContent
+                detail={report}
+                onOpenEvidenceImage={onOpenEvidenceImage}
+              />
               <ChikaTalkReportHistory items={report.relatedReports} />
             </>
           ) : null}
@@ -1771,19 +1796,28 @@ function ChikaTalkReportDetail({
 
 function ChikaTalkReportedContent({
   detail,
+  onOpenEvidenceImage,
 }: {
   detail: AdminChikaTalkReportDetailPayload;
+  onOpenEvidenceImage: (imageUrl: string) => void;
 }) {
   if (detail.report.targetType === "comment") {
     return <ChikaTalkReportedComment detail={detail} />;
   }
-  return <ChikaTalkReportedPost detail={detail} />;
+  return (
+    <ChikaTalkReportedPost
+      detail={detail}
+      onOpenEvidenceImage={onOpenEvidenceImage}
+    />
+  );
 }
 
 function ChikaTalkReportedPost({
   detail,
+  onOpenEvidenceImage,
 }: {
   detail: AdminChikaTalkReportDetailPayload;
+  onOpenEvidenceImage: (imageUrl: string) => void;
 }) {
   const { report } = detail;
   const snapshot = report.snapshot;
@@ -1791,6 +1825,7 @@ function ChikaTalkReportedPost({
   const body = adminChikaTalkRecordString(snapshot, "body", "displayName") ??
     "보존된 내용을 확인할 수 없습니다.";
   const createdAt = adminChikaTalkRecordString(snapshot, "createdAt", "created_at");
+  const evidenceImageUrl = report.evidenceImageUrl;
   const recentSanctionCount = detail.authorActions.length;
 
   return (
@@ -1818,12 +1853,17 @@ function ChikaTalkReportedPost({
         <div className="admin-chika-talk-detail-divider" aria-hidden="true" />
         <h3>{title ?? "제목을 확인할 수 없습니다."}</h3>
         <p>{body}</p>
-        {report.evidenceImageUrl ? (
-          <div className="admin-chika-talk-detail-evidence">
+        {evidenceImageUrl ? (
+          <button
+            type="button"
+            className="admin-chika-talk-detail-evidence"
+            aria-label="첨부 이미지 원본 크기로 보기"
+            onClick={() => onOpenEvidenceImage(evidenceImageUrl)}
+          >
             {/* The protected API returns a short-lived evidence URL at runtime. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={report.evidenceImageUrl} alt="신고 당시 첨부 이미지 증거" />
-          </div>
+            <img src={evidenceImageUrl} alt="신고 당시 첨부 이미지 증거" />
+          </button>
         ) : null}
       </div>
       {!detail.current ? (
@@ -1832,6 +1872,48 @@ function ChikaTalkReportedPost({
         </p>
       ) : null}
     </section>
+  );
+}
+
+function ChikaTalkEvidenceImageViewer({
+  imageUrl,
+  onClose,
+}: {
+  imageUrl: string;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="admin-chika-talk-image-viewer"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="chika-talk-image-viewer-title"
+    >
+      <h2 id="chika-talk-image-viewer-title" className="sr-only">
+        신고 콘텐츠 첨부 이미지 원본
+      </h2>
+      <div className="admin-chika-talk-image-viewer-scroll">
+        <div className="admin-chika-talk-image-viewer-canvas">
+          {/* The protected API returns the canonical image without resizing. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={imageUrl} alt="신고 당시 첨부 이미지 증거 원본" />
+        </div>
+      </div>
+      <button
+        type="button"
+        className="admin-chika-talk-image-viewer-close"
+        aria-label="원본 이미지 닫기"
+        autoFocus
+        onClick={onClose}
+      >
+        <Image
+          src="/secret-feedback/Type=Close.png"
+          alt=""
+          width={20}
+          height={20}
+        />
+      </button>
+    </div>
   );
 }
 

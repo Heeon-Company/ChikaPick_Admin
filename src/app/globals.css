@@ -4406,21 +4406,92 @@ td span {
 
 .admin-chika-talk-detail-evidence {
   width: 100%;
-  height: 140px;
+  max-height: 360px;
   overflow: hidden;
   border: 1px solid #b8bbc2;
   border-radius: 12px;
   background: #f3f4f6;
+  cursor: zoom-in;
   display: grid;
-  flex: 0 0 140px;
   place-items: center;
+  padding: 0;
 }
 
 .admin-chika-talk-detail-evidence img {
-  width: 100%;
-  height: 100%;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 360px;
   display: block;
   object-fit: contain;
+}
+
+.admin-chika-talk-detail-evidence:hover,
+.admin-chika-talk-detail-evidence:focus-visible {
+  border-color: #023dc7;
+  outline: 2px solid rgb(2 61 199 / 18%);
+  outline-offset: 2px;
+}
+
+.admin-chika-talk-image-viewer {
+  position: fixed;
+  z-index: 240;
+  inset: 0;
+  overflow: hidden;
+  background: rgb(0 0 0 / 92%);
+}
+
+.admin-chika-talk-image-viewer-scroll {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+.admin-chika-talk-image-viewer-canvas {
+  width: max-content;
+  min-width: 100%;
+  height: max-content;
+  min-height: 100%;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  padding: 72px 32px 32px;
+}
+
+.admin-chika-talk-image-viewer-canvas img {
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  display: block;
+}
+
+.admin-chika-talk-image-viewer-close {
+  position: fixed;
+  z-index: 1;
+  top: max(20px, env(safe-area-inset-top));
+  right: max(20px, env(safe-area-inset-right));
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgb(255 255 255 / 45%);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 92%);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.admin-chika-talk-image-viewer-close:hover,
+.admin-chika-talk-image-viewer-close:focus-visible {
+  background: #fff;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.admin-chika-talk-image-viewer-close img {
+  width: 20px;
+  height: 20px;
 }
 
 .admin-chika-talk-original-post {
@@ -4634,6 +4705,15 @@ td span {
   .admin-chika-talk-detail {
     border-radius: 0;
     padding: 16px;
+  }
+
+  .admin-chika-talk-image-viewer-canvas {
+    padding: 68px 16px 16px;
+  }
+
+  .admin-chika-talk-image-viewer-close {
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
   }
 
   .admin-chika-talk-detail-meta {
