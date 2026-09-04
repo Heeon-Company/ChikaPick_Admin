@@ -22,6 +22,9 @@ import {
   deleteAdminExternalConnector,
   fetchAdminAccountDirectory,
   fetchAdminAuditLog,
+  fetchAdminChikaTalkModerationMetrics,
+  fetchAdminChikaTalkReportDetail,
+  fetchAdminChikaTalkReports,
   fetchAdminClinicMembershipRequests,
   // 전문의 소견 관련 코드
   // fetchAdminConsultationDirectory,
@@ -147,6 +150,23 @@ import {
   formatChikapickAccountDate,
   type ChikapickAccountLookupPayload,
 } from "@/lib/chikapick-accounts";
+import {
+  adminChikaTalkActionLabel,
+  adminChikaTalkReasonLabel,
+  adminChikaTalkReasonOptions,
+  adminChikaTalkRecordString,
+  adminChikaTalkReportStatusLabel,
+  adminChikaTalkTargetTypeLabel,
+  formatAdminChikaTalkDate,
+  formatAdminChikaTalkQueueAge,
+  type AdminChikaTalkModerationAction,
+  type AdminChikaTalkModerationMetrics,
+  type AdminChikaTalkRelatedReport,
+  type AdminChikaTalkReportDetailPayload,
+  type AdminChikaTalkReportListItem,
+  type AdminChikaTalkReportReason,
+  type AdminChikaTalkReportStatus,
+} from "@/lib/chika-talk-moderation";
 import {
   formatPartnerAccountDate,
   partnerAccountClassificationLabel,
@@ -1167,7 +1187,7 @@ export default function AdminHome() {
               }
             />
           ) : activePrimaryTab === "chika-talk" ? (
-            <ChikaTalkManagementTab />
+            <ChikaTalkManagementTab accessToken={session?.access_token ?? ""} />
           ) : activePrimaryTab === "secret-feedback" ? (
             <SecretFeedbackTab accessToken={session?.access_token ?? ""} />
           ) : activePrimaryTab === "service-expansion-requests" ? (
@@ -1310,81 +1330,110 @@ export default function AdminHome() {
   );
 }
 
-type ChikaTalkReportStatus = "unresolved" | "deleted";
-type ChikaTalkStatusFilter = "all" | "unresolved" | "resolved";
-type ChikaTalkReportReason =
-  | "잘못된 의료정보"
-  | "치료 단정·지시"
-  | "비방·욕설"
-  | "광고·홍보";
-type ChikaTalkReasonFilter = "all" | ChikaTalkReportReason;
+type ChikaTalkReasonFilter = "all" | AdminChikaTalkReportReason;
 
-type ChikaTalkReport = {
-  content: string;
-  type: "게시글" | "댓글";
-  reason: ChikaTalkReportReason;
-  reportCount: number;
-  latestReportAt: string;
-  status: ChikaTalkReportStatus;
-};
-
-const chikaTalkReports: ReadonlyArray<ChikaTalkReport> = [
-  {
-    content: "임플란트하고 계속 아픈데...",
-    type: "게시글",
-    reason: "잘못된 의료정보",
-    reportCount: 4,
-    latestReportAt: "08.24 01:32",
-    status: "unresolved",
-  },
-  {
-    content: "무조건 신경치료 해야 합니다",
-    type: "댓글",
-    reason: "치료 단정·지시",
-    reportCount: 3,
-    latestReportAt: "08.23 22:15",
-    status: "unresolved",
-  },
-  {
-    content: "OO치과 절대 가지 마세요",
-    type: "게시글",
-    reason: "비방·욕설",
-    reportCount: 2,
-    latestReportAt: "08.23 17:40",
-    status: "unresolved",
-  },
-  {
-    content: "쪽지 주세요 싸게 해드려요",
-    type: "댓글",
-    reason: "광고·홍보",
-    reportCount: 6,
-    latestReportAt: "08.22 14:20",
-    status: "deleted",
-  },
+const chikaTalkStatusFilters: ReadonlyArray<{
+  label: string;
+  value: AdminChikaTalkReportStatus;
+}> = [
+  { label: "미처리", value: "unresolved" },
+  { label: "문제없음", value: "dismissed" },
+  { label: "콘텐츠 삭제", value: "content_removed" },
+  { label: "사용자 제재", value: "user_sanctioned" },
 ];
 
-const chikaTalkReasonOptions = [
-  { label: "신고 사유 전체", value: "all" },
-  { label: "잘못된 의료정보", value: "잘못된 의료정보" },
-  { label: "치료 단정·지시", value: "치료 단정·지시" },
-  { label: "비방·욕설", value: "비방·욕설" },
-  { label: "광고·홍보", value: "광고·홍보" },
-] as const;
-
-function ChikaTalkManagementTab() {
+function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
   const [statusFilter, setStatusFilter] =
-    useState<ChikaTalkStatusFilter>("all");
-  const [reasonFilter, setReasonFilter] =
-    useState<ChikaTalkReasonFilter>("all");
+    useState<AdminChikaTalkReportStatus>("unresolved");
+  const [reasonFilter, setReasonFilter] = useState<ChikaTalkReasonFilter>("all");
   const [query, setQuery] = useState("");
+  const [reports, setReports] = useState<AdminChikaTalkReportListItem[]>([]);
+  const [metrics, setMetrics] = useState<AdminChikaTalkModerationMetrics | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [selectedReport, setSelectedReport] =
-    useState<ChikaTalkReport | null>(null);
+    useState<AdminChikaTalkReportDetailPayload | null>(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
+  const reportRequestIdRef = useRef(0);
+  const detailRequestIdRef = useRef(0);
+
+  const loadReports = useCallback(async () => {
+    if (!accessToken) return;
+    const requestId = reportRequestIdRef.current + 1;
+    reportRequestIdRef.current = requestId;
+    setIsLoading(true);
+    setLoadError(null);
+    try {
+      const [reportPayload, metricsPayload] = await Promise.all([
+        fetchAdminChikaTalkReports(accessToken, {
+          page: 1,
+          pageSize: 100,
+          reason: reasonFilter === "all" ? null : reasonFilter,
+          status: statusFilter,
+        }),
+        fetchAdminChikaTalkModerationMetrics(accessToken),
+      ]);
+      if (reportRequestIdRef.current !== requestId) return;
+      setReports(reportPayload.items);
+      setMetrics(metricsPayload.metrics);
+    } catch (error) {
+      if (reportRequestIdRef.current !== requestId) return;
+      setLoadError(
+        error instanceof Error ? error.message : "치아톡 신고를 불러오지 못했습니다.",
+      );
+    } finally {
+      if (reportRequestIdRef.current === requestId) setIsLoading(false);
+    }
+  }, [accessToken, reasonFilter, statusFilter]);
 
   useEffect(() => {
-    if (!selectedReport) return;
+    const timeoutId = window.setTimeout(() => {
+      void loadReports();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [loadReports]);
+
+  const loadDetail = useCallback(
+    async (reportId: string) => {
+      if (!accessToken) return;
+      const requestId = detailRequestIdRef.current + 1;
+      detailRequestIdRef.current = requestId;
+      setSelectedReportId(reportId);
+      setSelectedReport(null);
+      setDetailError(null);
+      setIsDetailLoading(true);
+      try {
+        const payload = await fetchAdminChikaTalkReportDetail(accessToken, reportId);
+        if (detailRequestIdRef.current !== requestId) return;
+        setSelectedReport(payload);
+      } catch (error) {
+        if (detailRequestIdRef.current !== requestId) return;
+        setDetailError(
+          error instanceof Error
+            ? error.message
+            : "신고 콘텐츠 상세를 불러오지 못했습니다.",
+        );
+      } finally {
+        if (detailRequestIdRef.current === requestId) setIsDetailLoading(false);
+      }
+    },
+    [accessToken],
+  );
+
+  const closeDetail = useCallback(() => {
+    detailRequestIdRef.current += 1;
+    setSelectedReportId(null);
+    setSelectedReport(null);
+    setDetailError(null);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedReportId) return;
     const previousOverflow = document.body.style.overflow;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSelectedReport(null);
+      if (event.key === "Escape") closeDetail();
     };
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", closeOnEscape);
@@ -1392,44 +1441,32 @@ function ChikaTalkManagementTab() {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", closeOnEscape);
     };
-  }, [selectedReport]);
+  }, [closeDetail, selectedReportId]);
 
   const filteredReports = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("ko-KR");
-
-    return chikaTalkReports.filter((report) => {
-      const matchesStatus =
-        statusFilter === "all" ||
-        (statusFilter === "unresolved" && report.status === "unresolved") ||
-        (statusFilter === "resolved" && report.status !== "unresolved");
-      const matchesReason =
-        reasonFilter === "all" || report.reason === reasonFilter;
-      const matchesQuery =
+    return reports.filter((report) => {
+      return (
         !normalizedQuery ||
-        report.content.toLocaleLowerCase("ko-KR").includes(normalizedQuery);
-
-      return matchesStatus && matchesReason && matchesQuery;
+        report.contentPreview.toLocaleLowerCase("ko-KR").includes(normalizedQuery)
+      );
     });
-  }, [query, reasonFilter, statusFilter]);
+  }, [query, reports]);
 
-  const statusFilters: ReadonlyArray<{
-    label: string;
-    value: ChikaTalkStatusFilter;
-  }> = [
-    { label: "전체", value: "all" },
-    { label: "미처리", value: "unresolved" },
-    { label: "처리완료", value: "resolved" },
+  const metricCards = [
+    { label: "미처리 신고", value: `${metrics?.unresolvedReports ?? 0}건` },
+    {
+      label: "최장 대기",
+      value: formatAdminChikaTalkQueueAge(metrics?.oldestUnresolvedAgeSeconds ?? 0),
+    },
+    { label: "30일 처리", value: `${metrics?.actionsLast30Days ?? 0}건` },
+    { label: "제재 중 사용자", value: `${metrics?.activeSanctions ?? 0}명` },
   ];
 
   return (
     <section className="admin-chika-talk" aria-label="치아톡 신고 관리">
       <div className="admin-chika-talk-metrics" aria-label="신고 처리 현황">
-        {[
-          { label: "미처리 신고", value: "9건" },
-          { label: "오늘 접수", value: "3건" },
-          { label: "처리 완료", value: "28건" },
-          { label: "삭제", value: "7건" },
-        ].map((metric) => (
+        {metricCards.map((metric) => (
           <article key={metric.label}>
             <span>{metric.label}</span>
             <strong>{metric.value}</strong>
@@ -1443,7 +1480,7 @@ function ChikaTalkManagementTab() {
           role="group"
           aria-label="처리 상태"
         >
-          {statusFilters.map((filter) => (
+          {chikaTalkStatusFilters.map((filter) => (
             <button
               key={filter.value}
               type="button"
@@ -1461,7 +1498,7 @@ function ChikaTalkManagementTab() {
             className="admin-chika-talk-reason-filter"
             label="신고 사유"
             onChange={setReasonFilter}
-            options={chikaTalkReasonOptions}
+            options={adminChikaTalkReasonOptions}
             renderOptionsInPortal
             value={reasonFilter}
           />
@@ -1475,6 +1512,14 @@ function ChikaTalkManagementTab() {
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>
+          <button
+            type="button"
+            className="admin-chika-talk-refresh"
+            disabled={isLoading}
+            onClick={() => void loadReports()}
+          >
+            {isLoading ? "불러오는 중" : "새로고침"}
+          </button>
         </div>
       </div>
 
@@ -1495,33 +1540,48 @@ function ChikaTalkManagementTab() {
               <th scope="col">신고 콘텐츠</th>
               <th scope="col">유형</th>
               <th scope="col">신고 사유</th>
-              <th scope="col">신고 수</th>
+              <th scope="col">미처리 신고 수</th>
               <th scope="col">최근 신고일</th>
               <th scope="col">상태</th>
               <th scope="col"><span className="sr-only">관리</span></th>
             </tr>
           </thead>
           <tbody>
-            {filteredReports.length > 0 ? (
+            {loadError ? (
+              <tr>
+                <td className="admin-chika-talk-empty" colSpan={7}>
+                  {loadError}
+                </td>
+              </tr>
+            ) : isLoading && reports.length === 0 ? (
+              <tr>
+                <td className="admin-chika-talk-empty" colSpan={7}>
+                  신고 내역을 불러오는 중입니다.
+                </td>
+              </tr>
+            ) : filteredReports.length > 0 ? (
               filteredReports.map((report) => (
-                <tr key={`${report.content}:${report.latestReportAt}`}>
-                  <td className="admin-chika-talk-content-cell" title={report.content}>
-                    {report.content}
+                <tr key={report.id}>
+                  <td
+                    className="admin-chika-talk-content-cell"
+                    title={report.contentPreview}
+                  >
+                    {report.contentPreview}
                   </td>
-                  <td>{report.type}</td>
-                  <td>{report.reason}</td>
-                  <td>{report.reportCount}</td>
-                  <td>{report.latestReportAt}</td>
+                  <td>{adminChikaTalkTargetTypeLabel(report.targetType)}</td>
+                  <td>{adminChikaTalkReasonLabel(report.reason)}</td>
+                  <td>{report.unresolvedTargetReportCount}</td>
+                  <td>{formatAdminChikaTalkDate(report.createdAt)}</td>
                   <td>
                     <span className={`is-${report.status}`}>
-                      {report.status === "unresolved" ? "미처리" : "삭제"}
+                      {adminChikaTalkReportStatusLabel(report.status)}
                     </span>
                   </td>
                   <td className="admin-chika-talk-action-cell">
                     <button
                       type="button"
-                      aria-label={`${report.content} 상세 보기`}
-                      onClick={() => setSelectedReport(report)}
+                      aria-label={`${report.contentPreview} 상세 보기`}
+                      onClick={() => void loadDetail(report.id)}
                     >
                       상세 보기
                     </button>
@@ -1539,46 +1599,32 @@ function ChikaTalkManagementTab() {
         </table>
       </div>
 
-      {selectedReport ? (
+      {selectedReportId ? (
         <ChikaTalkReportDetail
           report={selectedReport}
-          onClose={() => setSelectedReport(null)}
+          error={detailError}
+          isLoading={isDetailLoading}
+          onClose={closeDetail}
+          onRetry={() => void loadDetail(selectedReportId)}
         />
       ) : null}
     </section>
   );
 }
 
-type ChikaTalkReportHistoryItem = {
-  reportedAt: string;
-  reason: string;
-  reporter: string;
-};
-
-const chikaTalkPostReportHistory: ReadonlyArray<ChikaTalkReportHistoryItem> = [
-  { reportedAt: "08.24 01:32", reason: "잘못된 의료정보", reporter: "user***21" },
-  { reportedAt: "08.24 00:51", reason: "질환을 단정하는 내용", reporter: "user***82" },
-  { reportedAt: "08.23 23:17", reason: "잘못된 의료정보", reporter: "user***14" },
-  { reportedAt: "08.23 22:44", reason: "기타", reporter: "user***35" },
-];
-
-const chikaTalkCommentReportHistory: ReadonlyArray<ChikaTalkReportHistoryItem> = [
-  { reportedAt: "08.24 02:10", reason: "광고·홍보", reporter: "user***45" },
-  { reportedAt: "08.23 23:50", reason: "광고·홍보", reporter: "user***67" },
-];
-
 function ChikaTalkReportDetail({
   report,
+  error,
+  isLoading,
   onClose,
+  onRetry,
 }: {
-  report: ChikaTalkReport;
+  report: AdminChikaTalkReportDetailPayload | null;
+  error: string | null;
+  isLoading: boolean;
   onClose: () => void;
+  onRetry: () => void;
 }) {
-  const isPost = report.type === "게시글";
-  const history = isPost
-    ? chikaTalkPostReportHistory
-    : chikaTalkCommentReportHistory;
-
   return (
     <div className="admin-chika-talk-detail-layer">
       <button
@@ -1607,65 +1653,150 @@ function ChikaTalkReportDetail({
         </header>
 
         <div className="admin-chika-talk-detail-scroll">
-          {isPost ? <ChikaTalkPostDetail /> : <ChikaTalkCommentDetail />}
-          <ChikaTalkReportHistory items={history} />
+          {isLoading ? (
+            <div className="admin-chika-talk-detail-state" role="status">
+              신고 콘텐츠를 불러오는 중입니다.
+            </div>
+          ) : error ? (
+            <div className="admin-chika-talk-detail-state" role="alert">
+              <p>{error}</p>
+              <button type="button" onClick={onRetry}>다시 시도</button>
+            </div>
+          ) : report ? (
+            <>
+              <ChikaTalkReportedContent detail={report} />
+              <ChikaTalkCurrentContent detail={report} />
+              <ChikaTalkAuthorEnforcement detail={report} />
+              <ChikaTalkReportHistory items={report.relatedReports} />
+              <ChikaTalkActionHistory
+                title="이 콘텐츠 처리 이력"
+                items={report.actions}
+              />
+            </>
+          ) : null}
         </div>
-
-        <footer className="admin-chika-talk-detail-actions">
-          <button type="button">문제없음</button>
-          <button type="button">콘텐츠 삭제</button>
-        </footer>
       </aside>
     </div>
   );
 }
 
-function ChikaTalkPostDetail() {
+function ChikaTalkReportedContent({
+  detail,
+}: {
+  detail: AdminChikaTalkReportDetailPayload;
+}) {
+  const { report } = detail;
+  const snapshot = report.snapshot;
+  const title = adminChikaTalkRecordString(snapshot, "title");
+  const body = adminChikaTalkRecordString(snapshot, "body", "displayName") ??
+    "보존된 내용을 확인할 수 없습니다.";
+  const createdAt = adminChikaTalkRecordString(snapshot, "createdAt", "created_at");
+
   return (
-    <section className="admin-chika-talk-detail-content" aria-label="신고된 게시글">
+    <section className="admin-chika-talk-detail-content" aria-label="신고 당시 콘텐츠">
       <div className="admin-chika-talk-detail-post-info">
         <div className="admin-chika-talk-detail-badges">
-          <span>게시글</span>
-          <span>최근 제재 3회</span>
+          <span>{adminChikaTalkTargetTypeLabel(report.targetType)}</span>
+          <span>{adminChikaTalkReportStatusLabel(report.status)}</span>
         </div>
-        <ChikaTalkDetailMeta label="작성자" value="살짝당당한미어캣" />
-        <ChikaTalkDetailMeta label="작성일" value="2026.08.23 20:41" />
+        <ChikaTalkDetailMeta
+          label="작성자"
+          value={detail.author?.displayName ?? "탈퇴했거나 확인할 수 없는 사용자"}
+        />
+        <ChikaTalkDetailMeta
+          label="신고 접수"
+          value={formatAdminChikaTalkDate(report.createdAt)}
+        />
+        <ChikaTalkDetailMeta
+          label="콘텐츠 작성"
+          value={formatAdminChikaTalkDate(createdAt)}
+        />
+        <ChikaTalkDetailMeta
+          label="신고 사유"
+          value={adminChikaTalkReasonLabel(report.reason)}
+        />
       </div>
       <div className="admin-chika-talk-detail-divider" aria-hidden="true" />
       <div className="admin-chika-talk-detail-post-body">
-        <h3>신경치료 해야하나요 ㅠㅠ 갑자기 아파요</h3>
-        <p>
-          6월에 정기검진 갔다와서 괜찮다고 했는데 갑자기 이가 시려지더니 이젠
-          뜨거운 거 마시면 통증이 심해요. 이 정도면 신경치료 해야 하는 건가요?
-          일단 타이레놀 먹고 있는데 소용이 없어요. 인터넷에서 찾아보니 이런 경우
-          무조건 신경치료라고 하던데...
-        </p>
-        <div className="admin-chika-talk-detail-image-placeholder">
-          <Image src="/Type=Image.svg" alt="" width={24} height={24} />
-        </div>
+        <h3>신고 당시 보존본</h3>
+        {title ? <h4>{title}</h4> : null}
+        <p>{body}</p>
+        {report.evidenceImageUrl ? (
+          <div className="admin-chika-talk-detail-evidence">
+            {/* The protected API returns a short-lived evidence URL at runtime. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={report.evidenceImageUrl} alt="신고 당시 첨부 이미지 증거" />
+          </div>
+        ) : null}
+      </div>
+      {report.targetType === "comment" && detail.contextPost ? (
+        <article className="admin-chika-talk-original-post">
+          <span>원문 게시글</span>
+          <h3>
+            {adminChikaTalkRecordString(detail.contextPost, "title") ??
+              "제목을 확인할 수 없습니다."}
+          </h3>
+          <ChikaTalkDetailMeta
+            label="상태"
+            value={adminChikaTalkRecordString(detail.contextPost, "status") ?? "-"}
+          />
+        </article>
+      ) : null}
+    </section>
+  );
+}
+
+function ChikaTalkCurrentContent({
+  detail,
+}: {
+  detail: AdminChikaTalkReportDetailPayload;
+}) {
+  const current = detail.current;
+  const title = adminChikaTalkRecordString(current, "title");
+  const body = adminChikaTalkRecordString(current, "body", "nickname");
+  const status = adminChikaTalkRecordString(current, "status", "moderation_status");
+
+  return (
+    <section className="admin-chika-talk-detail-content" aria-label="현재 콘텐츠">
+      <div className="admin-chika-talk-reported-comment">
+        <span>현재 콘텐츠</span>
+        {current ? (
+          <>
+            {title ? <h3>{title}</h3> : null}
+            <blockquote>{body ?? "현재 내용을 확인할 수 없습니다."}</blockquote>
+            <ChikaTalkDetailMeta label="상태" value={status ?? "-"} />
+            <ChikaTalkDetailMeta
+              label="최근 수정"
+              value={formatAdminChikaTalkDate(
+                adminChikaTalkRecordString(current, "updated_at", "updatedAt"),
+              )}
+            />
+          </>
+        ) : (
+          <p className="admin-chika-talk-detail-missing">
+            현재 콘텐츠는 삭제되었거나 더 이상 조회할 수 없습니다.
+          </p>
+        )}
       </div>
     </section>
   );
 }
 
-function ChikaTalkCommentDetail() {
+function ChikaTalkAuthorEnforcement({
+  detail,
+}: {
+  detail: AdminChikaTalkReportDetailPayload;
+}) {
+  const strikeCount = detail.sanctions?.strike_count;
+  const sanctionSummary = detail.sanctions
+    ? `누적 스트라이크 ${typeof strikeCount === "number" ? strikeCount : 0}회`
+    : "현재 제재 없음";
+
   return (
-    <section className="admin-chika-talk-detail-content" aria-label="신고된 댓글">
-      <article className="admin-chika-talk-original-post">
-        <span>원문 게시글</span>
-        <h3>임플란트 비용이 너무 비싸요... 진짜로?</h3>
-        <ChikaTalkDetailMeta label="작성자" value="user***82" />
-      </article>
-      <div className="admin-chika-talk-detail-divider" aria-hidden="true" />
-      <div className="admin-chika-talk-reported-comment">
-        <span>신고된 댓글</span>
-        <blockquote>
-          저도 거기서 했는데 120만원이면 싼 거예요. 다른 데 가지 마시고 여기로
-          오세요. 원장님이 진짜 잘해요. 강남 ○○치과 추천합니다!
-        </blockquote>
-        <ChikaTalkDetailMeta label="작성자" value="빠른거북이123" />
-        <ChikaTalkDetailMeta label="작성일" value="2026.08.23 21:15" />
-      </div>
+    <section className="admin-chika-talk-report-history">
+      <h3>작성자 제재 이력 {detail.authorActions.length}건</h3>
+      <p className="admin-chika-talk-sanction-summary">{sanctionSummary}</p>
+      <ChikaTalkActionHistoryTable items={detail.authorActions} />
     </section>
   );
 }
@@ -1682,7 +1813,7 @@ function ChikaTalkDetailMeta({ label, value }: { label: string; value: string })
 function ChikaTalkReportHistory({
   items,
 }: {
-  items: ReadonlyArray<ChikaTalkReportHistoryItem>;
+  items: ReadonlyArray<AdminChikaTalkRelatedReport>;
 }) {
   return (
     <section className="admin-chika-talk-report-history">
@@ -1704,16 +1835,64 @@ function ChikaTalkReportHistory({
           </thead>
           <tbody>
             {items.map((item) => (
-              <tr key={`${item.reportedAt}:${item.reporter}`}>
-                <td>{item.reportedAt}</td>
-                <td>{item.reason}</td>
-                <td>{item.reporter}</td>
+              <tr key={item.id}>
+                <td>{formatAdminChikaTalkDate(item.createdAt)}</td>
+                <td>{adminChikaTalkReasonLabel(item.reason)}</td>
+                <td>{item.reporterLabel}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
     </section>
+  );
+}
+
+function ChikaTalkActionHistory({
+  title,
+  items,
+}: {
+  title: string;
+  items: ReadonlyArray<AdminChikaTalkModerationAction>;
+}) {
+  return (
+    <section className="admin-chika-talk-report-history">
+      <h3>{title} {items.length}건</h3>
+      <ChikaTalkActionHistoryTable items={items} />
+    </section>
+  );
+}
+
+function ChikaTalkActionHistoryTable({
+  items,
+}: {
+  items: ReadonlyArray<AdminChikaTalkModerationAction>;
+}) {
+  if (items.length === 0) {
+    return <p className="admin-chika-talk-detail-missing">처리 이력이 없습니다.</p>;
+  }
+  return (
+    <div>
+      <table>
+        <caption className="sr-only">치아톡 운영 처리 이력</caption>
+        <thead>
+          <tr>
+            <th scope="col">처리일시</th>
+            <th scope="col">처리</th>
+            <th scope="col">사유 코드</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item) => (
+            <tr key={item.id}>
+              <td>{formatAdminChikaTalkDate(item.createdAt)}</td>
+              <td>{adminChikaTalkActionLabel(item.action)}</td>
+              <td>{item.reasonCode}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

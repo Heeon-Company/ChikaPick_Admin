@@ -175,6 +175,48 @@ export async function fetchAdminConsole(accessToken: string) {
   return adminFetch<AdminConsolePayload>("/api/v1/admin/console", accessToken);
 }
 
+export async function fetchAdminChikaTalkReports(
+  accessToken: string,
+  filters: {
+    page?: number;
+    pageSize?: number;
+    reason?: AdminChikaTalkReportReason | null;
+    status?: AdminChikaTalkReportStatus;
+    targetType?: AdminChikaTalkReportTargetType | null;
+  } = {},
+) {
+  const params = new URLSearchParams({
+    page: String(filters.page ?? 1),
+    pageSize: String(filters.pageSize ?? 100),
+    status: filters.status ?? "unresolved",
+  });
+  if (filters.reason) params.set("reason", filters.reason);
+  if (filters.targetType) params.set("targetType", filters.targetType);
+  return adminFetch<AdminChikaTalkReportsPayload>(
+    `/api/v1/admin/chika-talk/moderation?${params.toString()}`,
+    accessToken,
+  );
+}
+
+export async function fetchAdminChikaTalkReportDetail(
+  accessToken: string,
+  reportId: string,
+) {
+  return adminFetch<AdminChikaTalkReportDetailPayload>(
+    `/api/v1/admin/chika-talk/moderation/${encodeURIComponent(reportId)}`,
+    accessToken,
+  );
+}
+
+export async function fetchAdminChikaTalkModerationMetrics(
+  accessToken: string,
+) {
+  return adminFetch<AdminChikaTalkModerationMetricsPayload>(
+    "/api/v1/admin/chika-talk/moderation/metrics",
+    accessToken,
+  );
+}
+
 export async function fetchAdminManualHospitalSubmissions(
   accessToken: string,
   page: number,
@@ -1021,6 +1063,14 @@ import type {
   AdminAccountDirectoryPayload,
 } from "./admin-accounts";
 import type { ExternalConnectorDirectoryPayload } from "./external-connectors";
+import type {
+  AdminChikaTalkModerationMetricsPayload,
+  AdminChikaTalkReportDetailPayload,
+  AdminChikaTalkReportReason,
+  AdminChikaTalkReportsPayload,
+  AdminChikaTalkReportStatus,
+  AdminChikaTalkReportTargetType,
+} from "./chika-talk-moderation";
 import type {
   SecretFeedbackFilters,
   SecretFeedbackPayload,

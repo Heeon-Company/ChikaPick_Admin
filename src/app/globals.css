@@ -4018,6 +4018,30 @@ td span {
   opacity: 1;
 }
 
+.admin-chika-talk-refresh {
+  height: 36px;
+  border: 1px solid #d4d6da;
+  border-radius: 8px;
+  background: var(--surface);
+  color: #3b4358;
+  cursor: pointer;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.admin-chika-talk-refresh:hover,
+.admin-chika-talk-refresh:focus-visible {
+  border-color: #023dc7;
+  color: #023dc7;
+}
+
+.admin-chika-talk-refresh:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
 .admin-chika-talk-table-scroll {
   width: 100%;
   min-width: 0;
@@ -4114,9 +4138,15 @@ td span {
   font-weight: 600;
 }
 
-.admin-chika-talk-table td span.is-deleted {
+.admin-chika-talk-table td span.is-dismissed {
   color: #999da8;
   font-weight: 500;
+}
+
+.admin-chika-talk-table td span.is-content_removed,
+.admin-chika-talk-table td span.is-user_sanctioned {
+  color: #b91c1c;
+  font-weight: 600;
 }
 
 .admin-chika-talk-table th:last-child,
@@ -4242,6 +4272,30 @@ td span {
   scrollbar-width: thin;
 }
 
+.admin-chika-talk-detail-state {
+  min-height: 240px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  color: #596072;
+  text-align: center;
+}
+
+.admin-chika-talk-detail-state p {
+  margin: 0;
+}
+
+.admin-chika-talk-detail-state button {
+  height: 36px;
+  border: 1px solid #b8bbc2;
+  border-radius: 8px;
+  background: var(--surface);
+  color: #023dc7;
+  cursor: pointer;
+  padding: 0 16px;
+}
+
 .admin-chika-talk-detail-content,
 .admin-chika-talk-detail-post-info,
 .admin-chika-talk-detail-post-body,
@@ -4340,6 +4394,15 @@ td span {
   overflow-wrap: anywhere;
 }
 
+.admin-chika-talk-detail-post-body h4 {
+  margin: 0;
+  color: #000b26;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+}
+
 .admin-chika-talk-detail-post-body > p {
   margin: 0;
   color: #3b4358;
@@ -4364,6 +4427,22 @@ td span {
 .admin-chika-talk-detail-image-placeholder img {
   width: 24px;
   height: 24px;
+}
+
+.admin-chika-talk-detail-evidence {
+  width: 100%;
+  max-height: 360px;
+  overflow: hidden;
+  border: 1px solid #b8bbc2;
+  border-radius: 12px;
+  background: #f3f4f6;
+}
+
+.admin-chika-talk-detail-evidence img {
+  width: 100%;
+  max-height: 360px;
+  display: block;
+  object-fit: contain;
 }
 
 .admin-chika-talk-original-post {
@@ -4416,6 +4495,14 @@ td span {
 
 .admin-chika-talk-report-history {
   gap: 12px;
+}
+
+.admin-chika-talk-detail-missing,
+.admin-chika-talk-sanction-summary {
+  margin: 0;
+  color: #596072;
+  font-size: 14px;
+  line-height: 20px;
 }
 
 .admin-chika-talk-report-history h3 {
