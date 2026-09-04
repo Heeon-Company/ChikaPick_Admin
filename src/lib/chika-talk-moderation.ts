@@ -14,6 +14,38 @@ export type AdminChikaTalkReportReason =
   | "medical_impersonation"
   | "other";
 
+export type AdminChikaTalkModerationActionName =
+  | "dismiss_report"
+  | "hide_content"
+  | "restore_content"
+  | "warn_user"
+  | "suspend_writes"
+  | "suspend_access"
+  | "ban_user";
+
+export interface AdminChikaTalkModerationActionInput {
+  reportId: string | null;
+  targetType: AdminChikaTalkReportTargetType;
+  targetId: string;
+  action: AdminChikaTalkModerationActionName;
+  reasonCode: string;
+  requestId: string;
+  suspensionSeconds?: number | null;
+}
+
+export interface AdminChikaTalkModerationActionResult {
+  actionId: string;
+  applied: boolean;
+  targetStatus: string;
+  strikeCount: number;
+  requestId: string;
+}
+
+export interface AdminChikaTalkModerationActionPayload {
+  result: AdminChikaTalkModerationActionResult;
+  requestId: string;
+}
+
 export interface AdminChikaTalkReportListItem {
   id: string;
   targetType: AdminChikaTalkReportTargetType;
@@ -81,7 +113,13 @@ export interface AdminChikaTalkReportDetailPayload {
   };
   current: Record<string, unknown> | null;
   author: { displayName: string } | null;
-  contextPost: Record<string, unknown> | null;
+  contextPost: {
+    id: string;
+    title: string;
+    status: string;
+    createdAt: string;
+    authorDisplayName: string;
+  } | null;
   sanctions: Record<string, unknown> | null;
   actions: Array<
     AdminChikaTalkModerationAction & {
@@ -97,11 +135,11 @@ export interface AdminChikaTalkReportDetailPayload {
 }
 
 const reasonLabels: Record<AdminChikaTalkReportReason, string> = {
-  advertising_promotion: "광고 또는 홍보",
-  abuse_defamation: "욕설 및 비방",
+  advertising_promotion: "광고·홍보",
+  abuse_defamation: "욕설·비방",
   personal_information: "개인정보 노출",
   medical_misinformation: "잘못된 의료정보",
-  diagnosis_treatment_directive: "질환 단정·치료 지시",
+  diagnosis_treatment_directive: "질환을 단정하는 내용",
   medical_impersonation: "의사 또는 의료인 사칭",
   other: "기타",
 };
@@ -148,21 +186,19 @@ export function adminChikaTalkActionLabel(action: string) {
 }
 
 export function formatAdminChikaTalkDate(value: string | null | undefined) {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return new Intl.DateTimeFormat("ko-KR", {
-    timeZone: "Asia/Seoul",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  })
-    .format(date)
-    .replace(/\. /g, ".")
-    .replace(/\.$/, "");
+  const parts = adminChikaTalkDateParts(value);
+  return parts
+    ? `${parts.year}.${parts.month}.${parts.day} ${parts.hour}:${parts.minute}`
+    : "-";
+}
+
+export function formatAdminChikaTalkReportDate(
+  value: string | null | undefined,
+) {
+  const parts = adminChikaTalkDateParts(value);
+  return parts
+    ? `${parts.month}.${parts.day} ${parts.hour}:${parts.minute}`
+    : "-";
 }
 
 export function formatAdminChikaTalkQueueAge(seconds: number) {
@@ -185,4 +221,31 @@ export function adminChikaTalkRecordString(
     if (typeof value === "string" && value.trim()) return value.trim();
   }
   return null;
+}
+
+function adminChikaTalkDateParts(value: string | null | undefined) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const values = Object.fromEntries(
+    parts
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value]),
+  );
+  return {
+    year: values.year,
+    month: values.month,
+    day: values.day,
+    hour: values.hour,
+    minute: values.minute,
+  };
 }

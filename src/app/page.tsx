@@ -10,6 +10,7 @@ import remarkGfm from "remark-gfm";
 import { AdminSelect } from "@/components/AdminSelect";
 import { ServiceExpansionRequestsTab } from "@/components/ServiceExpansionRequestsTab";
 import {
+  applyAdminChikaTalkModerationAction,
   approveManualHospitalSubmission,
   assignAdminDentalSalesperson,
   assignAdminPartnerClinicOperator,
@@ -151,7 +152,6 @@ import {
   type ChikapickAccountLookupPayload,
 } from "@/lib/chikapick-accounts";
 import {
-  adminChikaTalkActionLabel,
   adminChikaTalkReasonLabel,
   adminChikaTalkReasonOptions,
   adminChikaTalkRecordString,
@@ -159,7 +159,8 @@ import {
   adminChikaTalkTargetTypeLabel,
   formatAdminChikaTalkDate,
   formatAdminChikaTalkQueueAge,
-  type AdminChikaTalkModerationAction,
+  formatAdminChikaTalkReportDate,
+  type AdminChikaTalkModerationActionName,
   type AdminChikaTalkModerationMetrics,
   type AdminChikaTalkRelatedReport,
   type AdminChikaTalkReportDetailPayload,
@@ -1356,8 +1357,11 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
     useState<AdminChikaTalkReportDetailPayload | null>(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
+  const [isDetailActionPending, setIsDetailActionPending] = useState(false);
+  const [detailActionError, setDetailActionError] = useState<string | null>(null);
   const reportRequestIdRef = useRef(0);
   const detailRequestIdRef = useRef(0);
+  const actionRequestIdsRef = useRef(new Map<string, string>());
 
   const loadReports = useCallback(async () => {
     if (!accessToken) return;
@@ -1403,6 +1407,7 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
       setSelectedReportId(reportId);
       setSelectedReport(null);
       setDetailError(null);
+      setDetailActionError(null);
       setIsDetailLoading(true);
       try {
         const payload = await fetchAdminChikaTalkReportDetail(accessToken, reportId);
@@ -1427,7 +1432,57 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
     setSelectedReportId(null);
     setSelectedReport(null);
     setDetailError(null);
+    setDetailActionError(null);
   }, []);
+
+  const applyDetailAction = useCallback(
+    async (action: Extract<AdminChikaTalkModerationActionName, "dismiss_report" | "hide_content">) => {
+      const detail = selectedReport;
+      if (!detail || detail.report.status !== "unresolved" || isDetailActionPending) {
+        return;
+      }
+      if (
+        action === "hide_content" &&
+        !window.confirm(
+          "이 콘텐츠를 삭제 처리하시겠습니까? 치아톡에서 즉시 숨겨지며 처리 이력이 기록됩니다.",
+        )
+      ) {
+        return;
+      }
+      const requestKey = `${detail.report.id}:${action}`;
+      const requestId =
+        actionRequestIdsRef.current.get(requestKey) ?? crypto.randomUUID();
+      actionRequestIdsRef.current.set(requestKey, requestId);
+      setDetailActionError(null);
+      setIsDetailActionPending(true);
+      try {
+        await applyAdminChikaTalkModerationAction(accessToken, {
+          reportId: detail.report.id,
+          targetType: detail.report.targetType,
+          targetId: detail.report.targetId,
+          action,
+          reasonCode:
+            action === "dismiss_report"
+              ? "no_policy_violation"
+              : detail.report.reason,
+          requestId,
+        });
+        actionRequestIdsRef.current.delete(requestKey);
+        detailRequestIdRef.current += 1;
+        setSelectedReportId(null);
+        setSelectedReport(null);
+        setDetailError(null);
+        await loadReports();
+      } catch (error) {
+        setDetailActionError(
+          error instanceof Error
+            ? error.message
+            : "신고 처리에 실패했습니다. 다시 시도해 주세요.",
+        );
+      } finally {
+        setIsDetailActionPending(false);
+      }
+    }, [accessToken, isDetailActionPending, loadReports, selectedReport]);
 
   useEffect(() => {
     if (!selectedReportId) return;
@@ -1540,7 +1595,7 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
               <th scope="col">신고 콘텐츠</th>
               <th scope="col">유형</th>
               <th scope="col">신고 사유</th>
-              <th scope="col">미처리 신고 수</th>
+              <th scope="col">신고 수</th>
               <th scope="col">최근 신고일</th>
               <th scope="col">상태</th>
               <th scope="col"><span className="sr-only">관리</span></th>
@@ -1604,8 +1659,11 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
           report={selectedReport}
           error={detailError}
           isLoading={isDetailLoading}
+          actionError={detailActionError}
+          isActionPending={isDetailActionPending}
           onClose={closeDetail}
           onRetry={() => void loadDetail(selectedReportId)}
+          onAction={applyDetailAction}
         />
       ) : null}
     </section>
@@ -1616,15 +1674,34 @@ function ChikaTalkReportDetail({
   report,
   error,
   isLoading,
+  actionError,
+  isActionPending,
   onClose,
   onRetry,
+  onAction,
 }: {
   report: AdminChikaTalkReportDetailPayload | null;
   error: string | null;
   isLoading: boolean;
+  actionError: string | null;
+  isActionPending: boolean;
   onClose: () => void;
   onRetry: () => void;
+  onAction: (
+    action: Extract<
+      AdminChikaTalkModerationActionName,
+      "dismiss_report" | "hide_content"
+    >,
+  ) => Promise<void>;
 }) {
+  const canResolve = report?.report.status === "unresolved";
+  const canRemove =
+    report !== null &&
+    canResolve &&
+    report.current !== null &&
+    adminChikaTalkRecordString(report.current, "status") !== "deleted" &&
+    report.report.targetType !== "user";
+
   return (
     <div className="admin-chika-talk-detail-layer">
       <button
@@ -1665,16 +1742,36 @@ function ChikaTalkReportDetail({
           ) : report ? (
             <>
               <ChikaTalkReportedContent detail={report} />
-              <ChikaTalkCurrentContent detail={report} />
-              <ChikaTalkAuthorEnforcement detail={report} />
               <ChikaTalkReportHistory items={report.relatedReports} />
-              <ChikaTalkActionHistory
-                title="이 콘텐츠 처리 이력"
-                items={report.actions}
-              />
             </>
           ) : null}
         </div>
+
+        {report && !isLoading && !error ? (
+          <>
+            {actionError ? (
+              <p className="admin-chika-talk-detail-action-error" role="alert">
+                {actionError}
+              </p>
+            ) : null}
+            <footer className="admin-chika-talk-detail-actions">
+              <button
+                type="button"
+                disabled={!canResolve || isActionPending}
+                onClick={() => void onAction("dismiss_report")}
+              >
+                {isActionPending ? "처리 중..." : "문제없음"}
+              </button>
+              <button
+                type="button"
+                disabled={!canRemove || isActionPending}
+                onClick={() => void onAction("hide_content")}
+              >
+                {isActionPending ? "처리 중..." : "콘텐츠 삭제"}
+              </button>
+            </footer>
+          </>
+        ) : null}
       </aside>
     </div>
   );
@@ -1685,41 +1782,49 @@ function ChikaTalkReportedContent({
 }: {
   detail: AdminChikaTalkReportDetailPayload;
 }) {
+  if (detail.report.targetType === "comment") {
+    return <ChikaTalkReportedComment detail={detail} />;
+  }
+  return <ChikaTalkReportedPost detail={detail} />;
+}
+
+function ChikaTalkReportedPost({
+  detail,
+}: {
+  detail: AdminChikaTalkReportDetailPayload;
+}) {
   const { report } = detail;
   const snapshot = report.snapshot;
   const title = adminChikaTalkRecordString(snapshot, "title");
   const body = adminChikaTalkRecordString(snapshot, "body", "displayName") ??
     "보존된 내용을 확인할 수 없습니다.";
   const createdAt = adminChikaTalkRecordString(snapshot, "createdAt", "created_at");
+  const recentSanctionCount = detail.authorActions.length;
 
   return (
-    <section className="admin-chika-talk-detail-content" aria-label="신고 당시 콘텐츠">
+    <section
+      className="admin-chika-talk-detail-content"
+      aria-label="신고된 게시글"
+    >
       <div className="admin-chika-talk-detail-post-info">
         <div className="admin-chika-talk-detail-badges">
           <span>{adminChikaTalkTargetTypeLabel(report.targetType)}</span>
-          <span>{adminChikaTalkReportStatusLabel(report.status)}</span>
+          {recentSanctionCount > 0 ? (
+            <span className="is-warning">최근 제재 {recentSanctionCount}회</span>
+          ) : null}
         </div>
         <ChikaTalkDetailMeta
           label="작성자"
           value={detail.author?.displayName ?? "탈퇴했거나 확인할 수 없는 사용자"}
         />
         <ChikaTalkDetailMeta
-          label="신고 접수"
-          value={formatAdminChikaTalkDate(report.createdAt)}
-        />
-        <ChikaTalkDetailMeta
-          label="콘텐츠 작성"
+          label="작성일"
           value={formatAdminChikaTalkDate(createdAt)}
         />
-        <ChikaTalkDetailMeta
-          label="신고 사유"
-          value={adminChikaTalkReasonLabel(report.reason)}
-        />
       </div>
-      <div className="admin-chika-talk-detail-divider" aria-hidden="true" />
       <div className="admin-chika-talk-detail-post-body">
-        <h3>신고 당시 보존본</h3>
-        {title ? <h4>{title}</h4> : null}
+        <div className="admin-chika-talk-detail-divider" aria-hidden="true" />
+        <h3>{title ?? "제목을 확인할 수 없습니다."}</h3>
         <p>{body}</p>
         {report.evidenceImageUrl ? (
           <div className="admin-chika-talk-detail-evidence">
@@ -1729,74 +1834,61 @@ function ChikaTalkReportedContent({
           </div>
         ) : null}
       </div>
-      {report.targetType === "comment" && detail.contextPost ? (
-        <article className="admin-chika-talk-original-post">
-          <span>원문 게시글</span>
-          <h3>
-            {adminChikaTalkRecordString(detail.contextPost, "title") ??
-              "제목을 확인할 수 없습니다."}
-          </h3>
-          <ChikaTalkDetailMeta
-            label="상태"
-            value={adminChikaTalkRecordString(detail.contextPost, "status") ?? "-"}
-          />
-        </article>
+      {!detail.current ? (
+        <p className="admin-chika-talk-detail-missing">
+          현재 콘텐츠는 삭제되었거나 더 이상 조회할 수 없습니다.
+        </p>
       ) : null}
     </section>
   );
 }
 
-function ChikaTalkCurrentContent({
+function ChikaTalkReportedComment({
   detail,
 }: {
   detail: AdminChikaTalkReportDetailPayload;
 }) {
-  const current = detail.current;
-  const title = adminChikaTalkRecordString(current, "title");
-  const body = adminChikaTalkRecordString(current, "body", "nickname");
-  const status = adminChikaTalkRecordString(current, "status", "moderation_status");
+  const snapshot = detail.report.snapshot;
+  const body = adminChikaTalkRecordString(snapshot, "body") ??
+    "보존된 내용을 확인할 수 없습니다.";
+  const createdAt = adminChikaTalkRecordString(
+    snapshot,
+    "createdAt",
+    "created_at",
+  );
+  const contextPost = detail.contextPost;
 
   return (
-    <section className="admin-chika-talk-detail-content" aria-label="현재 콘텐츠">
+    <section
+      className="admin-chika-talk-detail-content"
+      aria-label="신고된 댓글 또는 답글"
+    >
+      <article className="admin-chika-talk-original-post">
+        <span>원문 게시글</span>
+        <h3>{contextPost?.title || "제목을 확인할 수 없습니다."}</h3>
+        <ChikaTalkDetailMeta
+          label="작성자"
+          value={contextPost?.authorDisplayName || "확인할 수 없는 사용자"}
+        />
+      </article>
       <div className="admin-chika-talk-reported-comment">
-        <span>현재 콘텐츠</span>
-        {current ? (
-          <>
-            {title ? <h3>{title}</h3> : null}
-            <blockquote>{body ?? "현재 내용을 확인할 수 없습니다."}</blockquote>
-            <ChikaTalkDetailMeta label="상태" value={status ?? "-"} />
-            <ChikaTalkDetailMeta
-              label="최근 수정"
-              value={formatAdminChikaTalkDate(
-                adminChikaTalkRecordString(current, "updated_at", "updatedAt"),
-              )}
-            />
-          </>
-        ) : (
+        <div className="admin-chika-talk-detail-divider" aria-hidden="true" />
+        <span>신고된 댓글</span>
+        <blockquote>{body}</blockquote>
+        <ChikaTalkDetailMeta
+          label="작성자"
+          value={detail.author?.displayName ?? "탈퇴했거나 확인할 수 없는 사용자"}
+        />
+        <ChikaTalkDetailMeta
+          label="작성일"
+          value={formatAdminChikaTalkDate(createdAt)}
+        />
+        {!detail.current ? (
           <p className="admin-chika-talk-detail-missing">
             현재 콘텐츠는 삭제되었거나 더 이상 조회할 수 없습니다.
           </p>
-        )}
+        ) : null}
       </div>
-    </section>
-  );
-}
-
-function ChikaTalkAuthorEnforcement({
-  detail,
-}: {
-  detail: AdminChikaTalkReportDetailPayload;
-}) {
-  const strikeCount = detail.sanctions?.strike_count;
-  const sanctionSummary = detail.sanctions
-    ? `누적 스트라이크 ${typeof strikeCount === "number" ? strikeCount : 0}회`
-    : "현재 제재 없음";
-
-  return (
-    <section className="admin-chika-talk-report-history">
-      <h3>작성자 제재 이력 {detail.authorActions.length}건</h3>
-      <p className="admin-chika-talk-sanction-summary">{sanctionSummary}</p>
-      <ChikaTalkActionHistoryTable items={detail.authorActions} />
     </section>
   );
 }
@@ -1836,7 +1928,7 @@ function ChikaTalkReportHistory({
           <tbody>
             {items.map((item) => (
               <tr key={item.id}>
-                <td>{formatAdminChikaTalkDate(item.createdAt)}</td>
+                <td>{formatAdminChikaTalkReportDate(item.createdAt)}</td>
                 <td>{adminChikaTalkReasonLabel(item.reason)}</td>
                 <td>{item.reporterLabel}</td>
               </tr>
@@ -1845,54 +1937,6 @@ function ChikaTalkReportHistory({
         </table>
       </div>
     </section>
-  );
-}
-
-function ChikaTalkActionHistory({
-  title,
-  items,
-}: {
-  title: string;
-  items: ReadonlyArray<AdminChikaTalkModerationAction>;
-}) {
-  return (
-    <section className="admin-chika-talk-report-history">
-      <h3>{title} {items.length}건</h3>
-      <ChikaTalkActionHistoryTable items={items} />
-    </section>
-  );
-}
-
-function ChikaTalkActionHistoryTable({
-  items,
-}: {
-  items: ReadonlyArray<AdminChikaTalkModerationAction>;
-}) {
-  if (items.length === 0) {
-    return <p className="admin-chika-talk-detail-missing">처리 이력이 없습니다.</p>;
-  }
-  return (
-    <div>
-      <table>
-        <caption className="sr-only">치아톡 운영 처리 이력</caption>
-        <thead>
-          <tr>
-            <th scope="col">처리일시</th>
-            <th scope="col">처리</th>
-            <th scope="col">사유 코드</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item) => (
-            <tr key={item.id}>
-              <td>{formatAdminChikaTalkDate(item.createdAt)}</td>
-              <td>{adminChikaTalkActionLabel(item.action)}</td>
-              <td>{item.reasonCode}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }
 

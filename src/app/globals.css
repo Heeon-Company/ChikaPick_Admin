@@ -4332,7 +4332,7 @@ td span {
   white-space: nowrap;
 }
 
-.admin-chika-talk-detail-badges span:last-child {
+.admin-chika-talk-detail-badges span.is-warning {
   border-color: #fecaca;
   background: #fee2e2;
   color: #b91c1c;
@@ -4394,15 +4394,6 @@ td span {
   overflow-wrap: anywhere;
 }
 
-.admin-chika-talk-detail-post-body h4 {
-  margin: 0;
-  color: #000b26;
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 22px;
-  overflow-wrap: anywhere;
-}
-
 .admin-chika-talk-detail-post-body > p {
   margin: 0;
   color: #3b4358;
@@ -4413,9 +4404,10 @@ td span {
   overflow-wrap: anywhere;
 }
 
-.admin-chika-talk-detail-image-placeholder {
+.admin-chika-talk-detail-evidence {
   width: 100%;
   height: 140px;
+  overflow: hidden;
   border: 1px solid #b8bbc2;
   border-radius: 12px;
   background: #f3f4f6;
@@ -4424,23 +4416,9 @@ td span {
   place-items: center;
 }
 
-.admin-chika-talk-detail-image-placeholder img {
-  width: 24px;
-  height: 24px;
-}
-
-.admin-chika-talk-detail-evidence {
-  width: 100%;
-  max-height: 360px;
-  overflow: hidden;
-  border: 1px solid #b8bbc2;
-  border-radius: 12px;
-  background: #f3f4f6;
-}
-
 .admin-chika-talk-detail-evidence img {
   width: 100%;
-  max-height: 360px;
+  height: 100%;
   display: block;
   object-fit: contain;
 }
@@ -4497,8 +4475,7 @@ td span {
   gap: 12px;
 }
 
-.admin-chika-talk-detail-missing,
-.admin-chika-talk-sanction-summary {
+.admin-chika-talk-detail-missing {
   margin: 0;
   color: #596072;
   font-size: 14px;
@@ -4569,6 +4546,15 @@ td span {
   gap: 12px;
 }
 
+.admin-chika-talk-detail-action-error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 18px;
+  text-align: center;
+}
+
 .admin-chika-talk-detail-actions button {
   height: 48px;
   min-width: 0;
@@ -4598,6 +4584,14 @@ td span {
 .admin-chika-talk-detail-actions button:hover,
 .admin-chika-talk-detail-actions button:focus-visible {
   filter: brightness(0.96);
+}
+
+.admin-chika-talk-detail-actions button:disabled {
+  border-color: #d4d6da;
+  background: #eceef1;
+  color: #999da8;
+  cursor: not-allowed;
+  filter: none;
 }
 
 @media (max-width: 760px) {

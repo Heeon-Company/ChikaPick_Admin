@@ -7,7 +7,9 @@ import {
   adminChikaTalkRecordString,
   adminChikaTalkReportStatusLabel,
   adminChikaTalkTargetTypeLabel,
+  formatAdminChikaTalkDate,
   formatAdminChikaTalkQueueAge,
+  formatAdminChikaTalkReportDate,
 } from "./chika-talk-moderation.ts";
 
 test("ChikaTalk moderation labels present API values in Korean", () => {
@@ -25,4 +27,12 @@ test("ChikaTalk moderation helpers preserve safe fallbacks", () => {
     "신고 내용",
   );
   assert.equal(adminChikaTalkRecordString(null, "body"), null);
+  assert.equal(
+    formatAdminChikaTalkDate("2026-08-23T11:41:00.000Z"),
+    "2026.08.23 20:41",
+  );
+  assert.equal(
+    formatAdminChikaTalkReportDate("2026-08-23T16:32:00.000Z"),
+    "08.24 01:32",
+  );
 });

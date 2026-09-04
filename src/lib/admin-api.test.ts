@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
+  applyAdminChikaTalkModerationAction,
   approveManualHospitalSubmission,
   assignAdminDentalSalesperson,
   assignAdminPartnerClinicOperator,
@@ -59,7 +60,7 @@ import {
 } from "./admin-api.ts";
 import { emptyDentalSalesFilters } from "./dental-sales.ts";
 
-test("ChikaTalk moderation API requests protected list, detail, and metrics routes", async () => {
+test("ChikaTalk moderation API requests protected read and action routes", async () => {
   const calls: Array<{ input: string | URL | Request; init?: RequestInit }> = [];
   const originalFetch = globalThis.fetch;
   process.env.NEXT_PUBLIC_CHIKAPICK_API_BASE_URL = "https://api.example.com";
@@ -81,6 +82,14 @@ test("ChikaTalk moderation API requests protected list, detail, and metrics rout
     });
     await fetchAdminChikaTalkReportDetail("access-token", "report/id");
     await fetchAdminChikaTalkModerationMetrics("access-token");
+    await applyAdminChikaTalkModerationAction("access-token", {
+      reportId: "00000000-0000-4000-8000-000000000001",
+      targetType: "post",
+      targetId: "00000000-0000-4000-8000-000000000002",
+      action: "hide_content",
+      reasonCode: "medical_misinformation",
+      requestId: "00000000-0000-4000-8000-000000000003",
+    });
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -97,6 +106,19 @@ test("ChikaTalk moderation API requests protected list, detail, and metrics rout
     calls[2]?.input,
     "https://api.example.com/api/v1/admin/chika-talk/moderation/metrics",
   );
+  assert.equal(
+    calls[3]?.input,
+    "https://api.example.com/api/v1/admin/chika-talk/moderation/actions",
+  );
+  assert.equal(calls[3]?.init?.method, "POST");
+  assert.deepEqual(JSON.parse(calls[3]?.init?.body as string), {
+    reportId: "00000000-0000-4000-8000-000000000001",
+    targetType: "post",
+    targetId: "00000000-0000-4000-8000-000000000002",
+    action: "hide_content",
+    reasonCode: "medical_misinformation",
+    requestId: "00000000-0000-4000-8000-000000000003",
+  });
   for (const call of calls) {
     assert.equal(
       (call.init?.headers as Record<string, string>).Authorization,

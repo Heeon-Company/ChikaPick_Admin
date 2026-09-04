@@ -217,6 +217,20 @@ export async function fetchAdminChikaTalkModerationMetrics(
   );
 }
 
+export async function applyAdminChikaTalkModerationAction(
+  accessToken: string,
+  input: AdminChikaTalkModerationActionInput,
+) {
+  return adminFetch<AdminChikaTalkModerationActionPayload>(
+    "/api/v1/admin/chika-talk/moderation/actions",
+    accessToken,
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+  );
+}
+
 export async function fetchAdminManualHospitalSubmissions(
   accessToken: string,
   page: number,
@@ -1064,6 +1078,8 @@ import type {
 } from "./admin-accounts";
 import type { ExternalConnectorDirectoryPayload } from "./external-connectors";
 import type {
+  AdminChikaTalkModerationActionInput,
+  AdminChikaTalkModerationActionPayload,
   AdminChikaTalkModerationMetricsPayload,
   AdminChikaTalkReportDetailPayload,
   AdminChikaTalkReportReason,
