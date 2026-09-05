@@ -647,6 +647,34 @@ export async function uploadAdminDentalpediaImage(
   return upload;
 }
 
+export async function uploadAdminDentalpediaVideo(
+  accessToken: string,
+  file: File,
+) {
+  const { upload } = await adminFetch<{ upload: AdminDentalpediaUpload }>(
+    "/api/v1/admin/dentalpedia/video-uploads",
+    accessToken,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        fileName: file.name,
+        contentType: file.type,
+        sizeBytes: file.size,
+      }),
+    },
+  );
+  const result = await createSupabaseBrowserClient()
+    .storage.from(upload.bucket)
+    .uploadToSignedUrl(upload.path, upload.token, file, {
+      contentType: file.type,
+      upsert: false,
+    });
+  if (result.error) {
+    throw new Error("영상을 업로드하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+  }
+  return upload;
+}
+
 export async function createAdminDentalpediaArticle(
   accessToken: string,
   input: AdminDentalpediaArticleInput,

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  dentalpediaVideoFileError,
   isSupportedYoutubeUrl,
   validateDentalpediaVideo,
   type AdminDentalpediaVideoInput,
@@ -10,13 +11,22 @@ import {
 const validVideo: AdminDentalpediaVideoInput = {
   category: "implant",
   description: "임플란트 관리 방법을 알려드립니다.",
+  homeCategory: "treatment-guide",
+  homeOrder: 2,
+  homeTitle: "임플란트 상담 전 확인할 기준",
+  homeVisible: true,
   isVisible: true,
+  isRecommended: true,
   publishAt: "2026-09-05T04:00:00.000Z",
   status: "published",
   tags: ["임플란트"],
   thumbnailImageAlt: "임플란트 관리 영상",
   thumbnailImagePath: "admin/admin-1/thumbnail.png",
   title: "임플란트 수명 늘리기",
+  videoContentType: null,
+  videoFileName: null,
+  videoFilePath: null,
+  videoSizeBytes: null,
   videoUrl: "https://youtu.be/dQw4w9WgXcQ",
 };
 
@@ -48,8 +58,46 @@ test("published video requires complete patient-facing content", () => {
     "썸네일 이미지를 등록해 주세요.",
   );
   assert.equal(
+    validateDentalpediaVideo({ ...validVideo, homeTitle: "" }, true),
+    "썸네일 제목을 입력해 주세요.",
+  );
+  assert.equal(
     validateDentalpediaVideo({ ...validVideo, category: null }, true),
     "카테고리를 선택해 주세요.",
+  );
+});
+
+test("published video accepts an uploaded video without a YouTube URL", () => {
+  assert.equal(
+    validateDentalpediaVideo(
+      {
+        ...validVideo,
+        videoContentType: "video/mp4",
+        videoFileName: "guide.mp4",
+        videoFilePath: "admin/admin-1/guide.mp4",
+        videoSizeBytes: 1024,
+        videoUrl: null,
+      },
+      true,
+    ),
+    null,
+  );
+});
+
+test("video file selection accepts MP4/WebM through 50MB", () => {
+  assert.equal(
+    dentalpediaVideoFileError(
+      new File([new Uint8Array(1024)], "guide.mp4", { type: "video/mp4" }),
+    ),
+    null,
+  );
+  assert.match(
+    dentalpediaVideoFileError(
+      new File([new Uint8Array(10)], "guide.mov", {
+        type: "video/quicktime",
+      }),
+    ) ?? "",
+    /MP4 또는 WebM/,
   );
 });
 

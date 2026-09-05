@@ -289,7 +289,7 @@ const primaryTabs = [
   // 전문의 소견 관련 코드
   // { id: "consultations", label: "전문의 소견 운영", icon: "/Type=Response.svg" },
   { id: "secret-feedback", label: "시크릿 피드백", icon: "/Type=Opinion.svg" },
-  { id: "information-upload", label: "정보 업로드", icon: "/Type=Dashboard.svg" },
+  { id: "information-upload", label: "치카피디아", icon: "/Type=Dashboard.svg" },
   { id: "chika-talk", label: "치아톡 관리", icon: "/Type=Dashboard.svg" },
   { id: "service-expansion-requests", label: "서비스 확대 요청 관리", icon: "/Type=Dashboard.svg" },
   { id: "chikapick-accounts", label: "치카픽 계정 조회", icon: "/Type=Family.svg" },
@@ -1064,7 +1064,7 @@ export default function AdminHome() {
                     : activePrimaryTab === "memberships"
                       ? "치카픽 멤버십 관리"
                       : activePrimaryTab === "information-upload"
-                        ? "덴탈피디아"
+                        ? "치카피디아"
                       : primaryTabs.find((tab) => tab.id === activePrimaryTab)?.label}
                 </h1>
                 {activePrimaryTab === "dental-sales" ? <DentalSalesInfoTooltip /> : null}
