@@ -175,6 +175,10 @@ import type {
   AdminDentalpediaArticleInput,
   AdminDentalpediaUpload,
 } from "./dentalpedia.ts";
+import type {
+  AdminDentalpediaVideo,
+  AdminDentalpediaVideoInput,
+} from "./dentalpedia-video.ts";
 import type { AdminTermPreview } from "./admin-platform-operations.ts";
 
 export async function fetchAdminConsole(accessToken: string) {
@@ -671,6 +675,39 @@ export async function updateAdminDentalpediaArticle(
 ) {
   return adminFetch<AdminActionResult & { article: AdminDentalpediaArticle }>(
     `/api/v1/admin/dentalpedia/articles/${encodeURIComponent(articleId)}`,
+    accessToken,
+    { method: "PATCH", body: JSON.stringify(input) },
+  );
+}
+
+export async function createAdminDentalpediaVideo(
+  accessToken: string,
+  input: AdminDentalpediaVideoInput,
+) {
+  return adminFetch<AdminActionResult & { video: AdminDentalpediaVideo }>(
+    "/api/v1/admin/dentalpedia/videos",
+    accessToken,
+    { method: "POST", body: JSON.stringify(input) },
+  );
+}
+
+export async function fetchAdminDentalpediaVideo(
+  accessToken: string,
+  videoId: string,
+) {
+  return adminFetch<{ video: AdminDentalpediaVideo }>(
+    `/api/v1/admin/dentalpedia/videos/${encodeURIComponent(videoId)}`,
+    accessToken,
+  );
+}
+
+export async function updateAdminDentalpediaVideo(
+  accessToken: string,
+  videoId: string,
+  input: AdminDentalpediaVideoInput,
+) {
+  return adminFetch<AdminActionResult & { video: AdminDentalpediaVideo }>(
+    `/api/v1/admin/dentalpedia/videos/${encodeURIComponent(videoId)}`,
     accessToken,
     { method: "PATCH", body: JSON.stringify(input) },
   );
