@@ -169,6 +169,12 @@ export interface ManualHospitalApprovalResult extends AdminActionResult {
 }
 
 import { adminApiBaseUrl } from "./public-env.ts";
+import { createSupabaseBrowserClient } from "./supabase.ts";
+import type {
+  AdminDentalpediaArticle,
+  AdminDentalpediaArticleInput,
+  AdminDentalpediaUpload,
+} from "./dentalpedia.ts";
 import type { AdminTermPreview } from "./admin-platform-operations.ts";
 
 export async function fetchAdminConsole(accessToken: string) {
@@ -606,6 +612,67 @@ export async function fetchAdminMembershipManagement(
   return adminFetch<AdminMembershipManagementPayload>(
     `/api/v1/admin/memberships?${params.toString()}`,
     accessToken,
+  );
+}
+
+export async function uploadAdminDentalpediaImage(
+  accessToken: string,
+  file: File,
+) {
+  const { upload } = await adminFetch<{ upload: AdminDentalpediaUpload }>(
+    "/api/v1/admin/dentalpedia/uploads",
+    accessToken,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        fileName: file.name,
+        contentType: file.type,
+        sizeBytes: file.size,
+      }),
+    },
+  );
+  const result = await createSupabaseBrowserClient()
+    .storage.from(upload.bucket)
+    .uploadToSignedUrl(upload.path, upload.token, file, {
+      contentType: file.type,
+      upsert: false,
+    });
+  if (result.error) {
+    throw new Error("이미지를 업로드하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+  }
+  return upload;
+}
+
+export async function createAdminDentalpediaArticle(
+  accessToken: string,
+  input: AdminDentalpediaArticleInput,
+) {
+  return adminFetch<AdminActionResult & { article: AdminDentalpediaArticle }>(
+    "/api/v1/admin/dentalpedia/articles",
+    accessToken,
+    { method: "POST", body: JSON.stringify(input) },
+  );
+}
+
+export async function fetchAdminDentalpediaArticle(
+  accessToken: string,
+  articleId: string,
+) {
+  return adminFetch<{ article: AdminDentalpediaArticle }>(
+    `/api/v1/admin/dentalpedia/articles/${encodeURIComponent(articleId)}`,
+    accessToken,
+  );
+}
+
+export async function updateAdminDentalpediaArticle(
+  accessToken: string,
+  articleId: string,
+  input: AdminDentalpediaArticleInput,
+) {
+  return adminFetch<AdminActionResult & { article: AdminDentalpediaArticle }>(
+    `/api/v1/admin/dentalpedia/articles/${encodeURIComponent(articleId)}`,
+    accessToken,
+    { method: "PATCH", body: JSON.stringify(input) },
   );
 }
 

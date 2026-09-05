@@ -13219,6 +13219,25 @@ td span {
   white-space: nowrap;
 }
 
+.admin-information-article-tags button.is-tag {
+  border: 0;
+  background: #f0fdf4;
+  color: #0f766e;
+  font-weight: 600;
+}
+
+.admin-information-article-tags input {
+  width: 92px;
+  height: 23px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  outline: 0;
+  padding: 2px 7px;
+  color: #1e293b;
+  font: inherit;
+  font-size: 12px;
+}
+
 .admin-information-article-slug {
   width: 100%;
   min-width: 0;
@@ -13494,6 +13513,42 @@ td span {
   outline: 0;
 }
 
+.admin-information-article-content-editor {
+  min-height: 360px;
+  resize: vertical;
+  font: 400 15px/1.65 "Pretendard", ui-sans-serif, system-ui, sans-serif;
+  white-space: pre-wrap;
+}
+
+.admin-information-article-feedback,
+.admin-information-article-loading {
+  width: 100%;
+  margin: 0;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  background: #f0fdf4;
+  color: #166534;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.admin-information-article-feedback.is-error {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.admin-information-article-loading {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  border-color: #e2e8f0;
+  background: #fff;
+  color: #64748b;
+}
+
 .admin-information-article-content h3,
 .admin-information-article-content p,
 .admin-information-article-content ol,
@@ -13715,6 +13770,59 @@ td span {
   font-weight: 600;
   line-height: normal;
   white-space: nowrap;
+}
+
+.admin-information-article-actions button:disabled,
+.admin-information-article-publish-grid input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.admin-information-article-markdown {
+  width: 100%;
+  color: #334155;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.admin-information-article-markdown > *:first-child {
+  margin-top: 0;
+}
+
+.admin-information-article-markdown h2,
+.admin-information-article-markdown h3 {
+  margin: 18px 0 8px;
+  color: #1e293b;
+}
+
+.admin-information-article-markdown p,
+.admin-information-article-markdown ol,
+.admin-information-article-markdown ul,
+.admin-information-article-markdown blockquote {
+  margin: 8px 0;
+}
+
+.admin-information-article-markdown-image {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.admin-information-article-markdown-image img {
+  object-fit: cover;
+}
+
+.admin-information-article-preview-disclaimer {
+  display: block;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #64748b;
+  padding: 10px;
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .admin-information-article-actions > div button:first-child {

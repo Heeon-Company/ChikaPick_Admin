@@ -1205,7 +1205,7 @@ export default function AdminHome() {
           ) : activePrimaryTab === "secret-feedback" ? (
             <SecretFeedbackTab accessToken={session?.access_token ?? ""} />
           ) : activePrimaryTab === "information-upload" ? (
-            <InformationUploadTab />
+            <InformationUploadTab accessToken={session?.access_token ?? ""} />
           ) : activePrimaryTab === "service-expansion-requests" ? (
             <ServiceExpansionRequestsTab accessToken={session?.access_token ?? ""} />
           ) : activePrimaryTab === "chikapick-accounts" ? (
