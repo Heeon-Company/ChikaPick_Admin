@@ -12693,3 +12693,322 @@ td span {
     border-width: 6px;
   }
 }
+
+/* Figma 6916:53548 — fluid Dentalpedia information-upload surface. */
+.admin-workspace-heading--information-upload h1 {
+  font-weight: 700;
+  letter-spacing: -0.48px;
+}
+
+.admin-workspace-heading--information-upload p {
+  color: var(--text-secondary);
+}
+
+.admin-information-upload {
+  width: 100%;
+  min-width: 0;
+  color: var(--text-primary);
+  font-family: "Pretendard", ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+.admin-information-upload-card {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
+}
+
+.admin-information-upload-tabs {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-information-upload-tabs button {
+  min-height: 40px;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 9px 16px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: -0.28px;
+  white-space: nowrap;
+}
+
+.admin-information-upload-tabs button.is-active {
+  border-color: var(--text-primary);
+  background: var(--text-primary);
+  color: #fff;
+}
+
+.admin-information-upload-tabs button:focus-visible,
+.admin-information-upload-actions button:focus-visible,
+.admin-information-upload-visibility > button:focus-visible,
+.admin-information-upload-dropzone:focus-within {
+  outline: 2px solid var(--chika-secondary-4);
+  outline-offset: 2px;
+}
+
+.admin-information-upload-form {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.admin-information-upload-field {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-information-upload-field > span,
+.admin-information-upload-visibility strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: -0.28px;
+}
+
+.admin-information-upload-field > input,
+.admin-information-upload-field > textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  outline: 0;
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 0 14px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: -0.28px;
+}
+
+.admin-information-upload-field > input {
+  height: 48px;
+}
+
+.admin-information-upload-field > textarea {
+  height: 120px;
+  resize: vertical;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+.admin-information-upload-field > input::placeholder,
+.admin-information-upload-field > textarea::placeholder {
+  color: var(--text-quaternary);
+  opacity: 1;
+}
+
+.admin-information-upload-field > input:focus,
+.admin-information-upload-field > textarea:focus {
+  border-color: var(--chika-secondary-6);
+  box-shadow: 0 0 0 2px rgba(2, 61, 199, 0.1);
+}
+
+.admin-information-upload-dropzone {
+  width: 100%;
+  min-width: 0;
+  height: 160px;
+  border: 1px dashed #d1d5db;
+  border-radius: 12px;
+  background: #f9fafb;
+  color: var(--text-quaternary);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+  text-align: center;
+}
+
+.admin-information-upload-dropzone:hover {
+  border-color: var(--chika-secondary-4);
+  background: var(--chika-secondary-0);
+}
+
+.admin-information-upload-dropzone input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.admin-information-upload-dropzone img {
+  display: block;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+}
+
+.admin-information-upload-dropzone strong {
+  max-width: 100%;
+  color: var(--text-quaternary);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: -0.28px;
+  overflow-wrap: anywhere;
+}
+
+.admin-information-upload-dropzone small {
+  color: var(--text-quaternary);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 18px;
+}
+
+.admin-information-upload-category .admin-select-button {
+  height: 48px;
+  min-height: 48px;
+  border-color: #e5e7eb;
+  border-radius: 10px;
+  color: var(--text-quaternary);
+  padding: 0 14px;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: -0.28px;
+}
+
+.admin-information-upload-category.is-selected .admin-select-button {
+  color: var(--text-primary);
+}
+
+.admin-information-upload-visibility {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.admin-information-upload-visibility > span {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-information-upload-visibility strong,
+.admin-information-upload-visibility small {
+  display: block;
+}
+
+.admin-information-upload-visibility small {
+  color: var(--text-quaternary);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 18px;
+}
+
+.admin-information-upload-visibility > button {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  flex: 0 0 44px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--chika-base-3);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.admin-information-upload-visibility > button > span {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #fff;
+  transition: left 160ms ease;
+}
+
+.admin-information-upload-visibility > button.is-active {
+  background: var(--text-primary);
+}
+
+.admin-information-upload-visibility > button.is-active > span {
+  left: 24px;
+}
+
+.admin-information-upload-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.admin-information-upload-actions button {
+  height: 48px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 0 18px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: -0.28px;
+  white-space: nowrap;
+}
+
+.admin-information-upload-actions button:last-child {
+  border-color: var(--text-primary);
+  background: var(--text-primary);
+  color: #fff;
+}
+
+@media (max-width: 760px) {
+  .admin-information-upload-card {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-information-upload-card {
+    padding: 16px;
+  }
+
+  .admin-information-upload-dropzone {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .admin-information-upload-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-information-upload-actions button {
+    width: 100%;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+}

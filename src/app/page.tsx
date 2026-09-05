@@ -9,6 +9,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { AdminSelect } from "@/components/AdminSelect";
+import { InformationUploadTab } from "@/components/InformationUploadTab";
 import { ServiceExpansionRequestsTab } from "@/components/ServiceExpansionRequestsTab";
 import {
   applyAdminChikaTalkModerationAction,
@@ -288,6 +289,7 @@ const primaryTabs = [
   // 전문의 소견 관련 코드
   // { id: "consultations", label: "전문의 소견 운영", icon: "/Type=Response.svg" },
   { id: "secret-feedback", label: "시크릿 피드백", icon: "/Type=Opinion.svg" },
+  { id: "information-upload", label: "정보 업로드", icon: "/Type=Dashboard.svg" },
   { id: "chika-talk", label: "치아톡 관리", icon: "/Type=Dashboard.svg" },
   { id: "service-expansion-requests", label: "서비스 확대 요청 관리", icon: "/Type=Dashboard.svg" },
   { id: "chikapick-accounts", label: "치카픽 계정 조회", icon: "/Type=Family.svg" },
@@ -317,6 +319,7 @@ const primaryTabContentLayouts: Record<PrimaryAdminTab, AdminContentLayout> = {
   // 전문의 소견 관련 코드
   // consultations: "fluid",
   "secret-feedback": "compact",
+  "information-upload": "fluid",
   "service-expansion-requests": "fluid",
   "chikapick-accounts": "fluid",
   "partner-accounts": "fluid",
@@ -349,6 +352,8 @@ const primaryTabDescriptions: Record<PrimaryAdminTab, string> = {
   // consultations:
   //   "전문의 소견 요청과 답변 상태를 전체 치과 기준으로 조회합니다.",
   "secret-feedback": "어드민 관리자에게만 전송되는 시크릿 피드백 입니다.",
+  "information-upload":
+    "HOME 화면에 노출될 정보, 게시글, 컬럼을 등록할 수 있는 화면",
   "service-expansion-requests":
     "사용자들이 요청한 예약 가능 지역과 치과 제휴 요청을 확인하고 서비스 확대 우선순위를 관리합니다.",
   "chikapick-accounts":
@@ -1016,6 +1021,7 @@ export default function AdminHome() {
               activePrimaryTab === "license-review" ||
               activePrimaryTab === "chika-talk" ||
               activePrimaryTab === "secret-feedback" ||
+              activePrimaryTab === "information-upload" ||
               activePrimaryTab === "chikapick-accounts" ||
               activePrimaryTab === "partner-accounts" ||
               activePrimaryTab === "memberships" ||
@@ -1033,6 +1039,10 @@ export default function AdminHome() {
             }${
               activePrimaryTab === "secret-feedback"
                 ? " admin-workspace-heading--secret-feedback"
+                : ""
+            }${
+              activePrimaryTab === "information-upload"
+                ? " admin-workspace-heading--information-upload"
                 : ""
             }${
               activePrimaryTab === "partner-accounts"
@@ -1053,6 +1063,8 @@ export default function AdminHome() {
                       : "파트너스 계정 조회"
                     : activePrimaryTab === "memberships"
                       ? "치카픽 멤버십 관리"
+                      : activePrimaryTab === "information-upload"
+                        ? "덴탈피디아"
                       : primaryTabs.find((tab) => tab.id === activePrimaryTab)?.label}
                 </h1>
                 {activePrimaryTab === "dental-sales" ? <DentalSalesInfoTooltip /> : null}
@@ -1192,6 +1204,8 @@ export default function AdminHome() {
             <ChikaTalkManagementTab accessToken={session?.access_token ?? ""} />
           ) : activePrimaryTab === "secret-feedback" ? (
             <SecretFeedbackTab accessToken={session?.access_token ?? ""} />
+          ) : activePrimaryTab === "information-upload" ? (
+            <InformationUploadTab />
           ) : activePrimaryTab === "service-expansion-requests" ? (
             <ServiceExpansionRequestsTab accessToken={session?.access_token ?? ""} />
           ) : activePrimaryTab === "chikapick-accounts" ? (
