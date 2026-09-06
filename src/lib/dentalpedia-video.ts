@@ -1,13 +1,4 @@
-export type DentalpediaVideoCategory =
-  | "oral-care"
-  | "implant"
-  | "general-care"
-  | "cosmetic"
-  | "orthodontics"
-  | "cavity"
-  | "root-canal"
-  | "children"
-  | "other";
+export type DentalpediaVideoCategory = string;
 export type DentalpediaVideoStatus = "draft" | "published";
 export type DentalpediaVideoHomeCategory =
   | "treatment-guide"

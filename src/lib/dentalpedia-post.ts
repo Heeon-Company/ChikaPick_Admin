@@ -1,9 +1,4 @@
-export type DentalpediaPostCategory =
-  | "oral-care"
-  | "implant"
-  | "general-care"
-  | "cosmetic"
-  | "orthodontics";
+export type DentalpediaPostCategory = string;
 export type DentalpediaPostType = "single" | "carousel";
 export type DentalpediaPostStatus = "draft" | "published";
 

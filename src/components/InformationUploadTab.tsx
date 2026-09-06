@@ -10,7 +10,10 @@ import type {
 } from "react";
 
 import { AdminSelect } from "@/components/AdminSelect";
-import { DentalpediaArticleEditor } from "@/components/DentalpediaArticleEditor";
+import {
+  ColumnCategoryManagementDialog,
+  DentalpediaArticleEditor,
+} from "@/components/DentalpediaArticleEditor";
 import {
   DentalpediaInformationTypeTabs,
   DentalpediaWorkspaceHeading,
@@ -20,6 +23,7 @@ import { DentalpediaPostEditor } from "@/components/DentalpediaPostEditor";
 import {
   createAdminDentalpediaVideo,
   fetchAdminDentalpediaVideo,
+  fetchAdminDentalpediaCategories,
   fetchDentalpediaRelatedContentOptions,
   updateAdminDentalpediaVideo,
   uploadAdminDentalpediaImage,
@@ -40,23 +44,13 @@ import {
   type DentalpediaVideoExposurePriority,
   type DentalpediaVideoStatus,
 } from "@/lib/dentalpedia-video";
+import type { AdminDentalpediaCategory } from "@/lib/dentalpedia-category";
 
 type InformationCategory = "" | DentalpediaVideoCategory;
 type PreviewMode = "home" | "detail";
 type PublishMode = "immediate" | "scheduled";
 
 const videoDraftStorageKey = "chikapick.admin.dentalpedia.currentVideoId";
-
-const informationCategories: ReadonlyArray<{
-  label: string;
-  value: DentalpediaVideoCategory;
-}> = [
-  { value: "oral-care", label: "구강 관리" },
-  { value: "implant", label: "임플란트" },
-  { value: "general-care", label: "일반 진료" },
-  { value: "cosmetic", label: "미백·심미" },
-  { value: "orthodontics", label: "교정" },
-];
 
 const exposurePriorities: ReadonlyArray<{
   label: string;
@@ -69,19 +63,25 @@ const exposurePriorities: ReadonlyArray<{
 
 type ArticleEditorProps = {
   accessToken: string;
+  categories: AdminDentalpediaCategory[];
   informationType: DentalpediaInformationType;
+  onManageCategories: () => void;
   onInformationTypeChange: (type: DentalpediaInformationType) => void;
 };
 
 function ArticleEditor({
   accessToken,
+  categories,
   informationType,
+  onManageCategories,
   onInformationTypeChange,
 }: ArticleEditorProps) {
   return (
     <DentalpediaArticleEditor
       accessToken={accessToken}
+      categories={categories}
       informationType={informationType}
+      onManageCategories={onManageCategories}
       onInformationTypeChange={onInformationTypeChange}
     />
   );
@@ -90,6 +90,9 @@ function ArticleEditor({
 export function InformationUploadTab({ accessToken }: { accessToken: string }) {
   const [informationType, setInformationType] =
     useState<DentalpediaInformationType>("video");
+  const [categories, setCategories] = useState<AdminDentalpediaCategory[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [videoId, setVideoId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<InformationCategory>("");
@@ -138,6 +141,35 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
     message: string;
     tone: "error" | "success";
   } | null>(null);
+
+  useEffect(() => {
+    if (!accessToken) {
+      const timer = window.setTimeout(() => setCategoriesLoading(false), 0);
+      return () => window.clearTimeout(timer);
+    }
+    let active = true;
+    fetchAdminDentalpediaCategories(accessToken)
+      .then((payload) => {
+        if (active) setCategories(payload.categories);
+      })
+      .catch((error) => {
+        if (active) {
+          setFeedback({
+            tone: "error",
+            message:
+              error instanceof Error
+                ? error.message
+                : "카테고리를 불러오지 못했습니다.",
+          });
+        }
+      })
+      .finally(() => {
+        if (active) setCategoriesLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [accessToken]);
 
   useEffect(() => {
     const savedId = window.localStorage.getItem(videoDraftStorageKey);
@@ -448,7 +480,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
   const selectedVideoName = videoFile?.name ?? videoFileName;
   const selectedVideoSize = videoFile?.size ?? videoSizeBytes;
   const categoryLabel =
-    informationCategories.find((option) => option.value === category)?.label ??
+    categories.find((option) => option.code === category)?.displayName ??
     "카테고리";
   const urlState = url.trim()
     ? isSupportedYoutubeUrl(url)
@@ -531,21 +563,25 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                         <strong>카테고리</strong>
                         <b aria-hidden>*</b>
                       </span>
-                      <button disabled type="button" title="카테고리 관리는 준비 중입니다.">
+                      <button
+                        disabled={categoriesLoading || saving}
+                        onClick={() => setCategoryDialogOpen(true)}
+                        type="button"
+                      >
                         카테고리 관리
                       </button>
                     </div>
                     <div className="admin-information-video-category-chips">
-                      {informationCategories.map((option) => (
+                      {categories.filter((option) => option.isActive || option.code === category).map((option) => (
                         <button
-                          aria-pressed={category === option.value}
-                          className={category === option.value ? "is-active" : undefined}
-                          disabled={loadingDraft || saving}
-                          key={option.value}
-                          onClick={() => setCategory(option.value)}
+                          aria-pressed={category === option.code}
+                          className={category === option.code ? "is-active" : undefined}
+                          disabled={categoriesLoading || loadingDraft || saving}
+                          key={option.id}
+                          onClick={() => setCategory(option.code)}
                           type="button"
                         >
-                          {option.label}
+                          {option.displayName}
                         </button>
                       ))}
                     </div>
@@ -927,17 +963,29 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
         ) : isPost ? (
           <DentalpediaPostEditor
             accessToken={accessToken}
+            categories={categories}
             informationType={informationType}
+            onManageCategories={() => setCategoryDialogOpen(true)}
             onInformationTypeChange={setInformationType}
           />
         ) : (
           <ArticleEditor
             accessToken={accessToken}
+            categories={categories}
             informationType={informationType}
+            onManageCategories={() => setCategoryDialogOpen(true)}
             onInformationTypeChange={setInformationType}
           />
         )}
       </div>
+      {categoryDialogOpen ? (
+        <ColumnCategoryManagementDialog
+          accessToken={accessToken}
+          categories={categories}
+          onCategoriesChange={setCategories}
+          onClose={() => setCategoryDialogOpen(false)}
+        />
+      ) : null}
     </section>
   );
 }

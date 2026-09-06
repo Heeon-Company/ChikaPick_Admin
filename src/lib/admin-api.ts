@@ -184,6 +184,10 @@ import type {
   AdminDentalpediaPost,
   AdminDentalpediaPostInput,
 } from "./dentalpedia-post.ts";
+import type {
+  AdminDentalpediaCategory,
+  AdminDentalpediaCategoryInput,
+} from "./dentalpedia-category.ts";
 import type { AdminTermPreview } from "./admin-platform-operations.ts";
 
 export async function fetchAdminConsole(accessToken: string) {
@@ -650,6 +654,59 @@ export async function uploadAdminDentalpediaImage(
     throw new Error("이미지를 업로드하지 못했습니다. 잠시 후 다시 시도해 주세요.");
   }
   return upload;
+}
+
+export async function fetchAdminDentalpediaCategories(accessToken: string) {
+  return adminFetch<{ categories: AdminDentalpediaCategory[] }>(
+    "/api/v1/admin/dentalpedia/categories",
+    accessToken,
+  );
+}
+
+export async function createAdminDentalpediaCategory(
+  accessToken: string,
+  input: AdminDentalpediaCategoryInput,
+) {
+  return adminFetch<AdminActionResult & { category: AdminDentalpediaCategory }>(
+    "/api/v1/admin/dentalpedia/categories",
+    accessToken,
+    { method: "POST", body: JSON.stringify(input) },
+  );
+}
+
+export async function updateAdminDentalpediaCategory(
+  accessToken: string,
+  categoryId: string,
+  input: AdminDentalpediaCategoryInput,
+) {
+  return adminFetch<AdminActionResult & { category: AdminDentalpediaCategory }>(
+    `/api/v1/admin/dentalpedia/categories/${encodeURIComponent(categoryId)}`,
+    accessToken,
+    { method: "PATCH", body: JSON.stringify(input) },
+  );
+}
+
+export async function deleteAdminDentalpediaCategory(
+  accessToken: string,
+  categoryId: string,
+) {
+  return adminFetch<AdminActionResult>(
+    `/api/v1/admin/dentalpedia/categories/${encodeURIComponent(categoryId)}`,
+    accessToken,
+    { method: "DELETE" },
+  );
+}
+
+export async function reorderAdminDentalpediaCategories(
+  accessToken: string,
+  categoryIds: string[],
+) {
+  return adminFetch<
+    AdminActionResult & { categories: AdminDentalpediaCategory[] }
+  >("/api/v1/admin/dentalpedia/categories/order", accessToken, {
+    method: "PUT",
+    body: JSON.stringify({ categoryIds }),
+  });
 }
 
 export async function uploadAdminDentalpediaVideo(

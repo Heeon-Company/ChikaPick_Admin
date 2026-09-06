@@ -12,9 +12,13 @@ import {
   type DentalpediaInformationType,
 } from "@/components/DentalpediaEditorNavigation";
 import {
+  createAdminDentalpediaCategory,
+  deleteAdminDentalpediaCategory,
   createAdminDentalpediaArticle,
   fetchAdminDentalpediaArticle,
   fetchDentalpediaRelatedContentOptions,
+  reorderAdminDentalpediaCategories,
+  updateAdminDentalpediaCategory,
   updateAdminDentalpediaArticle,
   uploadAdminDentalpediaImage,
 } from "@/lib/admin-api";
@@ -28,6 +32,7 @@ import {
   type DentalpediaArticleStatus,
 } from "@/lib/dentalpedia";
 import type { DentalpediaRelatedContentOption } from "@/lib/dentalpedia-video";
+import type { AdminDentalpediaCategory } from "@/lib/dentalpedia-category";
 
 type PreviewMode = "home" | "detail";
 type PublishMode = "immediate" | "scheduled";
@@ -55,17 +60,6 @@ const initialBody = `## 왜 병원마다 임플란트 비용이 다를까?
 
 > 💡 알아두세요: 가장 비싼 임플란트가 반드시 가장 좋은 결과를 보장하지는 않습니다.`;
 
-const categories: ReadonlyArray<{
-  label: string;
-  value: DentalpediaArticleCategory;
-}> = [
-  { value: "oral-care", label: "구강 관리" },
-  { value: "implant", label: "임플란트" },
-  { value: "general-care", label: "일반 진료" },
-  { value: "cosmetic", label: "미백·심미" },
-  { value: "orthodontics", label: "교정" },
-];
-
 type CategoryManagementRow = {
   active: boolean;
   count: number;
@@ -80,51 +74,17 @@ type CategoryEditorState = {
   row: CategoryManagementRow | null;
 };
 
-const categoryManagementRows: ReadonlyArray<CategoryManagementRow> = [
-  {
-    active: true,
-    count: 24,
-    displayName: "구강 관리",
-    id: "oral-care",
-    name: "구강 관리",
-  },
-  {
-    active: true,
-    count: 18,
-    displayName: "임플란트",
-    id: "implant",
-    name: "임플란트",
-  },
-  {
-    active: true,
-    count: 31,
-    displayName: "일반 진료",
-    id: "general-care",
-    name: "일반 진료",
-  },
-  {
-    active: true,
-    count: 12,
-    displayName: "미백·심미",
-    id: "cosmetic",
-    name: "미백·심미",
-  },
-  {
-    active: true,
-    count: 9,
-    displayName: "교정",
-    id: "orthodontics",
-    name: "교정",
-  },
-] as const;
-
 export function DentalpediaArticleEditor({
   accessToken,
+  categories,
   informationType,
+  onManageCategories,
   onInformationTypeChange,
 }: {
   accessToken: string;
+  categories: AdminDentalpediaCategory[];
   informationType: DentalpediaInformationType;
+  onManageCategories: () => void;
   onInformationTypeChange: (type: DentalpediaInformationType) => void;
 }) {
   const today = toDateTimeLocalValue(new Date()).slice(0, 10);
@@ -174,7 +134,6 @@ export function DentalpediaArticleEditor({
     DentalpediaRelatedContentOption[]
   >([]);
   const [relatedDialogOpen, setRelatedDialogOpen] = useState(false);
-  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("home");
   const [disclaimerEnabled, setDisclaimerEnabled] = useState(true);
   const [loadingDraft, setLoadingDraft] = useState(true);
@@ -221,7 +180,7 @@ export function DentalpediaArticleEditor({
     [relatedContentIds, relatedOptions],
   );
   const categoryLabel =
-    categories.find((item) => item.value === category)?.label ?? "카테고리";
+    categories.find((item) => item.code === category)?.displayName ?? "카테고리";
   const visibleCoverUrl = coverObjectUrl ?? coverImageUrl;
 
   const applyArticle = useCallback((article: AdminDentalpediaArticle) => {
@@ -644,22 +603,22 @@ export function DentalpediaArticleEditor({
                   </span>
                   <button
                     disabled={saving}
-                    onClick={() => setCategoryDialogOpen(true)}
+                    onClick={onManageCategories}
                     type="button"
                   >
                     카테고리 관리
                   </button>
                 </div>
                 <div className="admin-information-video-category-chips">
-                  {categories.map((option) => (
+                  {categories.filter((option) => option.isActive || option.code === category).map((option) => (
                     <button
-                      className={category === option.value ? "is-active" : undefined}
+                      className={category === option.code ? "is-active" : undefined}
                       disabled={saving}
-                      key={option.value}
-                      onClick={() => setCategory(option.value)}
+                      key={option.id}
+                      onClick={() => setCategory(option.code)}
                       type="button"
                     >
-                      {option.label}
+                      {option.displayName}
                     </button>
                   ))}
                 </div>
@@ -1209,26 +1168,34 @@ export function DentalpediaArticleEditor({
             selectedIds={relatedContentIds}
           />
         ) : null}
-        {categoryDialogOpen ? (
-          <ColumnCategoryManagementDialog
-            onClose={() => setCategoryDialogOpen(false)}
-          />
-        ) : null}
       </form>
     </div>
   );
 }
 
-function ColumnCategoryManagementDialog({ onClose }: { onClose: () => void }) {
+export function ColumnCategoryManagementDialog({
+  accessToken,
+  categories,
+  onCategoriesChange,
+  onClose,
+}: {
+  accessToken: string;
+  categories: AdminDentalpediaCategory[];
+  onCategoriesChange: (categories: AdminDentalpediaCategory[]) => void;
+  onClose: () => void;
+}) {
   const dialogRef = useRef<HTMLElement>(null);
   const hadSubdialogRef = useRef(false);
   const [rows, setRows] = useState<CategoryManagementRow[]>(() =>
-    categoryManagementRows.map((row) => ({ ...row })),
+    categories.map(categoryManagementRow),
   );
   const [categoryEditor, setCategoryEditor] =
     useState<CategoryEditorState | null>(null);
   const [warningRow, setWarningRow] =
     useState<CategoryManagementRow | null>(null);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     dialogRef.current?.focus();
@@ -1260,64 +1227,142 @@ function ColumnCategoryManagementDialog({ onClose }: { onClose: () => void }) {
     };
   }, [categoryEditor, onClose, warningRow]);
 
-  function saveCategory(input: {
+  async function saveCategory(input: {
     active: boolean;
     displayName: string;
     name: string;
     order: number;
   }) {
-    if (categoryEditor?.mode === "edit" && categoryEditor.row) {
-      const editedId = categoryEditor.row.id;
-      setRows((currentRows) => {
-        const nextRows = currentRows.map((row) =>
-          row.id === editedId
-            ? {
-                ...row,
-                active: input.active,
-                displayName: input.displayName || input.name,
-                name: input.name,
-              }
-            : row,
-        );
-        const editedIndex = nextRows.findIndex((row) => row.id === editedId);
-        const [editedRow] = nextRows.splice(editedIndex, 1);
-        nextRows.splice(
-          Math.min(Math.max(input.order - 1, 0), nextRows.length),
-          0,
-          editedRow,
-        );
-        return nextRows;
-      });
-    } else {
-      setRows((currentRows) => {
-        const nextRows = [...currentRows];
-        const newRow: CategoryManagementRow = {
-          active: input.active,
-          count: 0,
-          displayName: input.displayName || input.name,
-          id: `local-${Date.now()}`,
-          name: input.name,
-        };
-        nextRows.splice(
-          Math.min(Math.max(input.order - 1, 0), nextRows.length),
-          0,
-          newRow,
-        );
-        return nextRows;
-      });
+    if (busy || !categoryEditor) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const payload = {
+        displayName: input.displayName || input.name,
+        displayOrder: input.order,
+        isActive: input.active,
+        name: input.name,
+      };
+      const result = categoryEditor.mode === "edit" && categoryEditor.row
+        ? await updateAdminDentalpediaCategory(
+            accessToken,
+            categoryEditor.row.id,
+            payload,
+          )
+        : await createAdminDentalpediaCategory(accessToken, payload);
+      const withoutSaved = categories.filter(
+        (category) => category.id !== result.category.id,
+      );
+      withoutSaved.splice(
+        Math.min(Math.max(input.order - 1, 0), withoutSaved.length),
+        0,
+        result.category,
+      );
+      const reordered = await reorderAdminDentalpediaCategories(
+        accessToken,
+        withoutSaved.map((category) => category.id),
+      );
+      setRows(reordered.categories.map(categoryManagementRow));
+      onCategoriesChange(reordered.categories);
+      setCategoryEditor(null);
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "카테고리를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      );
+    } finally {
+      setBusy(false);
     }
-    setCategoryEditor(null);
   }
 
-  function disableWarningCategory() {
-    if (!warningRow) return;
-    setRows((currentRows) =>
-      currentRows.map((row) =>
-        row.id === warningRow.id ? { ...row, active: false } : row,
-      ),
-    );
-    setWarningRow(null);
-    setCategoryEditor(null);
+  async function deleteCategory(row: CategoryManagementRow) {
+    if (row.count > 0) {
+      setWarningRow(row);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await deleteAdminDentalpediaCategory(accessToken, row.id);
+      const remaining = categories.filter((category) => category.id !== row.id);
+      setRows(remaining.map(categoryManagementRow));
+      onCategoriesChange(remaining);
+      setCategoryEditor(null);
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "카테고리를 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function disableWarningCategory() {
+    if (!warningRow || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const source = categories.find((category) => category.id === warningRow.id);
+      if (!source) return;
+      const result = await updateAdminDentalpediaCategory(
+        accessToken,
+        source.id,
+        {
+          displayName: source.displayName,
+          displayOrder: source.displayOrder,
+          isActive: false,
+          name: source.name,
+        },
+      );
+      const updated = categories.map((category) =>
+        category.id === result.category.id ? result.category : category,
+      );
+      setRows(updated.map(categoryManagementRow));
+      onCategoriesChange(updated);
+      setWarningRow(null);
+      setCategoryEditor(null);
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "카테고리를 수정하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function moveCategory(targetId: string) {
+    if (!draggedId || draggedId === targetId || busy) return;
+    const nextRows = [...rows];
+    const sourceIndex = nextRows.findIndex((row) => row.id === draggedId);
+    const targetIndex = nextRows.findIndex((row) => row.id === targetId);
+    if (sourceIndex < 0 || targetIndex < 0) return;
+    const [moved] = nextRows.splice(sourceIndex, 1);
+    nextRows.splice(targetIndex, 0, moved);
+    setRows(nextRows);
+    setDraggedId(null);
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await reorderAdminDentalpediaCategories(
+        accessToken,
+        nextRows.map((row) => row.id),
+      );
+      onCategoriesChange(result.categories);
+    } catch (cause) {
+      setRows(categories.map(categoryManagementRow));
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "카테고리 순서를 변경하지 못했습니다.",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -1349,9 +1394,10 @@ function ColumnCategoryManagementDialog({ onClose }: { onClose: () => void }) {
             </p>
           </div>
           <button
-            onClick={() =>
-              setCategoryEditor({ mode: "add", order: rows.length + 1, row: null })
-            }
+            onClick={() => {
+              setError(null);
+              setCategoryEditor({ mode: "add", order: rows.length + 1, row: null });
+            }}
             type="button"
           >
             <Image
@@ -1363,6 +1409,12 @@ function ColumnCategoryManagementDialog({ onClose }: { onClose: () => void }) {
             카테고리 추가
           </button>
         </header>
+
+        {error ? (
+          <p className="admin-information-upload-feedback is-error" role="alert">
+            {error}
+          </p>
+        ) : null}
 
         <div className="admin-information-column-category-table-wrap">
           <table>
@@ -1389,7 +1441,14 @@ function ColumnCategoryManagementDialog({ onClose }: { onClose: () => void }) {
             </thead>
             <tbody>
               {rows.map((row, index) => (
-                <tr key={row.id}>
+                <tr
+                  draggable={!busy}
+                  key={row.id}
+                  onDragEnd={() => setDraggedId(null)}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDragStart={() => setDraggedId(row.id)}
+                  onDrop={() => void moveCategory(row.id)}
+                >
                   <td>
                     <Image
                       alt=""
@@ -1411,9 +1470,10 @@ function ColumnCategoryManagementDialog({ onClose }: { onClose: () => void }) {
                   <td>{row.count}개</td>
                   <td>
                     <button
-                      onClick={() =>
-                        setCategoryEditor({ mode: "edit", order: index + 1, row })
-                      }
+                      onClick={() => {
+                        setError(null);
+                        setCategoryEditor({ mode: "edit", order: index + 1, row });
+                      }}
                       type="button"
                     >
                       수정
@@ -1441,25 +1501,20 @@ function ColumnCategoryManagementDialog({ onClose }: { onClose: () => void }) {
 
       {categoryEditor ? (
         <ColumnCategoryFormDialog
+          error={error}
           editor={categoryEditor}
           obscured={Boolean(warningRow)}
           onClose={() => setCategoryEditor(null)}
-          onDelete={(row) => {
-            if (row.count === 0) {
-              setRows((currentRows) =>
-                currentRows.filter((currentRow) => currentRow.id !== row.id),
-              );
-              setCategoryEditor(null);
-              return;
-            }
-            setWarningRow(row);
-          }}
+          busy={busy}
+          onDelete={(row) => void deleteCategory(row)}
           onSave={saveCategory}
         />
       ) : null}
       {warningRow ? (
         <ColumnCategoryDeleteWarningDialog
+          busy={busy}
           count={warningRow.count}
+          error={error}
           onClose={() => setWarningRow(null)}
           onDisable={disableWarningCategory}
         />
@@ -1469,13 +1524,17 @@ function ColumnCategoryManagementDialog({ onClose }: { onClose: () => void }) {
 }
 
 function ColumnCategoryFormDialog({
+  busy,
   editor,
+  error,
   obscured,
   onClose,
   onDelete,
   onSave,
 }: {
+  busy: boolean;
   editor: CategoryEditorState;
+  error: string | null;
   obscured: boolean;
   onClose: () => void;
   onDelete: (row: CategoryManagementRow) => void;
@@ -1484,7 +1543,7 @@ function ColumnCategoryFormDialog({
     displayName: string;
     name: string;
     order: number;
-  }) => void;
+  }) => void | Promise<void>;
 }) {
   const dialogRef = useRef<HTMLElement>(null);
   const [name, setName] = useState(editor.row?.name ?? "");
@@ -1500,7 +1559,7 @@ function ColumnCategoryFormDialog({
 
   function save() {
     if (!trimmedName) return;
-    onSave({
+    void onSave({
       active,
       displayName: displayName.trim(),
       name: trimmedName,
@@ -1540,12 +1599,18 @@ function ColumnCategoryFormDialog({
         </header>
 
         <div className="admin-information-column-category-form-body">
+          {error ? (
+            <p className="admin-information-upload-feedback is-error" role="alert">
+              {error}
+            </p>
+          ) : null}
           <label>
             <span>
               카테고리명 <b aria-hidden>*</b>
             </span>
             <input
               autoFocus
+              disabled={busy}
               maxLength={40}
               onChange={(event) => setName(event.target.value)}
               placeholder="예) 구강 관리, 임플란트"
@@ -1555,6 +1620,7 @@ function ColumnCategoryFormDialog({
           <label>
             <span>사용자 노출명</span>
             <input
+              disabled={busy}
               maxLength={40}
               onChange={(event) => setDisplayName(event.target.value)}
               placeholder="화면에 표시될 카테고리명을 입력하세요"
@@ -1565,6 +1631,7 @@ function ColumnCategoryFormDialog({
           <label className="admin-information-column-category-order-field">
             <span>노출 순서</span>
             <input
+              disabled={busy}
               inputMode="numeric"
               min={1}
               onChange={(event) => setOrder(event.target.value)}
@@ -1581,6 +1648,7 @@ function ColumnCategoryFormDialog({
               aria-label={active ? "카테고리 사용 중" : "카테고리 사용 안 함"}
               aria-pressed={active}
               className={active ? "is-active" : undefined}
+              disabled={busy}
               onClick={() => setActive((current) => !current)}
               type="button"
             />
@@ -1591,6 +1659,7 @@ function ColumnCategoryFormDialog({
           {editor.mode === "edit" && editedRow ? (
             <button
               className="is-delete"
+              disabled={busy}
               onClick={() => onDelete(editedRow)}
               type="button"
             >
@@ -1598,11 +1667,11 @@ function ColumnCategoryFormDialog({
             </button>
           ) : null}
           <div>
-            <button onClick={onClose} type="button">
+            <button disabled={busy} onClick={onClose} type="button">
               취소
             </button>
-            <button disabled={!trimmedName} onClick={save} type="button">
-              {editor.mode === "add" ? "카테고리 추가" : "저장"}
+            <button disabled={busy || !trimmedName} onClick={save} type="button">
+              {busy ? "저장 중..." : editor.mode === "add" ? "카테고리 추가" : "저장"}
             </button>
           </div>
         </footer>
@@ -1612,11 +1681,15 @@ function ColumnCategoryFormDialog({
 }
 
 function ColumnCategoryDeleteWarningDialog({
+  busy,
   count,
+  error,
   onClose,
   onDisable,
 }: {
+  busy: boolean;
   count: number;
+  error: string | null;
   onClose: () => void;
   onDisable: () => void;
 }) {
@@ -1663,17 +1736,34 @@ function ColumnCategoryDeleteWarningDialog({
             </p>
           </div>
         </div>
+        {error ? (
+          <p className="admin-information-upload-feedback is-error" role="alert">
+            {error}
+          </p>
+        ) : null}
         <footer>
-          <button onClick={onDisable} type="button">
-            사용 안 함으로 변경
+          <button disabled={busy} onClick={onDisable} type="button">
+            {busy ? "변경 중..." : "사용 안 함으로 변경"}
           </button>
-          <button onClick={onClose} type="button">
+          <button disabled={busy} onClick={onClose} type="button">
             확인
           </button>
         </footer>
       </section>
     </div>
   );
+}
+
+function categoryManagementRow(
+  category: AdminDentalpediaCategory,
+): CategoryManagementRow {
+  return {
+    active: category.isActive,
+    count: category.contentCount,
+    displayName: category.displayName,
+    id: category.id,
+    name: category.name,
+  };
 }
 
 function ColumnSection({ children, title }: { children: ReactNode; title: string }) {

@@ -32,6 +32,7 @@ import {
   type DentalpediaPostType,
 } from "@/lib/dentalpedia-post";
 import type { DentalpediaRelatedContentOption } from "@/lib/dentalpedia-video";
+import type { AdminDentalpediaCategory } from "@/lib/dentalpedia-category";
 
 type PostCategory = "" | DentalpediaPostCategory;
 type PreviewMode = "home" | "detail";
@@ -46,24 +47,17 @@ type PostImageDraft = {
 
 const postDraftStorageKey = "chikapick.admin.dentalpedia.currentPostId";
 const maxPostImages = 10;
-const postCategories: ReadonlyArray<{
-  label: string;
-  value: DentalpediaPostCategory;
-}> = [
-  { value: "oral-care", label: "구강 관리" },
-  { value: "implant", label: "임플란트" },
-  { value: "general-care", label: "일반 진료" },
-  { value: "cosmetic", label: "미백·심미" },
-  { value: "orthodontics", label: "교정" },
-];
-
 export function DentalpediaPostEditor({
   accessToken,
+  categories,
   informationType,
+  onManageCategories,
   onInformationTypeChange,
 }: {
   accessToken: string;
+  categories: AdminDentalpediaCategory[];
   informationType: DentalpediaInformationType;
+  onManageCategories: () => void;
   onInformationTypeChange: (type: DentalpediaInformationType) => void;
 }) {
   const [postId, setPostId] = useState<string | null>(null);
@@ -162,7 +156,7 @@ export function DentalpediaPostEditor({
     [relatedContentIds, relatedOptions],
   );
   const categoryLabel =
-    postCategories.find((option) => option.value === category)?.label ??
+    categories.find((option) => option.code === category)?.displayName ??
     "카테고리";
 
   function applyPost(post: AdminDentalpediaPost) {
@@ -469,20 +463,25 @@ export function DentalpediaPostEditor({
               </PostField>
 
               <div className="admin-information-video-field">
-                <span className="admin-information-video-required-label">
-                  <strong>카테고리</strong>
-                  <b aria-hidden>*</b>
-                </span>
+                <div className="admin-information-column-category-heading">
+                  <span className="admin-information-video-required-label">
+                    <strong>카테고리</strong>
+                    <b aria-hidden>*</b>
+                  </span>
+                  <button disabled={saving} onClick={onManageCategories} type="button">
+                    카테고리 관리
+                  </button>
+                </div>
                 <div className="admin-information-video-category-chips">
-                  {postCategories.map((option) => (
+                  {categories.filter((option) => option.isActive || option.code === category).map((option) => (
                     <button
-                      className={category === option.value ? "is-active" : undefined}
+                      className={category === option.code ? "is-active" : undefined}
                       disabled={saving}
-                      key={option.value}
-                      onClick={() => setCategory(option.value)}
+                      key={option.id}
+                      onClick={() => setCategory(option.code)}
                       type="button"
                     >
-                      {option.label}
+                      {option.displayName}
                     </button>
                   ))}
                 </div>

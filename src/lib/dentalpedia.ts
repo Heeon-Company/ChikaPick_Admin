@@ -1,9 +1,4 @@
-export type DentalpediaArticleCategory =
-  | "oral-care"
-  | "implant"
-  | "general-care"
-  | "cosmetic"
-  | "orthodontics";
+export type DentalpediaArticleCategory = string;
 export type DentalpediaArticleStatus = "draft" | "published";
 
 export interface AdminDentalpediaArticle {

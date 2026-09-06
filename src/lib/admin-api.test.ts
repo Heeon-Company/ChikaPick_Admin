@@ -7,11 +7,13 @@ import {
   assignAdminDentalSalesperson,
   assignAdminPartnerClinicOperator,
   bulkUpdateAdminMembershipPartners,
+  createAdminDentalpediaCategory,
   createAdminMembershipPartner,
   createAdminExternalConnector,
   createAdminDentalSalesVisit,
   createAdminPartnerClinicOperationEvent,
   deleteAdminExternalConnector,
+  deleteAdminDentalpediaCategory,
   deleteAdminMembershipPartner,
   fetchAdminAccountDirectory,
   fetchAdminAuditLog,
@@ -25,6 +27,7 @@ import {
   fetchAdminDentalSales,
   fetchAdminDentalSalesDistricts,
   fetchAdminDentalSalesDetail,
+  fetchAdminDentalpediaCategories,
   fetchAdminExternalConnectors,
   fetchAdminInviteDirectory,
   fetchAdminManualHospitalSubmissions,
@@ -47,11 +50,13 @@ import {
   previewAdminTermVersion,
   resendAdminAccountInvitation,
   revealInviteCode,
+  reorderAdminDentalpediaCategories,
   revokeAdminAccountInvitation,
   searchAdminPartnerAccounts,
   sendAdminPasswordReset,
   unlockAdminAccount,
   updateAdminAccountRole,
+  updateAdminDentalpediaCategory,
   updateAdminMembershipPartner,
   updateAdminClinicPartnershipRequest,
   updateAdminServiceAreaConfig,
@@ -59,6 +64,46 @@ import {
   withdrawAdminAccount,
 } from "./admin-api.ts";
 import { emptyDentalSalesFilters } from "./dental-sales.ts";
+
+test("Dentalpedia category management uses protected CRUD and order routes", async () => {
+  const calls: Array<{ input: string | URL | Request; init?: RequestInit }> = [];
+  const originalFetch = globalThis.fetch;
+  process.env.NEXT_PUBLIC_CHIKAPICK_API_BASE_URL = "https://api.example.com";
+  globalThis.fetch = async (input, init) => {
+    calls.push({ input, init });
+    return new Response(JSON.stringify({ categories: [], category: {} }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+
+  try {
+    const input = {
+      displayName: "턱관절",
+      displayOrder: 6,
+      isActive: true,
+      name: "턱관절 진료",
+    };
+    await fetchAdminDentalpediaCategories("access-token");
+    await createAdminDentalpediaCategory("access-token", input);
+    await updateAdminDentalpediaCategory("access-token", "category/id", input);
+    await reorderAdminDentalpediaCategories("access-token", ["category-id"]);
+    await deleteAdminDentalpediaCategory("access-token", "category/id");
+
+    assert.deepEqual(
+      calls.map((call) => [new URL(String(call.input)).pathname, call.init?.method]),
+      [
+        ["/api/v1/admin/dentalpedia/categories", undefined],
+        ["/api/v1/admin/dentalpedia/categories", "POST"],
+        ["/api/v1/admin/dentalpedia/categories/category%2Fid", "PATCH"],
+        ["/api/v1/admin/dentalpedia/categories/order", "PUT"],
+        ["/api/v1/admin/dentalpedia/categories/category%2Fid", "DELETE"],
+      ],
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
 
 test("ChikaTalk moderation API requests protected read and action routes", async () => {
   const calls: Array<{ input: string | URL | Request; init?: RequestInit }> = [];
