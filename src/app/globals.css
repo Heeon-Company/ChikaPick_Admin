@@ -13381,13 +13381,18 @@ td span {
 }
 
 .admin-information-video-layout {
-  min-height: calc(100dvh - 56px);
+  height: calc(100dvh - 56px);
+  min-height: 0;
+  overflow: hidden;
   display: grid;
   grid-template-columns: minmax(0, 2.2fr) minmax(330px, 1fr);
   align-items: stretch;
 }
 
 .admin-information-video-editor {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
   border-right: 0;
   display: flex;
   flex-direction: column;
@@ -14024,6 +14029,8 @@ td span {
 }
 
 .admin-information-video-preview {
+  min-height: 0;
+  overflow: hidden;
   align-self: stretch;
   border-left: 1px solid #ececec;
   background: #f8fafc;
@@ -14031,6 +14038,12 @@ td span {
   flex-direction: column;
   gap: 24px;
   padding: 32px;
+}
+
+.admin-information-video-preview > :last-child {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
 }
 
 .admin-information-video-preview > header {
@@ -14407,15 +14420,22 @@ td span {
 
 @container (max-width: 1050px) {
   .admin-information-video-layout {
+    height: auto;
+    min-height: calc(100dvh - 56px);
+    overflow: visible;
     grid-template-columns: minmax(0, 1fr);
   }
 
   .admin-information-video-editor {
+    overflow: visible;
+    overscroll-behavior-y: auto;
     border-right: 0;
     padding: 24px 32px 48px;
   }
 
   .admin-information-video-preview {
+    overflow: visible;
+    overscroll-behavior-y: auto;
     border-left: 0;
     border-top: 1px solid #e2e8f0;
     margin-top: 0;
@@ -14425,6 +14445,30 @@ td span {
     width: min(100%, 520px);
     margin-right: auto;
     margin-left: auto;
+  }
+
+  .admin-information-video-preview > :last-child {
+    overflow: visible;
+    overscroll-behavior-y: auto;
+  }
+}
+
+@media (max-width: 1100px) {
+  .admin-information-video-layout {
+    height: auto;
+    min-height: calc(100dvh - 56px);
+    overflow: visible;
+  }
+
+  .admin-information-video-editor,
+  .admin-information-video-preview {
+    overflow: visible;
+    overscroll-behavior-y: auto;
+  }
+
+  .admin-information-video-preview > :last-child {
+    overflow: visible;
+    overscroll-behavior-y: auto;
   }
 }
 
