@@ -15,9 +15,14 @@ const validVideo: AdminDentalpediaVideoInput = {
   homeOrder: 2,
   homeTitle: "임플란트 상담 전 확인할 기준",
   homeVisible: true,
+  isHero: false,
   isVisible: true,
   isRecommended: true,
+  exposurePriority: "recommended",
+  endAt: "2026-12-31T14:59:59.000Z",
   publishAt: "2026-09-05T04:00:00.000Z",
+  relatedContentIds: [],
+  searchKeywords: ["임플란트 관리"],
   status: "published",
   tags: ["임플란트"],
   thumbnailImageAlt: "임플란트 관리 영상",
@@ -27,6 +32,7 @@ const validVideo: AdminDentalpediaVideoInput = {
   videoFileName: null,
   videoFilePath: null,
   videoSizeBytes: null,
+  videoDurationSeconds: 138,
   videoUrl: "https://youtu.be/dQw4w9WgXcQ",
 };
 
@@ -81,6 +87,26 @@ test("published video accepts an uploaded video without a YouTube URL", () => {
       true,
     ),
     null,
+  );
+});
+
+test("latest editor fields validate duration and the publication window", () => {
+  assert.equal(
+    validateDentalpediaVideo(
+      { ...validVideo, videoDurationSeconds: 0 },
+      true,
+    ),
+    "재생시간을 확인해 주세요.",
+  );
+  assert.equal(
+    validateDentalpediaVideo(
+      {
+        ...validVideo,
+        endAt: "2026-09-05T03:59:59.000Z",
+      },
+      true,
+    ),
+    "게시 종료일은 게시일시 이후로 설정해 주세요.",
   );
 });
 

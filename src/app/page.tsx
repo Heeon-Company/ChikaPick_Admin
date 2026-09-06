@@ -353,7 +353,7 @@ const primaryTabDescriptions: Record<PrimaryAdminTab, string> = {
   //   "전문의 소견 요청과 답변 상태를 전체 치과 기준으로 조회합니다.",
   "secret-feedback": "어드민 관리자에게만 전송되는 시크릿 피드백 입니다.",
   "information-upload":
-    "HOME 화면에 노출될 정보, 게시글, 컬럼을 등록할 수 있는 화면",
+    "콘텐츠를 등록하고 관리할 수 있는 어드민 페이지입니다.",
   "service-expansion-requests":
     "사용자들이 요청한 예약 가능 지역과 치과 제휴 요청을 확인하고 서비스 확대 우선순위를 관리합니다.",
   "chikapick-accounts":
@@ -1011,7 +1011,9 @@ export default function AdminHome() {
           </div>
         </header>
 
-        {!isAdminDetailView && !isMembershipRegistrationView ? (
+        {!isAdminDetailView &&
+        !isMembershipRegistrationView &&
+        activePrimaryTab !== "information-upload" ? (
           <div
             className={`admin-workspace-heading${
               activePrimaryTab === "dental-sales" ||
@@ -1021,7 +1023,6 @@ export default function AdminHome() {
               activePrimaryTab === "license-review" ||
               activePrimaryTab === "chika-talk" ||
               activePrimaryTab === "secret-feedback" ||
-              activePrimaryTab === "information-upload" ||
               activePrimaryTab === "chikapick-accounts" ||
               activePrimaryTab === "partner-accounts" ||
               activePrimaryTab === "memberships" ||
@@ -1039,10 +1040,6 @@ export default function AdminHome() {
             }${
               activePrimaryTab === "secret-feedback"
                 ? " admin-workspace-heading--secret-feedback"
-                : ""
-            }${
-              activePrimaryTab === "information-upload"
-                ? " admin-workspace-heading--information-upload"
                 : ""
             }${
               activePrimaryTab === "partner-accounts"
@@ -1063,8 +1060,6 @@ export default function AdminHome() {
                       : "파트너스 계정 조회"
                     : activePrimaryTab === "memberships"
                       ? "치카픽 멤버십 관리"
-                      : activePrimaryTab === "information-upload"
-                        ? "치카피디아"
                       : primaryTabs.find((tab) => tab.id === activePrimaryTab)?.label}
                 </h1>
                 {activePrimaryTab === "dental-sales" ? <DentalSalesInfoTooltip /> : null}
@@ -1130,6 +1125,10 @@ export default function AdminHome() {
           }${
             activePrimaryTab === "secret-feedback"
               ? " admin-content--secret-feedback"
+              : ""
+          }${
+            activePrimaryTab === "information-upload"
+              ? " admin-content--information-upload"
               : ""
           }${
             activePrimaryTab === "chikapick-accounts"

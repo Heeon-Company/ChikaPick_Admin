@@ -178,6 +178,7 @@ import type {
 import type {
   AdminDentalpediaVideo,
   AdminDentalpediaVideoInput,
+  DentalpediaRelatedContentOption,
 } from "./dentalpedia-video.ts";
 import type { AdminTermPreview } from "./admin-platform-operations.ts";
 
@@ -739,6 +740,33 @@ export async function updateAdminDentalpediaVideo(
     accessToken,
     { method: "PATCH", body: JSON.stringify(input) },
   );
+}
+
+export async function fetchDentalpediaRelatedContentOptions(
+  accessToken: string,
+) {
+  const [articlePayload, videoPayload] = await Promise.all([
+    adminFetch<{ articles: Array<{ id: string; title: string }> }>(
+      "/api/v1/dentalpedia/articles?limit=50",
+      accessToken,
+    ),
+    adminFetch<{ videos: Array<{ id: string; title: string }> }>(
+      "/api/v1/dentalpedia/videos?filePlayback=true&limit=50",
+      accessToken,
+    ),
+  ]);
+  return [
+    ...articlePayload.articles.map<DentalpediaRelatedContentOption>((article) => ({
+      id: `article:${article.id}`,
+      label: article.title,
+      type: "article",
+    })),
+    ...videoPayload.videos.map<DentalpediaRelatedContentOption>((video) => ({
+      id: `video:${video.id}`,
+      label: video.title,
+      type: "video",
+    })),
+  ];
 }
 
 export async function createAdminMembershipPartner(

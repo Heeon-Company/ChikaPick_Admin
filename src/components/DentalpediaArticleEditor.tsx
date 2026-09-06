@@ -432,6 +432,10 @@ export function DentalpediaArticleEditor({
     <form className="admin-information-article" id="information-upload-form" onSubmit={submitArticle} role="tabpanel">
       <div className="admin-information-article-layout">
         <div className="admin-information-article-editor">
+          <header className="admin-information-editor-heading">
+            <h1>치카피디아</h1>
+            <p>콘텐츠를 등록하고 관리할 수 있는 어드민 페이지입니다.</p>
+          </header>
           <div className="admin-information-upload-tabs" aria-label="업로드 정보 유형" role="tablist">
             <button aria-selected={informationType === "video"} onClick={() => onInformationTypeChange("video")} role="tab" type="button">영상</button>
             <button aria-selected className="is-active" role="tab" type="button">칼럼/게시글</button>

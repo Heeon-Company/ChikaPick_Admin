@@ -1,5 +1,8 @@
 export type DentalpediaVideoCategory =
+  | "oral-care"
   | "implant"
+  | "general-care"
+  | "cosmetic"
   | "orthodontics"
   | "cavity"
   | "root-canal"
@@ -12,6 +15,16 @@ export type DentalpediaVideoHomeCategory =
   | "cost-guide"
   | "dental-news";
 export type DentalpediaVideoSourceType = "upload" | "youtube";
+export type DentalpediaVideoExposurePriority =
+  | "recommended"
+  | "standard"
+  | "latest";
+
+export interface DentalpediaRelatedContentOption {
+  id: string;
+  label: string;
+  type: "article" | "video";
+}
 
 export interface AdminDentalpediaVideo {
   id: string;
@@ -20,6 +33,7 @@ export interface AdminDentalpediaVideo {
   categoryLabel: string;
   description: string;
   tags: string[];
+  searchKeywords: string[];
   thumbnailImageUrl: string | null;
   thumbnailImagePath: string | null;
   thumbnailImageAlt: string;
@@ -27,7 +41,9 @@ export interface AdminDentalpediaVideo {
   homeCategoryLabel: string;
   homeTitle: string;
   homeVisible: boolean;
+  isHero: boolean;
   isRecommended: boolean;
+  exposurePriority: DentalpediaVideoExposurePriority;
   homeOrder: number;
   videoUrl: string | null;
   videoFileUrl: string | null;
@@ -37,10 +53,13 @@ export interface AdminDentalpediaVideo {
   videoFileName: string | null;
   videoContentType: string | null;
   videoSizeBytes: number | null;
+  videoDurationSeconds: number | null;
   youtubeVideoId: string | null;
   status: DentalpediaVideoStatus;
   isVisible: boolean;
   publishAt: string | null;
+  endAt: string | null;
+  relatedContentIds: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -50,21 +69,27 @@ export interface AdminDentalpediaVideoInput {
   category: DentalpediaVideoCategory | null;
   description: string;
   tags: string[];
+  searchKeywords: string[];
   thumbnailImagePath: string | null;
   thumbnailImageAlt: string;
   homeCategory: DentalpediaVideoHomeCategory | null;
   homeTitle: string;
   homeVisible: boolean;
+  isHero: boolean;
   isRecommended: boolean;
+  exposurePriority: DentalpediaVideoExposurePriority;
   homeOrder: number;
   videoUrl: string | null;
   videoFilePath: string | null;
   videoFileName: string | null;
   videoContentType: string | null;
   videoSizeBytes: number | null;
+  videoDurationSeconds: number | null;
   status: DentalpediaVideoStatus;
   isVisible: boolean;
   publishAt: string | null;
+  endAt: string | null;
+  relatedContentIds: string[];
 }
 
 export function validateDentalpediaVideo(
@@ -85,6 +110,27 @@ export function validateDentalpediaVideo(
     return "간단한 설명은 200자 이하로 입력해 주세요.";
   }
   if (input.tags.length > 10) return "태그는 최대 10개까지 등록할 수 있습니다.";
+  if (input.searchKeywords.length > 20) {
+    return "검색 키워드는 최대 20개까지 등록할 수 있습니다.";
+  }
+  if (
+    input.videoDurationSeconds !== null &&
+    (!Number.isInteger(input.videoDurationSeconds) ||
+      input.videoDurationSeconds < 1 ||
+      input.videoDurationSeconds > 86400)
+  ) {
+    return "재생시간을 확인해 주세요.";
+  }
+  if (
+    input.publishAt &&
+    input.endAt &&
+    new Date(input.endAt).getTime() <= new Date(input.publishAt).getTime()
+  ) {
+    return "게시 종료일은 게시일시 이후로 설정해 주세요.";
+  }
+  if (input.relatedContentIds.length > 10) {
+    return "관련 콘텐츠는 최대 10개까지 선택할 수 있습니다.";
+  }
   if (input.videoUrl && !isSupportedYoutubeUrl(input.videoUrl)) {
     return "올바른 YouTube 영상 URL을 입력해 주세요.";
   }
