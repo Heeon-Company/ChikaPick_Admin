@@ -141,6 +141,10 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
     message: string;
     tone: "error" | "success";
   } | null>(null);
+  const [publishToast, setPublishToast] = useState<{
+    message: string;
+    tone: "error" | "success";
+  } | null>(null);
 
   useEffect(() => {
     if (!accessToken) {
@@ -214,6 +218,12 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
     },
     [thumbnailObjectUrl],
   );
+
+  useEffect(() => {
+    if (!publishToast) return;
+    const timer = window.setTimeout(() => setPublishToast(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [publishToast]);
 
   function applyVideo(video: AdminDentalpediaVideo) {
     setVideoId(video.id);
@@ -380,6 +390,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
 
   async function saveVideo(status: DentalpediaVideoStatus) {
     if (saving || loadingDraft) return;
+    if (status === "published") setPublishToast(null);
     const pendingImagePath =
       thumbnailImagePath ?? (thumbnailFile ? "pending-thumbnail" : null);
     const pendingVideoPath = videoFile ? "pending-video" : videoFilePath;
@@ -389,7 +400,9 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
       status === "published",
     );
     if (preUploadError) {
-      setFeedback({ tone: "error", message: preUploadError });
+      const outcome = { tone: "error" as const, message: preUploadError };
+      setFeedback(outcome);
+      if (status === "published") setPublishToast(outcome);
       return;
     }
 
@@ -426,21 +439,25 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
         : await createAdminDentalpediaVideo(accessToken, input);
       applyVideo(result.video);
       window.localStorage.setItem(videoDraftStorageKey, result.video.id);
-      setFeedback({
+      const outcome = {
         tone: "success",
         message:
           status === "published" && !isVisible
             ? "영상을 발행했지만 공개 상태가 꺼져 있어 앱에는 노출되지 않습니다."
             : result.message,
-      });
+      } as const;
+      setFeedback(outcome);
+      if (status === "published") setPublishToast(outcome);
     } catch (error) {
-      setFeedback({
+      const outcome = {
         tone: "error",
         message:
           error instanceof Error
             ? error.message
             : "영상을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-      });
+      } as const;
+      setFeedback(outcome);
+      if (status === "published") setPublishToast(outcome);
     } finally {
       setSaving(false);
     }
@@ -469,13 +486,13 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
     setEndAt("");
     setRelatedContentIds([]);
     setFeedback(null);
+    setPublishToast(null);
   }
 
   const isVideo = informationType === "video";
   const isPost = informationType === "post";
   const previewThumbnailUrl = thumbnailObjectUrl ?? thumbnailImageUrl;
-  const visibleThumbnailUrl =
-    previewThumbnailUrl ?? "/dentalpedia/article-consultation-cover.png";
+  const visibleThumbnailUrl = previewThumbnailUrl;
   const selectedVideoName = videoFile?.name ?? videoFileName;
   const selectedVideoSize = videoFile?.size ?? videoSizeBytes;
   const categoryLabel =
@@ -659,13 +676,17 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                     </span>
                     <div className="admin-information-video-thumbnail-row">
                       <span className="admin-information-video-thumbnail-image">
-                        <Image
-                          alt={title.trim() ? `${title.trim()} 썸네일 미리보기` : "영상 썸네일 미리보기"}
-                          fill
-                          sizes="140px"
-                          src={visibleThumbnailUrl}
-                          unoptimized={Boolean(thumbnailObjectUrl ?? thumbnailImageUrl)}
-                        />
+                        {visibleThumbnailUrl ? (
+                          <Image
+                            alt={title.trim() ? `${title.trim()} 썸네일 미리보기` : "영상 썸네일 미리보기"}
+                            fill
+                            sizes="140px"
+                            src={visibleThumbnailUrl}
+                            unoptimized={Boolean(thumbnailObjectUrl ?? thumbnailImageUrl)}
+                          />
+                        ) : (
+                          <PreviewImagePlaceholder />
+                        )}
                       </span>
                       <div className="admin-information-video-thumbnail-controls">
                         <div>
@@ -726,7 +747,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                     </div>
                   </div>
 
-                  <Field label="영상 URL" required>
+                  <Field label="영상 URL">
                     <div className="admin-information-video-url-row">
                       <input
                         aria-invalid={urlState === "invalid"}
@@ -742,7 +763,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                         </span>
                       ) : null}
                     </div>
-                    <small>YouTube 영상 URL을 입력하거나 아래에서 영상 파일을 직접 업로드하세요.</small>
+                    <small>YouTube 영상 URL 또는 아래의 영상 파일 중 하나를 등록해 주세요. (둘 중 하나 필수)</small>
                   </Field>
 
                   <div className="admin-information-video-field">
@@ -949,6 +970,16 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
               />
             </div>
 
+            {publishToast ? (
+              <div
+                aria-atomic="true"
+                className={`admin-information-video-toast is-${publishToast.tone}`}
+                role={publishToast.tone === "error" ? "alert" : "status"}
+              >
+                {publishToast.message}
+              </div>
+            ) : null}
+
             {relatedDialogOpen ? (
               <RelatedContentDialog
                 currentVideoId={videoId}
@@ -997,8 +1028,8 @@ function Field({ children, label, required = false }: { children: ReactNode; lab
   return <label className="admin-information-video-field"><span className="admin-information-video-required-label"><strong>{label}</strong>{required ? <b aria-hidden>*</b> : null}</span>{children}</label>;
 }
 
-function CropPreview({ alt, detail, label, ratio, src, unoptimized }: { alt: string; detail: string; label: string; ratio: string; src: string; unoptimized: boolean }) {
-  return <figure><div style={{ aspectRatio: ratio }}><Image alt={alt} fill sizes="274px" src={src} unoptimized={unoptimized} /></div><figcaption><strong>{label}</strong><small>{detail}</small></figcaption></figure>;
+function CropPreview({ alt, detail, label, ratio, src, unoptimized }: { alt: string; detail: string; label: string; ratio: string; src: string | null; unoptimized: boolean }) {
+  return <figure><div style={{ aspectRatio: ratio }}>{src ? <Image alt={alt} fill sizes="274px" src={src} unoptimized={unoptimized} /> : <PreviewImagePlaceholder />}</div><figcaption><strong>{label}</strong><small>{detail}</small></figcaption></figure>;
 }
 
 function ToggleRow({ checked, description, disabled, label, onChange }: { checked: boolean; description: string; disabled: boolean; label: string; onChange: () => void }) {

@@ -90,6 +90,19 @@ test("published video accepts an uploaded video without a YouTube URL", () => {
   );
 });
 
+test("published video requires either a YouTube URL or an uploaded video", () => {
+  assert.equal(
+    validateDentalpediaVideo(
+      {
+        ...validVideo,
+        videoUrl: null,
+      },
+      true,
+    ),
+    "영상 파일을 업로드하거나 영상 URL을 입력해 주세요.",
+  );
+});
+
 test("latest editor fields validate duration and the publication window", () => {
   assert.equal(
     validateDentalpediaVideo(
