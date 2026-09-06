@@ -180,6 +180,10 @@ import type {
   AdminDentalpediaVideoInput,
   DentalpediaRelatedContentOption,
 } from "./dentalpedia-video.ts";
+import type {
+  AdminDentalpediaPost,
+  AdminDentalpediaPostInput,
+} from "./dentalpedia-post.ts";
 import type { AdminTermPreview } from "./admin-platform-operations.ts";
 
 export async function fetchAdminConsole(accessToken: string) {
@@ -742,12 +746,49 @@ export async function updateAdminDentalpediaVideo(
   );
 }
 
+export async function createAdminDentalpediaPost(
+  accessToken: string,
+  input: AdminDentalpediaPostInput,
+) {
+  return adminFetch<AdminActionResult & { post: AdminDentalpediaPost }>(
+    "/api/v1/admin/dentalpedia/posts",
+    accessToken,
+    { method: "POST", body: JSON.stringify(input) },
+  );
+}
+
+export async function fetchAdminDentalpediaPost(
+  accessToken: string,
+  postId: string,
+) {
+  return adminFetch<{ post: AdminDentalpediaPost }>(
+    `/api/v1/admin/dentalpedia/posts/${encodeURIComponent(postId)}`,
+    accessToken,
+  );
+}
+
+export async function updateAdminDentalpediaPost(
+  accessToken: string,
+  postId: string,
+  input: AdminDentalpediaPostInput,
+) {
+  return adminFetch<AdminActionResult & { post: AdminDentalpediaPost }>(
+    `/api/v1/admin/dentalpedia/posts/${encodeURIComponent(postId)}`,
+    accessToken,
+    { method: "PATCH", body: JSON.stringify(input) },
+  );
+}
+
 export async function fetchDentalpediaRelatedContentOptions(
   accessToken: string,
 ) {
-  const [articlePayload, videoPayload] = await Promise.all([
+  const [articlePayload, postPayload, videoPayload] = await Promise.all([
     adminFetch<{ articles: Array<{ id: string; title: string }> }>(
       "/api/v1/dentalpedia/articles?limit=50",
+      accessToken,
+    ),
+    adminFetch<{ posts: Array<{ id: string; title: string }> }>(
+      "/api/v1/dentalpedia/posts?limit=50",
       accessToken,
     ),
     adminFetch<{ videos: Array<{ id: string; title: string }> }>(
@@ -760,6 +801,11 @@ export async function fetchDentalpediaRelatedContentOptions(
       id: `article:${article.id}`,
       label: article.title,
       type: "article",
+    })),
+    ...postPayload.posts.map<DentalpediaRelatedContentOption>((post) => ({
+      id: `post:${post.id}`,
+      label: post.title,
+      type: "post",
     })),
     ...videoPayload.videos.map<DentalpediaRelatedContentOption>((video) => ({
       id: `video:${video.id}`,

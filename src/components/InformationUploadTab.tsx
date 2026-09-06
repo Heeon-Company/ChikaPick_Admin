@@ -12,6 +12,12 @@ import type {
 import { AdminSelect } from "@/components/AdminSelect";
 import { DentalpediaArticleEditor } from "@/components/DentalpediaArticleEditor";
 import {
+  DentalpediaInformationTypeTabs,
+  DentalpediaWorkspaceHeading,
+  type DentalpediaInformationType,
+} from "@/components/DentalpediaEditorNavigation";
+import { DentalpediaPostEditor } from "@/components/DentalpediaPostEditor";
+import {
   createAdminDentalpediaVideo,
   fetchAdminDentalpediaVideo,
   fetchDentalpediaRelatedContentOptions,
@@ -35,7 +41,6 @@ import {
   type DentalpediaVideoStatus,
 } from "@/lib/dentalpedia-video";
 
-type InformationType = "video" | "article";
 type InformationCategory = "" | DentalpediaVideoCategory;
 type PreviewMode = "home" | "detail";
 type PublishMode = "immediate" | "scheduled";
@@ -62,58 +67,10 @@ const exposurePriorities: ReadonlyArray<{
   { value: "latest", label: "최신" },
 ];
 
-type InformationTypeTabsProps = {
-  informationType: InformationType;
-  onChange: (type: InformationType) => void;
-};
-
-function InformationTypeTabs({
-  informationType,
-  onChange,
-}: InformationTypeTabsProps) {
-  return (
-    <div
-      className="admin-information-upload-tabs admin-information-video-tabs"
-      aria-label="업로드 정보 유형"
-      role="tablist"
-    >
-      <button
-        aria-controls="information-upload-form"
-        aria-selected={informationType === "video"}
-        className={informationType === "video" ? "is-active" : undefined}
-        onClick={() => onChange("video")}
-        role="tab"
-        type="button"
-      >
-        영상
-      </button>
-      <button
-        aria-selected={false}
-        disabled
-        role="tab"
-        title="게시물 편집 화면은 준비 중입니다."
-        type="button"
-      >
-        게시물
-      </button>
-      <button
-        aria-controls="information-upload-form"
-        aria-selected={informationType === "article"}
-        className={informationType === "article" ? "is-active" : undefined}
-        onClick={() => onChange("article")}
-        role="tab"
-        type="button"
-      >
-        칼럼
-      </button>
-    </div>
-  );
-}
-
 type ArticleEditorProps = {
   accessToken: string;
-  informationType: InformationType;
-  onInformationTypeChange: (type: InformationType) => void;
+  informationType: DentalpediaInformationType;
+  onInformationTypeChange: (type: DentalpediaInformationType) => void;
 };
 
 function ArticleEditor({
@@ -132,7 +89,7 @@ function ArticleEditor({
 
 export function InformationUploadTab({ accessToken }: { accessToken: string }) {
   const [informationType, setInformationType] =
-    useState<InformationType>("video");
+    useState<DentalpediaInformationType>("video");
   const [videoId, setVideoId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<InformationCategory>("");
@@ -483,6 +440,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
   }
 
   const isVideo = informationType === "video";
+  const isPost = informationType === "post";
   const visibleThumbnailUrl =
     thumbnailObjectUrl ??
     thumbnailImageUrl ??
@@ -504,7 +462,11 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
           relatedOptions.find((option) => option.id === id) ?? {
             id,
             label: "선택한 관련 콘텐츠",
-            type: id.startsWith("video:") ? "video" : "article",
+            type: id.startsWith("video:")
+              ? "video"
+              : id.startsWith("post:")
+                ? "post"
+                : "article",
           },
       ),
     [relatedContentIds, relatedOptions],
@@ -514,7 +476,11 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
     <section className="admin-information-upload" aria-label="치카피디아">
       <div
         className={`admin-information-upload-card${
-          isVideo ? " admin-information-upload-card--video" : " admin-information-upload-card--article"
+          isVideo
+            ? " admin-information-upload-card--video"
+            : isPost
+              ? " admin-information-upload-card--post"
+              : " admin-information-upload-card--article"
         }`}
       >
         {isVideo ? (
@@ -527,8 +493,8 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
           >
             <div className="admin-information-video-layout">
               <div className="admin-information-video-editor">
-                <WorkspaceHeading />
-                <InformationTypeTabs
+                <DentalpediaWorkspaceHeading />
+                <DentalpediaInformationTypeTabs
                   informationType={informationType}
                   onChange={setInformationType}
                 />
@@ -958,6 +924,12 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
               />
             ) : null}
           </form>
+        ) : isPost ? (
+          <DentalpediaPostEditor
+            accessToken={accessToken}
+            informationType={informationType}
+            onInformationTypeChange={setInformationType}
+          />
         ) : (
           <ArticleEditor
             accessToken={accessToken}
@@ -972,15 +944,6 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
 
 function EditorSection({ children, title }: { children: ReactNode; title: string }) {
   return <section className="admin-information-video-section"><h2>{title}</h2>{children}</section>;
-}
-
-function WorkspaceHeading() {
-  return (
-    <header className="admin-information-editor-heading">
-      <h1>치카피디아</h1>
-      <p>콘텐츠를 등록하고 관리할 수 있는 어드민 페이지입니다.</p>
-    </header>
-  );
 }
 
 function Field({ children, label, required = false }: { children: ReactNode; label: string; required?: boolean }) {
@@ -1008,7 +971,7 @@ function VideoPreview({ categoryLabel, description, duration, isRecommended, pre
 
 function RelatedContentDialog({ currentVideoId, onChange, onClose, options, selectedIds }: { currentVideoId: string | null; onChange: (ids: string[]) => void; onClose: () => void; options: DentalpediaRelatedContentOption[]; selectedIds: string[] }) {
   const availableOptions = options.filter((option) => option.id !== `video:${currentVideoId}`);
-  return <div className="admin-information-video-dialog-layer" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section aria-label="관련 콘텐츠 선택" aria-modal="true" className="admin-information-video-dialog" role="dialog"><header><div><h2>관련 콘텐츠 선택</h2><p>최대 10개까지 선택할 수 있습니다.</p></div><button aria-label="닫기" onClick={onClose} type="button">×</button></header><div>{availableOptions.length ? availableOptions.map((option) => <label key={option.id}><input checked={selectedIds.includes(option.id)} onChange={(event) => { if (event.target.checked) { if (selectedIds.length < 10) onChange([...selectedIds, option.id]); } else { onChange(selectedIds.filter((id) => id !== option.id)); } }} type="checkbox" /><span><strong>{option.label}</strong><small>{option.type === "video" ? "영상" : "칼럼"}</small></span></label>) : <p>선택할 수 있는 발행 콘텐츠가 없습니다.</p>}</div><footer><button onClick={onClose} type="button">선택 완료</button></footer></section></div>;
+  return <div className="admin-information-video-dialog-layer" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section aria-label="관련 콘텐츠 선택" aria-modal="true" className="admin-information-video-dialog" role="dialog"><header><div><h2>관련 콘텐츠 선택</h2><p>최대 10개까지 선택할 수 있습니다.</p></div><button aria-label="닫기" onClick={onClose} type="button">×</button></header><div>{availableOptions.length ? availableOptions.map((option) => <label key={option.id}><input checked={selectedIds.includes(option.id)} onChange={(event) => { if (event.target.checked) { if (selectedIds.length < 10) onChange([...selectedIds, option.id]); } else { onChange(selectedIds.filter((id) => id !== option.id)); } }} type="checkbox" /><span><strong>{option.label}</strong><small>{option.type === "video" ? "영상" : option.type === "post" ? "게시물" : "칼럼"}</small></span></label>) : <p>선택할 수 있는 발행 콘텐츠가 없습니다.</p>}</div><footer><button onClick={onClose} type="button">선택 완료</button></footer></section></div>;
 }
 
 function Switch({ checked, disabled, label, onChange }: { checked: boolean; disabled: boolean; label: string; onChange: () => void }) {

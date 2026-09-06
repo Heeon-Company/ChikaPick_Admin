@@ -23,7 +23,7 @@ export type DentalpediaVideoExposurePriority =
 export interface DentalpediaRelatedContentOption {
   id: string;
   label: string;
-  type: "article" | "video";
+  type: "article" | "post" | "video";
 }
 
 export interface AdminDentalpediaVideo {

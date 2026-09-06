@@ -1,30 +1,34 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { FormEvent, KeyboardEvent, ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import { AdminSelect } from "@/components/AdminSelect";
+import {
+  DentalpediaInformationTypeTabs,
+  DentalpediaWorkspaceHeading,
+  type DentalpediaInformationType,
+} from "@/components/DentalpediaEditorNavigation";
 import {
   createAdminDentalpediaArticle,
   fetchAdminDentalpediaArticle,
+  fetchDentalpediaRelatedContentOptions,
   updateAdminDentalpediaArticle,
   uploadAdminDentalpediaImage,
 } from "@/lib/admin-api";
 import {
   dentalpediaImageError,
-  formatDentalpediaDate,
   toDateTimeLocalValue,
   validateDentalpediaArticle,
   type AdminDentalpediaArticle,
   type AdminDentalpediaArticleInput,
   type DentalpediaArticleCategory,
+  type DentalpediaArticleStatus,
 } from "@/lib/dentalpedia";
+import type { DentalpediaRelatedContentOption } from "@/lib/dentalpedia-video";
 
-type InformationType = "video" | "article";
-type ArticleAuthor = "operator" | "content-manager";
 type PreviewMode = "home" | "detail";
 type PublishMode = "immediate" | "scheduled";
 type PendingBodyImage = {
@@ -34,110 +38,110 @@ type PendingBodyImage = {
 };
 
 const draftStorageKey = "chikapick.admin.dentalpedia.currentArticleId";
-const initialTitle = "임플란트 상담 전 꼭 확인해야 할 5가지";
+const initialTitle = "치과 가기 전에 알아두면 좋은 임플란트 비용 구조";
 const initialSummary =
-  "치료 전 상담에서 비용, 재료, 보증, 사후관리 기준을 확인하는 방법을 정리했습니다.";
-const initialBody = `## 왜 상담 전 확인이 필요할까요?
+  "임플란트 비용이 병원마다 다른 이유와 합리적인 비용 판단 기준을 알려드립니다.";
+const initialBody = `## 왜 병원마다 임플란트 비용이 다를까?
 
-임플란트 치료는 개인의 구강 상태와 치료 계획에 따라 비용과 기간이 달라질 수 있습니다.
+임플란트 시술을 고려할 때 가장 먼저 부딪히는 질문이 바로 '왜 병원마다 가격이 이렇게 다를까?'입니다.
 
-## 상담에서 확인할 5가지
+임플란트 비용은 크게 다음 요소에 의해 결정됩니다:
 
-1. 내 상태에 맞는 치료 계획
-2. 사용할 재료와 제조사
-3. 총 치료비와 추가 비용
-4. 보증 및 사후관리 기준
-5. 치료 기간과 내원 횟수
+1. 사용하는 임플란트 제품 (국산/수입)
+2. 뼈이식 필요 여부
+3. 상악동 거상술 여부
+4. 보철물 종류
+5. 병원의 시설 및 장비 수준
 
-> 정확한 치료 계획은 의료진의 대면 진료와 상담 후 결정됩니다.`;
+> 💡 알아두세요: 가장 비싼 임플란트가 반드시 가장 좋은 결과를 보장하지는 않습니다.`;
 
 const categories: ReadonlyArray<{
   label: string;
   value: DentalpediaArticleCategory;
 }> = [
-  { value: "treatment-guide", label: "치료 가이드" },
   { value: "oral-care", label: "구강 관리" },
-  { value: "cost-guide", label: "치료 비용 가이드" },
-  { value: "dental-news", label: "치과 소식" },
+  { value: "implant", label: "임플란트" },
+  { value: "general-care", label: "일반 진료" },
+  { value: "cosmetic", label: "미백·심미" },
+  { value: "orthodontics", label: "교정" },
 ];
-
-const authors: ReadonlyArray<{ label: string; value: ArticleAuthor }> = [
-  { value: "operator", label: "운영 관리자" },
-  { value: "content-manager", label: "콘텐츠 관리자" },
-];
-
-const authorLabels: Record<ArticleAuthor, string> = {
-  operator: "운영 관리자",
-  "content-manager": "콘텐츠 관리자",
-};
-
-type DentalpediaArticleEditorProps = {
-  accessToken: string;
-  informationType: InformationType;
-  onInformationTypeChange: (type: InformationType) => void;
-};
 
 export function DentalpediaArticleEditor({
   accessToken,
   informationType,
   onInformationTypeChange,
-}: DentalpediaArticleEditorProps) {
+}: {
+  accessToken: string;
+  informationType: DentalpediaInformationType;
+  onInformationTypeChange: (type: DentalpediaInformationType) => void;
+}) {
+  const today = toDateTimeLocalValue(new Date()).slice(0, 10);
   const [articleId, setArticleId] = useState<string | null>(null);
+  const [slug, setSlug] = useState("");
   const [title, setTitle] = useState(initialTitle);
   const [category, setCategory] =
-    useState<DentalpediaArticleCategory>("treatment-guide");
-  const [tags, setTags] = useState(["임플란트", "치과상담", "치료가이드"]);
-  const [tagDraft, setTagDraft] = useState("");
-  const [slug, setSlug] = useState("implant-consulting-checklist");
+    useState<DentalpediaArticleCategory>("implant");
   const [summary, setSummary] = useState(initialSummary);
-  const [homeVisible, setHomeVisible] = useState(true);
-  const [recommended, setRecommended] = useState(true);
-  const [homeOrder, setHomeOrder] = useState("2");
-  const [bodyMarkdown, setBodyMarkdown] = useState(initialBody);
-  const [storedImagePaths, setStoredImagePaths] = useState<Record<string, string>>({});
-  const [pendingBodyImages, setPendingBodyImages] = useState<PendingBodyImage[]>([]);
+  const [tags, setTags] = useState([
+    "임플란트비용",
+    "임플란트가격",
+    "치과비용",
+  ]);
+  const [tagDraft, setTagDraft] = useState("");
+  const [searchKeywords, setSearchKeywords] = useState(
+    "임플란트 비용 구조, 임플란트 가격 비교, 합리적인 임플란트 치과",
+  );
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverObjectUrl, setCoverObjectUrl] = useState<string | null>(null);
   const [coverImagePath, setCoverImagePath] = useState<string | null>(null);
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
-  const [previewMode, setPreviewMode] = useState<PreviewMode>("home");
+  const [bodyMarkdown, setBodyMarkdown] = useState(initialBody);
+  const [bodyEditing, setBodyEditing] = useState(false);
+  const [storedImagePaths, setStoredImagePaths] = useState<
+    Record<string, string>
+  >({});
+  const [pendingBodyImages, setPendingBodyImages] = useState<
+    PendingBodyImage[]
+  >([]);
+  const [authorLabel, setAuthorLabel] = useState("치카픽 콘텐츠팀");
+  const [authoredAt, setAuthoredAt] = useState(today);
+  const [reviewedAt, setReviewedAt] = useState(today);
+  const [reviewerLabel, setReviewerLabel] = useState("");
+  const [isVisible, setIsVisible] = useState(true);
+  const [isRecommended, setIsRecommended] = useState(true);
+  const [isHero, setIsHero] = useState(false);
+  const [homeVisible, setHomeVisible] = useState(true);
+  const [homeOrder, setHomeOrder] = useState("2");
   const [publishMode, setPublishMode] = useState<PublishMode>("immediate");
   const [publishAt, setPublishAt] = useState(() =>
     toDateTimeLocalValue(new Date()),
   );
-  const [author, setAuthor] = useState<ArticleAuthor>("operator");
-  const [reviewedAt, setReviewedAt] = useState(() =>
-    toDateTimeLocalValue(new Date()).slice(0, 10),
-  );
+  const [endAt, setEndAt] = useState("");
+  const [relatedContentIds, setRelatedContentIds] = useState<string[]>([]);
+  const [relatedOptions, setRelatedOptions] = useState<
+    DentalpediaRelatedContentOption[]
+  >([]);
+  const [relatedDialogOpen, setRelatedDialogOpen] = useState(false);
+  const [previewMode, setPreviewMode] = useState<PreviewMode>("home");
   const [disclaimerEnabled, setDisclaimerEnabled] = useState(true);
-  const [publishingExpanded, setPublishingExpanded] = useState(true);
   const [loadingDraft, setLoadingDraft] = useState(true);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{
     message: string;
     tone: "error" | "success";
   } | null>(null);
-  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const bodyImageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const savedId = window.localStorage.getItem(draftStorageKey);
-    if (!savedId || !accessToken) {
-      const timer = window.setTimeout(() => setLoadingDraft(false), 0);
-      return () => window.clearTimeout(timer);
-    }
+    if (!accessToken) return;
     let active = true;
-    fetchAdminDentalpediaArticle(accessToken, savedId)
-      .then(({ article }) => {
-        if (!active) return;
-        applyArticle(article);
+    fetchDentalpediaRelatedContentOptions(accessToken)
+      .then((options) => {
+        if (active) setRelatedOptions(options);
       })
       .catch(() => {
-        window.localStorage.removeItem(draftStorageKey);
-      })
-      .finally(() => {
-        if (active) setLoadingDraft(false);
+        if (active) setRelatedOptions([]);
       });
     return () => {
       active = false;
@@ -151,35 +155,56 @@ export function DentalpediaArticleEditor({
     });
     return markdown;
   }, [bodyMarkdown, pendingBodyImages]);
-
+  const selectedRelatedOptions = useMemo(
+    () =>
+      relatedContentIds.map(
+        (id) =>
+          relatedOptions.find((option) => option.id === id) ?? {
+            id,
+            label: "선택한 관련 콘텐츠",
+            type: contentTypeFromId(id),
+          },
+      ),
+    [relatedContentIds, relatedOptions],
+  );
   const categoryLabel =
-    categories.find((item) => item.value === category)?.label ?? "치료 가이드";
+    categories.find((item) => item.value === category)?.label ?? "카테고리";
   const visibleCoverUrl = coverObjectUrl ?? coverImageUrl;
 
-  function applyArticle(article: AdminDentalpediaArticle) {
+  const applyArticle = useCallback((article: AdminDentalpediaArticle) => {
     const markdown = article.bodyMarkdown ?? "";
     const imageUrls = markdownImageUrls(markdown);
     setArticleId(article.id);
+    setSlug(article.slug);
     setTitle(article.title);
     setCategory(article.category);
-    setTags(article.tags);
-    setSlug(article.slug);
     setSummary(article.homeSummary);
-    setHomeVisible(article.homeVisible);
-    setRecommended(article.isRecommended);
-    setHomeOrder(String(article.homeOrder));
-    setBodyMarkdown(markdown);
-    setStoredImagePaths(
-      Object.fromEntries(
-        imageUrls.map((url, index) => [url, article.bodyImagePaths[index]]).filter(
-          (entry): entry is [string, string] => Boolean(entry[1]),
-        ),
-      ),
-    );
+    setTags(article.tags);
+    setTagDraft("");
+    setSearchKeywords(article.searchKeywords.join(", "));
     setCoverFile(null);
     setCoverObjectUrl(null);
     setCoverImagePath(article.coverImagePath);
     setCoverImageUrl(article.coverImageUrl);
+    setBodyMarkdown(markdown);
+    setBodyEditing(false);
+    setStoredImagePaths(
+      Object.fromEntries(
+        imageUrls
+          .map((url, index) => [url, article.bodyImagePaths[index]])
+          .filter((entry): entry is [string, string] => Boolean(entry[1])),
+      ),
+    );
+    setPendingBodyImages([]);
+    setAuthorLabel(article.authorLabel);
+    setAuthoredAt(article.authoredAt ?? toDateInputValue(article.publishAt));
+    setReviewedAt(article.reviewedAt ?? "");
+    setReviewerLabel(article.reviewerLabel ?? "");
+    setIsVisible(article.isVisible);
+    setIsRecommended(article.isRecommended);
+    setIsHero(article.isHero);
+    setHomeVisible(article.homeVisible);
+    setHomeOrder(String(article.homeOrder));
     setPublishMode(
       article.publishAt && new Date(article.publishAt).getTime() > Date.now()
         ? "scheduled"
@@ -190,22 +215,52 @@ export function DentalpediaArticleEditor({
         ? toDateTimeLocalValue(new Date(article.publishAt))
         : toDateTimeLocalValue(new Date()),
     );
-    setAuthor(article.authorLabel === "콘텐츠 관리자" ? "content-manager" : "operator");
-    setReviewedAt(article.reviewedAt ?? "");
+    setEndAt(toDateInputValue(article.endAt));
+    setRelatedContentIds(article.relatedContentIds);
     setDisclaimerEnabled(article.disclaimerEnabled);
-    setPendingBodyImages([]);
-    setLastSavedAt(new Date(article.updatedAt));
-  }
+  }, []);
+
+  useEffect(() => {
+    const savedId = window.localStorage.getItem(draftStorageKey);
+    if (!savedId || !accessToken) {
+      const timer = window.setTimeout(() => setLoadingDraft(false), 0);
+      return () => window.clearTimeout(timer);
+    }
+    let active = true;
+    fetchAdminDentalpediaArticle(accessToken, savedId)
+      .then(({ article }) => {
+        if (active) applyArticle(article);
+      })
+      .catch(() => {
+        window.localStorage.removeItem(draftStorageKey);
+      })
+      .finally(() => {
+        if (active) setLoadingDraft(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [accessToken, applyArticle]);
 
   function addTag() {
-    const normalized = tagDraft.trim().replace(/^#+/, "");
-    if (!normalized || tags.includes(normalized)) return;
-    if (tags.length >= 10 || normalized.length > 30) {
-      setFeedback({ tone: "error", message: "태그는 30자 이내로 최대 10개까지 등록할 수 있습니다." });
+    const tag = tagDraft.trim().replace(/^#+/, "");
+    if (!tag || tags.includes(tag)) return;
+    if (tags.length >= 10 || tag.length > 30) {
+      setFeedback({
+        tone: "error",
+        message: "태그는 30자 이내로 최대 10개까지 등록할 수 있습니다.",
+      });
       return;
     }
-    setTags((current) => [...current, normalized]);
+    setTags((current) => [...current, tag]);
     setTagDraft("");
+    setFeedback(null);
+  }
+
+  function handleTagKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    addTag();
   }
 
   function chooseCover(file: File | null) {
@@ -238,7 +293,10 @@ export function DentalpediaArticleEditor({
     setBodyMarkdown(next.slice(0, 50_000));
     window.requestAnimationFrame(() => {
       textarea.focus();
-      textarea.setSelectionRange(start + prefix.length, start + prefix.length + selected.length);
+      textarea.setSelectionRange(
+        start + prefix.length,
+        start + prefix.length + selected.length,
+      );
     });
   }
 
@@ -254,7 +312,10 @@ export function DentalpediaArticleEditor({
     const available = Math.max(0, 10 - existingImageCount - pendingImageCount);
     const selected = Array.from(files).slice(0, available);
     if (selected.length === 0) {
-      setFeedback({ tone: "error", message: "본문 이미지는 최대 10개까지 등록할 수 있습니다." });
+      setFeedback({
+        tone: "error",
+        message: "본문 이미지는 최대 10개까지 등록할 수 있습니다.",
+      });
       return;
     }
     const error = selected.map(dentalpediaImageError).find(Boolean);
@@ -271,60 +332,103 @@ export function DentalpediaArticleEditor({
     setBodyMarkdown((current) => {
       const separator = current && !current.endsWith("\n") ? "\n\n" : "";
       return `${current}${separator}${images
-        .map((image) => `![${safeMarkdownAlt(image.file.name)}](${localImageUrl(image.token)})`)
+        .map(
+          (image) =>
+            `![${safeMarkdownAlt(image.file.name)}](${localImageUrl(image.token)})`,
+        )
         .join("\n\n")}`.slice(0, 50_000);
     });
     setFeedback(null);
   }
 
-  async function save(status: "draft" | "published") {
-    if (!accessToken || saving) return;
+  function articleInput(
+    status: DentalpediaArticleStatus,
+    resolvedSlug: string,
+    resolvedCoverPath: string | null,
+    resolvedBody: string,
+    resolvedImagePaths: string[],
+  ): AdminDentalpediaArticleInput {
+    return {
+      authorLabel: authorLabel.trim(),
+      authoredAt: authoredAt || null,
+      bodyImagePaths: resolvedImagePaths,
+      bodyMarkdown: resolvedBody,
+      category,
+      coverImageAlt: title.trim() ? `${title.trim()} 대표 이미지` : "",
+      coverImagePath: resolvedCoverPath,
+      disclaimerEnabled,
+      endAt: dateToEndOfDayIso(endAt),
+      homeOrder: Number(homeOrder),
+      homeSummary: summary.trim(),
+      homeVisible,
+      isHero,
+      isRecommended,
+      isVisible,
+      publishAt:
+        status === "published"
+          ? publishMode === "scheduled"
+            ? localDateTimeToIso(publishAt)
+            : new Date().toISOString()
+          : publishMode === "scheduled"
+            ? localDateTimeToIso(publishAt)
+            : null,
+      relatedContentIds: relatedContentIds.filter(
+        (id) => id !== `article:${articleId}`,
+      ),
+      reviewedAt: reviewedAt || null,
+      reviewerLabel: reviewerLabel.trim() || null,
+      searchKeywords: commaSeparatedValues(searchKeywords, 20),
+      slug: resolvedSlug,
+      status,
+      tags,
+      title: title.trim(),
+    };
+  }
+
+  async function save(status: DentalpediaArticleStatus) {
+    if (!accessToken || saving || loadingDraft) return;
+    const resolvedSlug = slug || `column-${crypto.randomUUID()}`;
+    const pendingCoverPath =
+      coverImagePath ?? (coverFile ? "pending-cover" : null);
+    const pendingBodyPaths = markdownImageUrls(bodyMarkdown).map(
+      (url, index) => storedImagePaths[url] ?? `pending-body-${index}`,
+    );
+    const preUploadInput = articleInput(
+      status,
+      resolvedSlug,
+      pendingCoverPath,
+      bodyMarkdown,
+      pendingBodyPaths,
+    );
+    const preUploadError = validateDentalpediaArticle(
+      preUploadInput,
+      status === "published",
+    );
+    if (preUploadError) {
+      setFeedback({ tone: "error", message: preUploadError });
+      return;
+    }
+    if (
+      status === "published" &&
+      publishMode === "scheduled" &&
+      (!preUploadInput.publishAt ||
+        new Date(preUploadInput.publishAt).getTime() <= Date.now())
+    ) {
+      setFeedback({
+        tone: "error",
+        message: "예약 발행일은 현재 이후로 설정해 주세요.",
+      });
+      return;
+    }
+
     setSaving(true);
     setFeedback(null);
     try {
-      const requestedPublishAt =
-        status === "published"
-          ? publishMode === "immediate"
-            ? new Date().toISOString()
-            : localDateTimeToIso(publishAt)
-          : publishAt
-            ? localDateTimeToIso(publishAt)
-            : null;
-      if (
-        status === "published" &&
-        publishMode === "scheduled" &&
-        (!requestedPublishAt || new Date(requestedPublishAt).getTime() <= Date.now())
-      ) {
-        throw new Error("예약 발행일은 현재 이후로 설정해 주세요.");
-      }
-      const preUploadValidationError = validateDentalpediaArticle(
-        {
-          authorLabel: authorLabels[author],
-          bodyImagePaths: [],
-          bodyMarkdown,
-          category,
-          coverImageAlt: title.trim(),
-          coverImagePath: coverImagePath ?? (coverFile ? "pending-upload" : null),
-          disclaimerEnabled,
-          homeOrder: Number(homeOrder),
-          homeSummary: summary.trim(),
-          homeVisible,
-          isRecommended: recommended,
-          publishAt: requestedPublishAt,
-          reviewedAt: reviewedAt || null,
-          slug: slug.trim().toLowerCase(),
-          status,
-          tags,
-          title: title.trim(),
-        },
-        status === "published",
-      );
-      if (preUploadValidationError) throw new Error(preUploadValidationError);
-
+      setSlug(resolvedSlug);
       let nextCoverPath = coverImagePath;
       if (coverFile) {
-        const uploaded = await uploadAdminDentalpediaImage(accessToken, coverFile);
-        nextCoverPath = uploaded.path;
+        const upload = await uploadAdminDentalpediaImage(accessToken, coverFile);
+        nextCoverPath = upload.path;
       }
 
       const referencedPendingImages = pendingBodyImages.filter((image) =>
@@ -339,7 +443,10 @@ export function DentalpediaArticleEditor({
       let resolvedBody = bodyMarkdown;
       const nextStoredPaths = { ...storedImagePaths };
       uploadedBodyImages.forEach(({ image, upload }) => {
-        resolvedBody = resolvedBody.replaceAll(localImageUrl(image.token), upload.publicUrl);
+        resolvedBody = resolvedBody.replaceAll(
+          localImageUrl(image.token),
+          upload.publicUrl,
+        );
         nextStoredPaths[upload.publicUrl] = upload.path;
       });
       const resolvedImagePaths = markdownImageUrls(resolvedBody).map(
@@ -351,26 +458,13 @@ export function DentalpediaArticleEditor({
       const verifiedImagePaths = resolvedImagePaths.filter(
         (path): path is string => Boolean(path),
       );
-
-      const input: AdminDentalpediaArticleInput = {
-        authorLabel: authorLabels[author],
-        bodyImagePaths: verifiedImagePaths,
-        bodyMarkdown: resolvedBody,
-        category,
-        coverImageAlt: title.trim(),
-        coverImagePath: nextCoverPath,
-        disclaimerEnabled,
-        homeOrder: Number(homeOrder),
-        homeSummary: summary.trim(),
-        homeVisible,
-        isRecommended: recommended,
-        publishAt: requestedPublishAt,
-        reviewedAt: reviewedAt || null,
-        slug: slug.trim().toLowerCase(),
+      const input = articleInput(
         status,
-        tags,
-        title: title.trim(),
-      };
+        resolvedSlug,
+        nextCoverPath,
+        resolvedBody,
+        verifiedImagePaths,
+      );
       const validationError = validateDentalpediaArticle(
         input,
         status === "published",
@@ -384,11 +478,20 @@ export function DentalpediaArticleEditor({
       pendingBodyImages.forEach((image) => URL.revokeObjectURL(image.objectUrl));
       applyArticle(result.article);
       window.localStorage.setItem(draftStorageKey, result.article.id);
-      setFeedback({ tone: "success", message: result.message });
+      setFeedback({
+        tone: "success",
+        message:
+          status === "published" && !isVisible
+            ? "칼럼을 발행했지만 공개 상태가 꺼져 있어 앱에는 노출되지 않습니다."
+            : result.message,
+      });
     } catch (error) {
       setFeedback({
         tone: "error",
-        message: error instanceof Error ? error.message : "칼럼을 저장하지 못했습니다.",
+        message:
+          error instanceof Error
+            ? error.message
+            : "칼럼을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
       });
     } finally {
       setSaving(false);
@@ -397,26 +500,39 @@ export function DentalpediaArticleEditor({
 
   function resetToNewArticle() {
     window.localStorage.removeItem(draftStorageKey);
-    setArticleId(null);
-    setTitle("");
-    setCategory("treatment-guide");
-    setTags([]);
-    setSlug("");
-    setSummary("");
-    setHomeVisible(true);
-    setRecommended(false);
-    setHomeOrder("1");
-    setBodyMarkdown("");
-    setStoredImagePaths({});
+    if (coverObjectUrl) URL.revokeObjectURL(coverObjectUrl);
     pendingBodyImages.forEach((image) => URL.revokeObjectURL(image.objectUrl));
+    setArticleId(null);
+    setSlug("");
+    setTitle("");
+    setCategory("implant");
+    setSummary("");
+    setTags([]);
+    setTagDraft("");
+    setSearchKeywords("");
+    setCoverFile(null);
+    setCoverObjectUrl(null);
+    setCoverImagePath(null);
+    setCoverImageUrl(null);
+    setBodyMarkdown("");
+    setBodyEditing(false);
+    setStoredImagePaths({});
     setPendingBodyImages([]);
-    removeCover();
+    setAuthorLabel("치카픽 콘텐츠팀");
+    setAuthoredAt(toDateTimeLocalValue(new Date()).slice(0, 10));
+    setReviewedAt(toDateTimeLocalValue(new Date()).slice(0, 10));
+    setReviewerLabel("");
+    setIsVisible(true);
+    setIsRecommended(false);
+    setIsHero(false);
+    setHomeVisible(true);
+    setHomeOrder("2");
     setPublishMode("immediate");
     setPublishAt(toDateTimeLocalValue(new Date()));
-    setReviewedAt(toDateTimeLocalValue(new Date()).slice(0, 10));
+    setEndAt("");
+    setRelatedContentIds([]);
     setDisclaimerEnabled(true);
-    setLastSavedAt(null);
-    setFeedback({ tone: "success", message: "새 칼럼을 작성할 수 있습니다." });
+    setFeedback(null);
   }
 
   function submitArticle(event: FormEvent<HTMLFormElement>) {
@@ -424,131 +540,965 @@ export function DentalpediaArticleEditor({
     void save("published");
   }
 
-  if (loadingDraft) {
-    return <p className="admin-information-article-loading">저장한 칼럼을 불러오는 중입니다.</p>;
-  }
-
   return (
-    <form className="admin-information-article" id="information-upload-form" onSubmit={submitArticle} role="tabpanel">
-      <div className="admin-information-article-layout">
-        <div className="admin-information-article-editor">
-          <header className="admin-information-editor-heading">
-            <h1>치카피디아</h1>
-            <p>콘텐츠를 등록하고 관리할 수 있는 어드민 페이지입니다.</p>
-          </header>
-          <div className="admin-information-upload-tabs" aria-label="업로드 정보 유형" role="tablist">
-            <button aria-selected={informationType === "video"} onClick={() => onInformationTypeChange("video")} role="tab" type="button">영상</button>
-            <button aria-selected className="is-active" role="tab" type="button">칼럼/게시글</button>
+    <div className="admin-information-video admin-information-column">
+      <form id="information-upload-form" onSubmit={submitArticle}>
+        <div className="admin-information-video-layout">
+          <div className="admin-information-video-editor">
+            <DentalpediaWorkspaceHeading />
+            <DentalpediaInformationTypeTabs
+              informationType={informationType}
+              onChange={onInformationTypeChange}
+            />
+
+            <div className="admin-information-video-type-note">
+              <strong>선택된 유형: 칼럼</strong>
+              <p>
+                대표 이미지 + 제목 + 요약 + 상세 본문 형태로 사용자에게 노출됩니다.
+              </p>
+            </div>
+
+            {loadingDraft ? (
+              <p className="admin-information-post-loading">
+                저장한 칼럼을 불러오는 중...
+              </p>
+            ) : null}
+            {feedback ? (
+              <p
+                className={`admin-information-upload-feedback is-${feedback.tone}`}
+                role="status"
+              >
+                {feedback.message}
+              </p>
+            ) : null}
+
+            <ColumnSection title="기본 정보">
+              <ColumnField label="콘텐츠 제목" required>
+                <input
+                  disabled={saving}
+                  maxLength={120}
+                  onChange={(event) => setTitle(event.target.value)}
+                  placeholder="콘텐츠 제목을 입력해 주세요."
+                  value={title}
+                />
+              </ColumnField>
+
+              <div className="admin-information-video-field">
+                <div className="admin-information-column-category-heading">
+                  <span className="admin-information-video-required-label">
+                    <strong>카테고리</strong>
+                    <b aria-hidden>*</b>
+                  </span>
+                  <button disabled={saving} type="button">
+                    카테고리 관리
+                  </button>
+                </div>
+                <div className="admin-information-video-category-chips">
+                  {categories.map((option) => (
+                    <button
+                      className={category === option.value ? "is-active" : undefined}
+                      disabled={saving}
+                      key={option.value}
+                      onClick={() => setCategory(option.value)}
+                      type="button"
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                <small>사용자 상단 필터와 연결됩니다.</small>
+              </div>
+
+              <ColumnField label="카드 요약">
+                <textarea
+                  disabled={saving}
+                  maxLength={200}
+                  onChange={(event) => setSummary(event.target.value)}
+                  placeholder="홈이나 가로형 칼럼 카드에서 사용할 짧은 설명입니다."
+                  value={summary}
+                />
+                <small>홈이나 가로형 칼럼 카드에서 사용할 짧은 설명입니다.</small>
+              </ColumnField>
+
+              <div className="admin-information-video-field">
+                <strong>태그</strong>
+                {tags.length ? (
+                  <div className="admin-information-column-tags">
+                    {tags.map((tag) => (
+                      <span key={tag}>
+                        #{tag}
+                        <button
+                          aria-label={`${tag} 태그 삭제`}
+                          disabled={saving}
+                          onClick={() =>
+                            setTags((current) =>
+                              current.filter((item) => item !== tag),
+                            )
+                          }
+                          type="button"
+                        >
+                          <Image
+                            alt=""
+                            height={16}
+                            src="/dentalpedia/column-tag-delete.svg"
+                            width={24}
+                          />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                <input
+                  disabled={saving || tags.length >= 10}
+                  maxLength={30}
+                  onChange={(event) => setTagDraft(event.target.value)}
+                  onKeyDown={handleTagKeyDown}
+                  placeholder="태그를 입력하세요 (엔터로 추가)"
+                  value={tagDraft}
+                />
+              </div>
+
+              <ColumnField label="검색 키워드">
+                <input
+                  disabled={saving}
+                  onChange={(event) => setSearchKeywords(event.target.value)}
+                  placeholder="쉼표로 구분해 입력해 주세요."
+                  value={searchKeywords}
+                />
+                <small>사용자 검색 시 제목 외 추가 검색어로 활용됩니다.</small>
+              </ColumnField>
+            </ColumnSection>
+
+            <ColumnSection title="칼럼 콘텐츠">
+              <div className="admin-information-video-field">
+                <span className="admin-information-video-required-label">
+                  <strong>대표 이미지</strong>
+                  <b aria-hidden>*</b>
+                </span>
+                <div className="admin-information-column-cover-field">
+                  <div className="admin-information-column-cover-image">
+                    <ArticleImage
+                      alt={title || "칼럼 대표 이미지"}
+                      fallback="/dentalpedia/column-sample-cover.png"
+                      src={visibleCoverUrl}
+                    />
+                  </div>
+                  <div className="admin-information-column-cover-actions">
+                    <div>
+                      <label>
+                        이미지 변경
+                        <input
+                          accept="image/jpeg,image/png,image/webp"
+                          aria-label="대표 이미지 변경"
+                          disabled={saving}
+                          onChange={(event) => {
+                            chooseCover(event.currentTarget.files?.[0] ?? null);
+                            event.currentTarget.value = "";
+                          }}
+                          type="file"
+                        />
+                      </label>
+                      <button
+                        aria-label="대표 이미지 삭제"
+                        disabled={saving}
+                        onClick={removeCover}
+                        type="button"
+                      >
+                        <Image
+                          alt=""
+                          height={18}
+                          src="/dentalpedia/column-delete.svg"
+                          width={24}
+                        />
+                      </button>
+                    </div>
+                    <small>
+                      권장 사이즈: 1280 × 720px (16:9) · JPG, PNG, WEBP · 최대
+                      10MB
+                    </small>
+                  </div>
+                </div>
+              </div>
+
+              <div className="admin-information-video-field">
+                <strong>노출 영역별 미리보기</strong>
+                <div className="admin-information-column-crops">
+                  <ColumnCrop
+                    detail="4:3 비율 크롭"
+                    label="홈 카드"
+                    ratio="4 / 3"
+                    src={visibleCoverUrl}
+                  />
+                  <ColumnCrop
+                    detail="16:9 비율 크롭"
+                    label="Hero 카드"
+                    ratio="16 / 9"
+                    src={visibleCoverUrl}
+                  />
+                  <ColumnCrop
+                    detail="1:1 비율 크롭"
+                    label="기본 카드"
+                    ratio="1 / 1"
+                    src={visibleCoverUrl}
+                  />
+                  <ColumnCrop
+                    detail="4:3 비율 크롭"
+                    label="가로 칼럼 카드"
+                    ratio="4 / 3"
+                    src={visibleCoverUrl}
+                  />
+                </div>
+              </div>
+
+              <div className="admin-information-video-field">
+                <strong>본문 내용</strong>
+                <div
+                  aria-label="본문 편집 도구"
+                  className="admin-information-column-toolbar"
+                  role="toolbar"
+                >
+                  <button
+                    className="is-paragraph"
+                    onClick={() => applyFormat("\n\n", "", "본문을 입력하세요.")}
+                    type="button"
+                  >
+                    본문(Paragraph)
+                    <Image
+                      alt=""
+                      height={24}
+                      src="/dentalpedia/article-chevron-down.svg"
+                      width={24}
+                    />
+                  </button>
+                  <span aria-hidden />
+                  <button onClick={() => applyFormat("## ", "", "제목")} type="button">
+                    H2
+                  </button>
+                  <button onClick={() => applyFormat("### ", "", "소제목")} type="button">
+                    H3
+                  </button>
+                  <span aria-hidden />
+                  <button
+                    aria-label="굵게"
+                    className="is-bold"
+                    onClick={() => applyFormat("**", "**", "강조할 내용")}
+                    type="button"
+                  >
+                    B
+                  </button>
+                  <span aria-hidden />
+                  <button
+                    aria-label="목록"
+                    onClick={() => applyFormat("1. ", "", "목록 항목")}
+                    type="button"
+                  >
+                    <Image
+                      alt=""
+                      height={24}
+                      src="/dentalpedia/article-list.svg"
+                      width={24}
+                    />
+                  </button>
+                  <button
+                    aria-label="이미지 삽입"
+                    onClick={() => bodyImageInputRef.current?.click()}
+                    type="button"
+                  >
+                    <Image
+                      alt=""
+                      height={24}
+                      src="/dentalpedia/article-camera.svg"
+                      width={24}
+                    />
+                  </button>
+                  <button
+                    aria-label="안내문 삽입"
+                    onClick={() => applyFormat("> 💡 ", "", "알아두세요")}
+                    type="button"
+                  >
+                    <Image
+                      alt=""
+                      height={24}
+                      src="/dentalpedia/column-toolbar-callout.svg"
+                      width={24}
+                    />
+                  </button>
+                  <button
+                    aria-label="링크 삽입"
+                    onClick={() =>
+                      applyFormat("[", "](https://)", "링크 텍스트")
+                    }
+                    type="button"
+                  >
+                    <Image
+                      alt=""
+                      height={24}
+                      src="/dentalpedia/column-toolbar-share.svg"
+                      width={24}
+                    />
+                  </button>
+                </div>
+                <div
+                  className={`admin-information-column-body-editor${bodyEditing ? " is-editing" : ""}`}
+                  onClick={() => bodyRef.current?.focus()}
+                >
+                  <div
+                    aria-hidden
+                    className="admin-information-column-body-rendered"
+                  >
+                    {bodyMarkdown === initialBody ? (
+                      <InitialColumnBodyPreview />
+                    ) : (
+                      <ReactMarkdown
+                        components={{
+                          img: ({ alt, src }) => (
+                            <span className="admin-information-column-markdown-image">
+                              <Image
+                                alt={alt ?? "본문 이미지"}
+                                fill
+                                sizes="760px"
+                                src={String(src)}
+                                unoptimized
+                              />
+                            </span>
+                          ),
+                        }}
+                        remarkPlugins={[remarkGfm]}
+                      >
+                        {previewBody}
+                      </ReactMarkdown>
+                    )}
+                  </div>
+                  <textarea
+                    aria-label="칼럼 본문"
+                    className="admin-information-column-body"
+                    disabled={saving}
+                    maxLength={50_000}
+                    onBlur={() => setBodyEditing(false)}
+                    onChange={(event) => setBodyMarkdown(event.target.value)}
+                    onFocus={() => setBodyEditing(true)}
+                    ref={bodyRef}
+                    value={bodyMarkdown}
+                  />
+                </div>
+                <button
+                  className="admin-information-column-insert-image"
+                  disabled={saving}
+                  onClick={() => bodyImageInputRef.current?.click()}
+                  type="button"
+                >
+                  <Image
+                    alt=""
+                    height={18}
+                    src="/dentalpedia/column-insert-image.svg"
+                    width={24}
+                  />
+                  이미지 삽입
+                </button>
+                <input
+                  accept="image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  multiple
+                  onChange={(event) => {
+                    addBodyImages(event.currentTarget.files);
+                    event.currentTarget.value = "";
+                  }}
+                  ref={bodyImageInputRef}
+                  type="file"
+                />
+              </div>
+            </ColumnSection>
+
+            <ColumnSection title="작성 정보">
+              <div className="admin-information-column-grid">
+                <ColumnField label="작성자" required>
+                  <input
+                    disabled={saving}
+                    maxLength={40}
+                    onChange={(event) => setAuthorLabel(event.target.value)}
+                    value={authorLabel}
+                  />
+                </ColumnField>
+                <ColumnField label="작성/게시일" required>
+                  <input
+                    disabled={saving}
+                    onChange={(event) => setAuthoredAt(event.target.value)}
+                    type="date"
+                    value={authoredAt}
+                  />
+                </ColumnField>
+                <ColumnField label="최종 검토일" required>
+                  <input
+                    disabled={saving}
+                    onChange={(event) => setReviewedAt(event.target.value)}
+                    type="date"
+                    value={reviewedAt}
+                  />
+                </ColumnField>
+                <ColumnField label="검수자">
+                  <input
+                    disabled={saving}
+                    maxLength={40}
+                    onChange={(event) => setReviewerLabel(event.target.value)}
+                    placeholder="검수자 정보 (선택)"
+                    value={reviewerLabel}
+                  />
+                </ColumnField>
+              </div>
+              <p className="admin-information-column-helper">
+                치과 건강 정보의 경우 검수 전문가를 기재할 수 있습니다.
+              </p>
+            </ColumnSection>
+
+            <ColumnSection title="노출 설정">
+              <div className="admin-information-video-toggle-list">
+                <ColumnToggleRow
+                  checked={isVisible}
+                  description="ON이면 치카피디아 콘텐츠 목록에 노출됩니다."
+                  disabled={saving}
+                  label="치카피디아 노출"
+                  onChange={() => setIsVisible((value) => !value)}
+                />
+                <ColumnToggleRow
+                  checked={isRecommended}
+                  description="추천 콘텐츠로 강조 노출합니다."
+                  disabled={saving}
+                  label="추천 콘텐츠"
+                  onChange={() => setIsRecommended((value) => !value)}
+                />
+                <ColumnToggleRow
+                  checked={isHero}
+                  description="치카피디아 상단 Hero 영역에 노출합니다."
+                  disabled={saving}
+                  label="상단 대표 콘텐츠"
+                  onChange={() => setIsHero((value) => !value)}
+                />
+                <div className="admin-information-video-home-exposure">
+                  <ColumnToggleRow
+                    checked={homeVisible}
+                    description="치카픽 홈 화면 치카피디아 영역에 노출합니다."
+                    disabled={saving}
+                    label="홈 노출"
+                    onChange={() => setHomeVisible((value) => !value)}
+                  />
+                  {homeVisible ? (
+                    <label>
+                      홈 노출 순서
+                      <input
+                        disabled={saving}
+                        min={1}
+                        max={9999}
+                        onChange={(event) => setHomeOrder(event.target.value)}
+                        type="number"
+                        value={homeOrder}
+                      />
+                      <small>
+                        1순위는 대형 카드, 2~5순위는 일반 카드로 자동 배치됩니다.
+                      </small>
+                    </label>
+                  ) : null}
+                </div>
+              </div>
+            </ColumnSection>
+
+            <ColumnSection title="발행 설정">
+              <fieldset className="admin-information-video-radio-field">
+                <legend>공개 상태</legend>
+                <label>
+                  <input
+                    checked={isVisible}
+                    disabled={saving}
+                    name="articleVisibility"
+                    onChange={() => setIsVisible(true)}
+                    type="radio"
+                  />
+                  공개
+                </label>
+                <label>
+                  <input
+                    checked={!isVisible}
+                    disabled={saving}
+                    name="articleVisibility"
+                    onChange={() => setIsVisible(false)}
+                    type="radio"
+                  />
+                  비공개
+                </label>
+              </fieldset>
+              <fieldset className="admin-information-video-radio-field">
+                <legend>발행 방식</legend>
+                <label>
+                  <input
+                    checked={publishMode === "immediate"}
+                    disabled={saving}
+                    name="articlePublishMode"
+                    onChange={() => setPublishMode("immediate")}
+                    type="radio"
+                  />
+                  즉시 발행
+                </label>
+                <label>
+                  <input
+                    checked={publishMode === "scheduled"}
+                    disabled={saving}
+                    name="articlePublishMode"
+                    onChange={() => setPublishMode("scheduled")}
+                    type="radio"
+                  />
+                  예약 발행
+                </label>
+              </fieldset>
+              <div className="admin-information-video-date-grid">
+                <ColumnField label="게시일시">
+                  <input
+                    disabled={saving || publishMode === "immediate"}
+                    onChange={(event) => setPublishAt(event.target.value)}
+                    type="datetime-local"
+                    value={publishAt}
+                  />
+                </ColumnField>
+                <ColumnField label="게시 종료일 (선택)">
+                  <input
+                    disabled={saving}
+                    onChange={(event) => setEndAt(event.target.value)}
+                    type="date"
+                    value={endAt}
+                  />
+                </ColumnField>
+              </div>
+            </ColumnSection>
+
+            <ColumnSection title="관련 콘텐츠">
+              <div className="admin-information-video-related">
+                <button
+                  disabled={saving}
+                  onClick={() => setRelatedDialogOpen(true)}
+                  type="button"
+                >
+                  ＋ 콘텐츠 선택
+                </button>
+                {selectedRelatedOptions.length ? (
+                  <ul>
+                    {selectedRelatedOptions.map((option) => (
+                      <li key={option.id}>
+                        <span aria-hidden />
+                        <strong>
+                          {option.label} ({contentTypeLabel(option.type)})
+                        </strong>
+                        <button
+                          aria-label={`${option.label} 관련 콘텐츠 삭제`}
+                          disabled={saving}
+                          onClick={() =>
+                            setRelatedContentIds((current) =>
+                              current.filter((id) => id !== option.id),
+                            )
+                          }
+                          type="button"
+                        >
+                          <Image
+                            alt=""
+                            height={18}
+                            src="/dentalpedia/column-delete.svg"
+                            width={24}
+                          />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>선택된 관련 콘텐츠가 없습니다.</p>
+                )}
+              </div>
+            </ColumnSection>
           </div>
 
-          {feedback ? (
-            <p className={`admin-information-article-feedback is-${feedback.tone}`} role="alert">{feedback.message}</p>
-          ) : null}
-
-          <section className="admin-information-article-card">
-            <h2>기본 정보</h2>
-            <label className="admin-information-article-field">
-              <span className="admin-information-article-field-heading"><strong>칼럼 제목 *</strong><small>{title.length} / 60</small></span>
-              <input className="is-emphasized" maxLength={60} onChange={(event) => setTitle(event.target.value)} type="text" value={title} />
-            </label>
-            <div className="admin-information-article-basic-grid">
-              <div className="admin-information-article-field">
-                <strong>카테고리 *</strong>
-                <AdminSelect className="admin-information-article-select" label="칼럼 카테고리" onChange={setCategory} options={categories} value={category} />
-              </div>
-              <div className="admin-information-article-field">
-                <strong>태그</strong>
-                <div className="admin-information-article-tags">
-                  {tags.map((tag) => <button aria-label={`${tag} 태그 삭제`} className="is-tag" key={tag} onClick={() => setTags((current) => current.filter((item) => item !== tag))} type="button">#{tag} ×</button>)}
-                  <input aria-label="새 태그" maxLength={30} onChange={(event) => setTagDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addTag(); } }} placeholder="태그" value={tagDraft} />
-                  <button onClick={addTag} type="button">+ 태그 추가</button>
-                </div>
-              </div>
-            </div>
-            <label className="admin-information-article-field">
-              <strong>페이지 주소(URL) *</strong>
-              <span className="admin-information-article-slug"><span>chikapick.com/column/</span><input aria-label="페이지 주소" maxLength={100} onChange={(event) => setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))} type="text" value={slug} /></span>
-            </label>
-          </section>
-
-          <section className="admin-information-article-card">
-            <header className="admin-information-article-section-heading"><h2>홈 노출 정보</h2><p>홈 칼럼 카드에 표시될 정보를 입력하세요.</p></header>
-            <div className="admin-information-article-field">
-              <strong>대표 이미지 *</strong>
-              <div className="admin-information-article-cover-field">
-                <div className="admin-information-article-cover-image"><ArticleImage alt={title || "칼럼 대표 이미지"} fallback="/dentalpedia/article-consultation-cover.png" src={visibleCoverUrl} /></div>
-                <div className="admin-information-article-cover-controls">
-                  <div><label>이미지 변경<input accept="image/jpeg,image/png,image/webp" aria-label="대표 이미지 변경" onChange={(event) => { chooseCover(event.currentTarget.files?.[0] ?? null); event.currentTarget.value = ""; }} type="file" /></label><button aria-label="대표 이미지 삭제" onClick={removeCover} type="button"><Image alt="" aria-hidden height={24} src="/dentalpedia/article-delete.svg" width={24} /></button></div>
-                  <small>{coverFile?.name ?? (coverImagePath ? "등록된 대표 이미지" : "권장 1200 × 630px · JPG, PNG, WEBP · 최대 10MB")}</small>
-                </div>
-              </div>
-            </div>
-            <label className="admin-information-article-field">
-              <span className="admin-information-article-field-heading"><strong>홈 카드 요약 *</strong><small>{summary.length} / 120</small></span>
-              <textarea maxLength={120} onChange={(event) => setSummary(event.target.value)} value={summary} />
-            </label>
-            <div className="admin-information-article-home-settings">
-              <div><Switch checked={homeVisible} label="홈에 노출" onChange={() => setHomeVisible((current) => !current)} /><strong>홈에 노출</strong></div>
-              <div><Switch checked={recommended} label="추천 칼럼으로 표시" onChange={() => setRecommended((current) => !current)} /><strong>추천 칼럼으로 표시</strong></div>
-              <label><strong>홈 노출 순서</strong><input aria-label="홈 노출 순서" min="1" onChange={(event) => setHomeOrder(event.target.value)} type="number" value={homeOrder} /><small>숫자가 작을수록 먼저 노출됩니다.</small></label>
-            </div>
-          </section>
-
-          <section className="admin-information-article-card admin-information-article-body-card">
-            <h2>본문 내용</h2>
-            <div aria-label="본문 편집 도구" className="admin-information-article-toolbar" role="toolbar">
-              <button className="is-paragraph" onClick={() => applyFormat("\n\n", "", "본문을 입력하세요.")} type="button">본문(Paragraph)<Image alt="" aria-hidden height={24} src="/dentalpedia/article-chevron-down.svg" width={24} /></button><span aria-hidden />
-              <button aria-label="굵게" className="is-bold" onClick={() => applyFormat("**", "**", "강조할 내용")} type="button">B</button>
-              <button aria-label="기울임" className="is-italic" onClick={() => applyFormat("*", "*", "기울일 내용")} type="button">I</button>
-              <button aria-label="인용" className="is-underline" onClick={() => applyFormat("> ", "", "인용할 내용")} type="button">U</button><span aria-hidden />
-              <button onClick={() => applyFormat("## ", "", "제목")} type="button">H2</button><button onClick={() => applyFormat("### ", "", "소제목")} type="button">H3</button><span aria-hidden />
-              <button aria-label="목록" onClick={() => applyFormat("1. ", "", "목록 항목")} type="button"><Image alt="" aria-hidden height={24} src="/dentalpedia/article-list.svg" width={24} /></button>
-              <button aria-label="실행 취소" onClick={() => { bodyRef.current?.focus(); document.execCommand("undo"); }} type="button"><Image alt="" aria-hidden height={24} src="/dentalpedia/article-back.svg" width={24} /></button>
-              <button aria-label="이미지 삽입" onClick={() => bodyImageInputRef.current?.click()} type="button"><Image alt="" aria-hidden height={24} src="/dentalpedia/article-camera.svg" width={24} /></button>
-            </div>
-            <textarea aria-label="칼럼 본문" className="admin-information-article-content admin-information-article-content-editor" maxLength={50000} onChange={(event) => setBodyMarkdown(event.target.value)} ref={bodyRef} value={bodyMarkdown} />
-            <input accept="image/jpeg,image/png,image/webp" className="sr-only" multiple onChange={(event) => { addBodyImages(event.currentTarget.files); event.currentTarget.value = ""; }} ref={bodyImageInputRef} type="file" />
-            <p className="admin-information-article-saved"><span aria-hidden />{saving ? "저장 중" : lastSavedAt ? `${lastSavedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })} 저장됨` : "아직 저장되지 않음"}</p>
-          </section>
-
-          <section className="admin-information-article-card admin-information-article-publishing">
-            <header><h2>발행 설정</h2><button aria-expanded={publishingExpanded} aria-label={publishingExpanded ? "발행 설정 접기" : "발행 설정 펼치기"} onClick={() => setPublishingExpanded((current) => !current)} type="button"><Image alt="" aria-hidden height={24} src={publishingExpanded ? "/dentalpedia/article-chevron-up.svg" : "/dentalpedia/article-chevron-down.svg"} width={24} /></button></header>
-            {publishingExpanded ? <>
-              <div className="admin-information-article-publish-options"><label><input checked={publishMode === "immediate"} name="article-publish-mode" onChange={() => setPublishMode("immediate")} type="radio" />즉시 발행</label><label><input checked={publishMode === "scheduled"} name="article-publish-mode" onChange={() => setPublishMode("scheduled")} type="radio" />예약 발행</label></div>
-              <div className="admin-information-article-publish-grid">
-                <label className="admin-information-article-field"><strong>발행일</strong><input disabled={publishMode === "immediate"} onChange={(event) => setPublishAt(event.target.value)} type="datetime-local" value={publishAt} /></label>
-                <div className="admin-information-article-field"><strong>작성자</strong><AdminSelect className="admin-information-article-select" label="작성자" onChange={setAuthor} options={authors} value={author} /></div>
-                <label className="admin-information-article-field"><strong>최종 검토일</strong><input onChange={(event) => setReviewedAt(event.target.value)} type="date" value={reviewedAt} /></label>
-              </div>
-              <div className="admin-information-article-disclaimer"><div><strong>의료 정보 안내문 활성화</strong><Switch checked={disclaimerEnabled} label="의료 정보 안내문 활성화" onChange={() => setDisclaimerEnabled((current) => !current)} /></div><p>본 칼럼은 일반적인 건강 정보를 제공하기 위해 작성되었으며, 전문적인 치료나 임상적 진단을 대체할 수 없습니다. 개별 증상에 대한 처방 및 치료 결정은 반드시 담당 전문 의료진과의 상담을 거쳐야 합니다.</p></div>
-            </> : null}
-          </section>
-
-          <footer className="admin-information-article-actions"><button disabled={saving} onClick={resetToNewArticle} type="button">취소</button><div><button disabled={saving} onClick={() => void save("draft")} type="button">{saving ? "저장 중" : "임시저장"}</button><button disabled={saving} type="submit">{saving ? "처리 중" : "발행하기"}</button></div></footer>
+          <ColumnPreview
+            body={previewBody}
+            categoryLabel={categoryLabel}
+            coverUrl={visibleCoverUrl}
+            isRecommended={isRecommended}
+            previewMode={previewMode}
+            saved={Boolean(articleId)}
+            setPreviewMode={setPreviewMode}
+            summary={summary}
+            title={title}
+          />
         </div>
 
-        <aside className="admin-information-article-preview" aria-label="실시간 미리보기">
-          <header><span><Image alt="" aria-hidden height={24} src="/dentalpedia/article-preview.svg" width={24} /><strong>실시간 미리보기</strong></span><em>{articleId ? "저장된 칼럼" : "미발행 미리보기"}</em></header>
-          <div className="admin-information-article-preview-tabs" role="tablist"><button aria-selected={previewMode === "home"} className={previewMode === "home" ? "is-active" : undefined} onClick={() => setPreviewMode("home")} role="tab" type="button">홈 카드</button><button aria-selected={previewMode === "detail"} className={previewMode === "detail" ? "is-active" : undefined} onClick={() => setPreviewMode("detail")} role="tab" type="button">상세 페이지</button></div>
-          <p className="admin-information-article-preview-status"><span aria-hidden />입력 내용이 실시간으로 자동 반영됩니다.</p>
-          {previewMode === "home" ? (
-            <div className="admin-information-article-home-preview"><header><strong>치카픽 추천 칼럼</strong><span>전체보기 &gt;</span></header><div className="admin-information-article-preview-list"><article className="is-current"><div className="admin-information-article-preview-main-image"><ArticleImage alt={title || "칼럼 대표 이미지"} fallback="/dentalpedia/article-home-card.png" src={visibleCoverUrl} /></div><div><p className="admin-information-article-preview-badges"><span>{categoryLabel}</span>{recommended ? <em>추천</em> : null}</p><h3>{title || "칼럼 제목"}</h3><p>{summary || "홈 카드에 표시될 요약을 입력하세요."}</p><time>{formatDentalpediaDate(publishMode === "scheduled" ? localDateTimeToIso(publishAt) : new Date().toISOString())}</time></div></article></div><p className="admin-information-article-preview-order">{homeVisible ? `홈 노출 순서 ${homeOrder || "-"}번으로 표시됩니다.` : "홈에 노출되지 않습니다."}</p></div>
-          ) : (
-            <article className="admin-information-article-detail-preview"><div><ArticleImage alt={title || "칼럼 대표 이미지"} fallback="/dentalpedia/article-home-card.png" src={visibleCoverUrl} /></div><span>{categoryLabel}</span><h3>{title || "칼럼 제목"}</h3><p>{summary || "칼럼 내용을 입력하세요."}</p><div className="admin-information-article-markdown"><ReactMarkdown components={{ img: ({ alt, src }) => <span className="admin-information-article-markdown-image"><Image alt={alt ?? "본문 이미지"} fill sizes="420px" src={String(src)} unoptimized /></span> }} remarkPlugins={[remarkGfm]}>{previewBody}</ReactMarkdown></div>{disclaimerEnabled ? <small className="admin-information-article-preview-disclaimer">본 칼럼은 일반적인 건강 정보이며 전문적인 진단이나 치료를 대체하지 않습니다.</small> : null}</article>
-          )}
-          <button className="admin-information-article-miniature" onClick={() => setPreviewMode("detail")} type="button"><span><Image alt="상세 페이지 구성 미니어처" fill sizes="40px" src="/dentalpedia/article-detail-miniature.png" /></span><span><strong>상세 페이지 미니어처 보기</strong><small>상단 히어로 배너 및 전체 구성 확인</small></span><Image alt="" aria-hidden height={24} src="/dentalpedia/article-chevron-right.svg" width={24} /></button>
-        </aside>
-      </div>
-    </form>
+        <footer className="admin-information-video-actions">
+          <button disabled={loadingDraft || saving} onClick={resetToNewArticle} type="button">
+            취소
+          </button>
+          <div>
+            <button
+              disabled={loadingDraft || saving}
+              onClick={() => void save("draft")}
+              type="button"
+            >
+              {saving ? "저장 중..." : "임시저장"}
+            </button>
+            <button disabled={loadingDraft || saving} type="submit">
+              {saving ? "처리 중..." : "발행하기"}
+            </button>
+          </div>
+        </footer>
+
+        {relatedDialogOpen ? (
+          <ColumnRelatedContentDialog
+            currentArticleId={articleId}
+            onChange={setRelatedContentIds}
+            onClose={() => setRelatedDialogOpen(false)}
+            options={relatedOptions}
+            selectedIds={relatedContentIds}
+          />
+        ) : null}
+      </form>
+    </div>
   );
 }
 
-function Switch({ checked, label, onChange }: { checked: boolean; label: string; onChange: () => void }) {
-  return <button aria-checked={checked} aria-label={label} className="admin-information-article-switch" onClick={onChange} role="switch" type="button"><span /></button>;
+function ColumnSection({ children, title }: { children: ReactNode; title: string }) {
+  return (
+    <section className="admin-information-video-section">
+      <h2>{title}</h2>
+      {children}
+    </section>
+  );
 }
 
-function ArticleImage({ alt, fallback, src }: { alt: string; fallback: string; src: string | null }) {
-  return <Image alt={alt} fill sizes="(max-width: 980px) 100vw, 420px" src={src ?? fallback} unoptimized={Boolean(src)} />;
+function ColumnField({
+  children,
+  label,
+  required = false,
+}: {
+  children: ReactNode;
+  label: string;
+  required?: boolean;
+}) {
+  return (
+    <label className="admin-information-video-field">
+      <span className="admin-information-video-required-label">
+        <strong>{label}</strong>
+        {required ? <b aria-hidden>*</b> : null}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+function ColumnCrop({
+  detail,
+  label,
+  ratio,
+  src,
+}: {
+  detail: string;
+  label: string;
+  ratio: string;
+  src: string | null;
+}) {
+  return (
+    <figure>
+      <div style={{ aspectRatio: ratio }}>
+        <ArticleImage
+          alt={`${label} 대표 이미지 미리보기`}
+          fallback="/dentalpedia/column-sample-cover.png"
+          src={src}
+        />
+      </div>
+      <figcaption>
+        <strong>{label}</strong>
+        <small>{detail}</small>
+      </figcaption>
+    </figure>
+  );
+}
+
+function ColumnToggleRow({
+  checked,
+  description,
+  disabled,
+  label,
+  onChange,
+}: {
+  checked: boolean;
+  description: string;
+  disabled: boolean;
+  label: string;
+  onChange: () => void;
+}) {
+  return (
+    <div className="admin-information-video-toggle-row">
+      <span>
+        <strong>{label}</strong>
+        <small>{description}</small>
+      </span>
+      <button
+        aria-checked={checked}
+        aria-label={label}
+        className={`admin-information-video-switch${checked ? " is-active" : ""}`}
+        disabled={disabled}
+        onClick={onChange}
+        role="switch"
+        type="button"
+      >
+        <span />
+      </button>
+    </div>
+  );
+}
+
+function InitialColumnBodyPreview() {
+  return (
+    <>
+      <h2>왜 병원마다 임플란트 비용이 다를까?</h2>
+      <p>
+        임플란트 시술을 고려할 때 가장 먼저 부딪히는 질문이 바로
+        &apos;왜 병원마다 가격이 이렇게 다를까?&apos;입니다.
+      </p>
+      <p>임플란트 비용은 크게 다음 요소에 의해 결정됩니다:</p>
+      <ol>
+        <li>사용하는 임플란트 제품 (국산/수입)</li>
+        <li>뼈이식 필요 여부</li>
+        <li>상악동 거상술 여부</li>
+        <li>보철물 종류</li>
+        <li>병원의 시설 및 장비 수준</li>
+      </ol>
+      <span className="admin-information-column-demo-body-image">
+        <Image
+          alt="임플란트 치아 모형을 설명하는 모습"
+          fill
+          sizes="760px"
+          src="/dentalpedia/column-sample-body.png"
+        />
+      </span>
+      <small>임플란트 가격은 다양한 구강 구조 요인과 수술 현황에 의해 세분화됩니다.</small>
+      <blockquote>
+        💡 알아두세요: 가장 비싼 임플란트가 반드시 가장 좋은 결과를 보장하지는
+        않습니다.
+      </blockquote>
+    </>
+  );
+}
+
+function ColumnPreview({
+  body,
+  categoryLabel,
+  coverUrl,
+  isRecommended,
+  previewMode,
+  saved,
+  setPreviewMode,
+  summary,
+  title,
+}: {
+  body: string;
+  categoryLabel: string;
+  coverUrl: string | null;
+  isRecommended: boolean;
+  previewMode: PreviewMode;
+  saved: boolean;
+  setPreviewMode: (mode: PreviewMode) => void;
+  summary: string;
+  title: string;
+}) {
+  const displayTitle = title.trim() || "콘텐츠 제목";
+  const displaySummary =
+    summary.trim() || "카드 요약이 여기에 표시됩니다.";
+  return (
+    <aside className="admin-information-video-preview" aria-label="실시간 미리보기">
+      <header>
+        <span>
+          <Image
+            alt=""
+            height={24}
+            src="/dentalpedia/article-preview.svg"
+            width={24}
+          />
+          <strong>실시간 미리보기</strong>
+        </span>
+        <em>{saved ? "저장된 칼럼" : "미발행 미리보기"}</em>
+      </header>
+      <div className="admin-information-video-preview-tabs" role="tablist">
+        <button
+          aria-selected={previewMode === "home"}
+          className={previewMode === "home" ? "is-active" : undefined}
+          onClick={() => setPreviewMode("home")}
+          role="tab"
+          type="button"
+        >
+          홈 카드
+        </button>
+        <button
+          aria-selected={previewMode === "detail"}
+          className={previewMode === "detail" ? "is-active" : undefined}
+          onClick={() => setPreviewMode("detail")}
+          role="tab"
+          type="button"
+        >
+          상세 페이지
+        </button>
+      </div>
+      <p className="admin-information-video-preview-status">
+        <span aria-hidden />입력 내용이 실시간으로 자동 반영됩니다.
+      </p>
+
+      {previewMode === "home" ? (
+        <div className="admin-information-column-home-preview">
+          <header>
+            <strong>치카픽 추천 칼럼</strong>
+            <span>전체보기 &gt;</span>
+          </header>
+          <article>
+            <div className="admin-information-column-preview-image">
+              <ArticleImage
+                alt={`${displayTitle} 홈 카드 미리보기`}
+                fallback="/dentalpedia/column-sample-cover.png"
+                src={coverUrl}
+              />
+            </div>
+            <div>
+              <p className="admin-information-column-preview-badges">
+                <span>COLUMN · {categoryLabel}</span>
+                {isRecommended ? <em>추천</em> : null}
+              </p>
+              <h3>{displayTitle}</h3>
+              <small>{displaySummary}</small>
+            </div>
+          </article>
+        </div>
+      ) : (
+        <article className="admin-information-column-detail-preview">
+          <div className="admin-information-column-detail-image">
+            <ArticleImage
+              alt={`${displayTitle} 상세 미리보기`}
+              fallback="/dentalpedia/column-sample-cover.png"
+              src={coverUrl}
+            />
+          </div>
+          <span>COLUMN · {categoryLabel}</span>
+          <h3>{displayTitle}</h3>
+          <p>{displaySummary}</p>
+          <div className="admin-information-column-markdown">
+            <ReactMarkdown
+              components={{
+                img: ({ alt, src }) => (
+                  <span className="admin-information-column-markdown-image">
+                    <Image
+                      alt={alt ?? "본문 이미지"}
+                      fill
+                      sizes="386px"
+                      src={String(src)}
+                      unoptimized
+                    />
+                  </span>
+                ),
+              }}
+              remarkPlugins={[remarkGfm]}
+            >
+              {body}
+            </ReactMarkdown>
+          </div>
+        </article>
+      )}
+    </aside>
+  );
+}
+
+function ColumnRelatedContentDialog({
+  currentArticleId,
+  onChange,
+  onClose,
+  options,
+  selectedIds,
+}: {
+  currentArticleId: string | null;
+  onChange: (ids: string[]) => void;
+  onClose: () => void;
+  options: DentalpediaRelatedContentOption[];
+  selectedIds: string[];
+}) {
+  const availableOptions = options.filter(
+    (option) => option.id !== `article:${currentArticleId}`,
+  );
+  return (
+    <div
+      className="admin-information-video-dialog-layer"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      role="presentation"
+    >
+      <section
+        aria-label="관련 콘텐츠 선택"
+        aria-modal="true"
+        className="admin-information-video-dialog"
+        role="dialog"
+      >
+        <header>
+          <div>
+            <h2>관련 콘텐츠 선택</h2>
+            <p>최대 10개까지 선택할 수 있습니다.</p>
+          </div>
+          <button aria-label="닫기" onClick={onClose} type="button">
+            ×
+          </button>
+        </header>
+        <div>
+          {availableOptions.length ? (
+            availableOptions.map((option) => (
+              <label key={option.id}>
+                <input
+                  checked={selectedIds.includes(option.id)}
+                  onChange={(event) => {
+                    if (event.target.checked) {
+                      if (selectedIds.length < 10) {
+                        onChange([...selectedIds, option.id]);
+                      }
+                    } else {
+                      onChange(selectedIds.filter((id) => id !== option.id));
+                    }
+                  }}
+                  type="checkbox"
+                />
+                <span>
+                  <strong>{option.label}</strong>
+                  <small>{contentTypeLabel(option.type)}</small>
+                </span>
+              </label>
+            ))
+          ) : (
+            <p>선택할 수 있는 발행 콘텐츠가 없습니다.</p>
+          )}
+        </div>
+        <footer>
+          <button onClick={onClose} type="button">
+            선택 완료
+          </button>
+        </footer>
+      </section>
+    </div>
+  );
+}
+
+function ArticleImage({
+  alt,
+  fallback,
+  src,
+}: {
+  alt: string;
+  fallback: string;
+  src: string | null;
+}) {
+  return (
+    <Image
+      alt={alt}
+      fill
+      sizes="(max-width: 1050px) 100vw, 420px"
+      src={src ?? fallback}
+      unoptimized={Boolean(src)}
+    />
+  );
 }
 
 function localImageUrl(token: string) {
@@ -560,10 +1510,51 @@ function safeMarkdownAlt(value: string) {
 }
 
 function markdownImageUrls(markdown: string) {
-  return [...markdown.matchAll(/!\[[^\]]*\]\(([^\s)]+)(?:\s+"[^"]*")?\)/g)].map((match) => match[1]);
+  return [
+    ...markdown.matchAll(/!\[[^\]]*\]\(([^\s)]+)(?:\s+"[^"]*")?\)/g),
+  ].map((match) => match[1]);
+}
+
+function commaSeparatedValues(value: string, limit: number) {
+  return [
+    ...new Set(
+      value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  ].slice(0, limit);
 }
 
 function localDateTimeToIso(value: string) {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function dateToEndOfDayIso(value: string) {
+  if (!value) return null;
+  const date = new Date(`${value}T23:59:59.999`);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function toDateInputValue(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function contentTypeFromId(id: string): DentalpediaRelatedContentOption["type"] {
+  if (id.startsWith("video:")) return "video";
+  if (id.startsWith("post:")) return "post";
+  return "article";
+}
+
+function contentTypeLabel(type: DentalpediaRelatedContentOption["type"]) {
+  if (type === "video") return "영상";
+  if (type === "post") return "게시물";
+  return "칼럼";
 }
