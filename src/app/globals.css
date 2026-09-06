@@ -13399,10 +13399,13 @@ td span {
   overflow: hidden;
   display: grid;
   grid-template-columns: minmax(0, 2.2fr) minmax(330px, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
   align-items: stretch;
 }
 
 .admin-information-video-editor {
+  grid-column: 1;
+  grid-row: 1;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior-y: contain;
@@ -13410,7 +13413,7 @@ td span {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  padding: 24px 28px 48px 32px;
+  padding: 24px 28px 32px 32px;
 }
 
 .admin-information-video-tabs {
@@ -14042,6 +14045,8 @@ td span {
 }
 
 .admin-information-video-preview {
+  grid-column: 2;
+  grid-row: 1 / -1;
   min-height: 0;
   overflow: hidden;
   align-self: stretch;
@@ -14277,20 +14282,21 @@ td span {
 }
 
 .admin-information-video-actions {
-  position: sticky;
+  position: relative;
   z-index: 5;
-  bottom: 0;
+  grid-column: 1;
+  grid-row: 2;
   width: 100%;
   min-width: 0;
+  flex: 0 0 auto;
   border-top: 1px solid #e2e8f0;
-  background: rgba(255, 255, 255, 0.96);
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   margin-top: 0;
-  padding: 18px 0;
-  backdrop-filter: blur(8px);
+  padding: 18px 28px 18px 32px;
 }
 
 .admin-information-video-actions > div {
@@ -14437,9 +14443,12 @@ td span {
     min-height: calc(100dvh - 56px);
     overflow: visible;
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
   }
 
   .admin-information-video-editor {
+    grid-column: 1;
+    grid-row: auto;
     overflow: visible;
     overscroll-behavior-y: auto;
     border-right: 0;
@@ -14447,6 +14456,8 @@ td span {
   }
 
   .admin-information-video-preview {
+    grid-column: 1;
+    grid-row: auto;
     overflow: visible;
     overscroll-behavior-y: auto;
     border-left: 0;
@@ -14458,6 +14469,15 @@ td span {
     width: min(100%, 520px);
     margin-right: auto;
     margin-left: auto;
+  }
+
+  .admin-information-video-actions {
+    position: sticky;
+    bottom: 0;
+    grid-column: 1;
+    grid-row: auto;
+    padding-right: 32px;
+    padding-left: 32px;
   }
 
   .admin-information-video-preview > :last-child {
@@ -14592,6 +14612,7 @@ td span {
   .admin-information-video-actions {
     align-items: stretch;
     flex-direction: column;
+    padding: 16px;
   }
 
   .admin-information-video-actions > div {

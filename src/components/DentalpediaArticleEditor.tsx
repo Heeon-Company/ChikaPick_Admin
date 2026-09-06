@@ -1126,25 +1126,25 @@ export function DentalpediaArticleEditor({
                 )}
               </div>
             </ColumnSection>
-
-            <footer className="admin-information-video-actions">
-              <button disabled={loadingDraft || saving} onClick={resetToNewArticle} type="button">
-                취소
-              </button>
-              <div>
-                <button
-                  disabled={loadingDraft || saving}
-                  onClick={() => void save("draft")}
-                  type="button"
-                >
-                  {saving ? "저장 중..." : "임시저장"}
-                </button>
-                <button disabled={loadingDraft || saving} type="submit">
-                  {saving ? "처리 중..." : "발행하기"}
-                </button>
-              </div>
-            </footer>
           </div>
+
+          <footer className="admin-information-video-actions">
+            <button disabled={loadingDraft || saving} onClick={resetToNewArticle} type="button">
+              취소
+            </button>
+            <div>
+              <button
+                disabled={loadingDraft || saving}
+                onClick={() => void save("draft")}
+                type="button"
+              >
+                {saving ? "저장 중..." : "임시저장"}
+              </button>
+              <button disabled={loadingDraft || saving} type="submit">
+                {saving ? "처리 중..." : "발행하기"}
+              </button>
+            </div>
+          </footer>
 
           <ColumnPreview
             body={previewBody}
