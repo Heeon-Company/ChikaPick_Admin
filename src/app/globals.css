@@ -14111,7 +14111,7 @@ td span {
 
 .admin-information-video-home-preview > header span {
   color: #787e8c;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .admin-information-video-home-preview article {
@@ -14768,10 +14768,6 @@ td span {
 
 .admin-information-post-preview-image > img {
   object-fit: cover;
-}
-
-.admin-information-post-home-preview > header span {
-  font-size: 13px;
 }
 
 .admin-information-post-preview-image > span {
