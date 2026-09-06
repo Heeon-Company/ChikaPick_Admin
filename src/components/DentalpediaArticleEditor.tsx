@@ -66,6 +66,58 @@ const categories: ReadonlyArray<{
   { value: "orthodontics", label: "교정" },
 ];
 
+type CategoryManagementRow = {
+  active: boolean;
+  count: number;
+  displayName: string;
+  id: string;
+  name: string;
+};
+
+type CategoryEditorState = {
+  mode: "add" | "edit";
+  order: number;
+  row: CategoryManagementRow | null;
+};
+
+const categoryManagementRows: ReadonlyArray<CategoryManagementRow> = [
+  {
+    active: true,
+    count: 24,
+    displayName: "구강 관리",
+    id: "oral-care",
+    name: "구강 관리",
+  },
+  {
+    active: true,
+    count: 18,
+    displayName: "임플란트",
+    id: "implant",
+    name: "임플란트",
+  },
+  {
+    active: true,
+    count: 31,
+    displayName: "일반 진료",
+    id: "general-care",
+    name: "일반 진료",
+  },
+  {
+    active: true,
+    count: 12,
+    displayName: "미백·심미",
+    id: "cosmetic",
+    name: "미백·심미",
+  },
+  {
+    active: true,
+    count: 9,
+    displayName: "교정",
+    id: "orthodontics",
+    name: "교정",
+  },
+] as const;
+
 export function DentalpediaArticleEditor({
   accessToken,
   informationType,
@@ -122,6 +174,7 @@ export function DentalpediaArticleEditor({
     DentalpediaRelatedContentOption[]
   >([]);
   const [relatedDialogOpen, setRelatedDialogOpen] = useState(false);
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("home");
   const [disclaimerEnabled, setDisclaimerEnabled] = useState(true);
   const [loadingDraft, setLoadingDraft] = useState(true);
@@ -589,7 +642,11 @@ export function DentalpediaArticleEditor({
                     <strong>카테고리</strong>
                     <b aria-hidden>*</b>
                   </span>
-                  <button disabled={saving} type="button">
+                  <button
+                    disabled={saving}
+                    onClick={() => setCategoryDialogOpen(true)}
+                    type="button"
+                  >
                     카테고리 관리
                   </button>
                 </div>
@@ -1152,7 +1209,478 @@ export function DentalpediaArticleEditor({
             selectedIds={relatedContentIds}
           />
         ) : null}
+        {categoryDialogOpen ? (
+          <ColumnCategoryManagementDialog
+            onClose={() => setCategoryDialogOpen(false)}
+          />
+        ) : null}
       </form>
+    </div>
+  );
+}
+
+function ColumnCategoryManagementDialog({ onClose }: { onClose: () => void }) {
+  const dialogRef = useRef<HTMLElement>(null);
+  const hadSubdialogRef = useRef(false);
+  const [rows, setRows] = useState<CategoryManagementRow[]>(() =>
+    categoryManagementRows.map((row) => ({ ...row })),
+  );
+  const [categoryEditor, setCategoryEditor] =
+    useState<CategoryEditorState | null>(null);
+  const [warningRow, setWarningRow] =
+    useState<CategoryManagementRow | null>(null);
+
+  useEffect(() => {
+    dialogRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const hasSubdialog = Boolean(categoryEditor || warningRow);
+    if (!hasSubdialog && hadSubdialogRef.current) dialogRef.current?.focus();
+    hadSubdialogRef.current = hasSubdialog;
+  }, [categoryEditor, warningRow]);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    function handleKeyDown(event: globalThis.KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      if (warningRow) {
+        setWarningRow(null);
+      } else if (categoryEditor) {
+        setCategoryEditor(null);
+      } else {
+        onClose();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [categoryEditor, onClose, warningRow]);
+
+  function saveCategory(input: {
+    active: boolean;
+    displayName: string;
+    name: string;
+    order: number;
+  }) {
+    if (categoryEditor?.mode === "edit" && categoryEditor.row) {
+      const editedId = categoryEditor.row.id;
+      setRows((currentRows) => {
+        const nextRows = currentRows.map((row) =>
+          row.id === editedId
+            ? {
+                ...row,
+                active: input.active,
+                displayName: input.displayName || input.name,
+                name: input.name,
+              }
+            : row,
+        );
+        const editedIndex = nextRows.findIndex((row) => row.id === editedId);
+        const [editedRow] = nextRows.splice(editedIndex, 1);
+        nextRows.splice(
+          Math.min(Math.max(input.order - 1, 0), nextRows.length),
+          0,
+          editedRow,
+        );
+        return nextRows;
+      });
+    } else {
+      setRows((currentRows) => {
+        const nextRows = [...currentRows];
+        const newRow: CategoryManagementRow = {
+          active: input.active,
+          count: 0,
+          displayName: input.displayName || input.name,
+          id: `local-${Date.now()}`,
+          name: input.name,
+        };
+        nextRows.splice(
+          Math.min(Math.max(input.order - 1, 0), nextRows.length),
+          0,
+          newRow,
+        );
+        return nextRows;
+      });
+    }
+    setCategoryEditor(null);
+  }
+
+  function disableWarningCategory() {
+    if (!warningRow) return;
+    setRows((currentRows) =>
+      currentRows.map((row) =>
+        row.id === warningRow.id ? { ...row, active: false } : row,
+      ),
+    );
+    setWarningRow(null);
+    setCategoryEditor(null);
+  }
+
+  return (
+    <div
+      className="admin-information-column-category-dialog-layer"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      role="presentation"
+    >
+      <section
+        aria-describedby="column-category-description"
+        aria-hidden={categoryEditor ? true : undefined}
+        aria-labelledby="column-category-title"
+        aria-modal="true"
+        className="admin-information-column-category-dialog"
+        ref={dialogRef}
+        role="dialog"
+        tabIndex={-1}
+      >
+        <button className="sr-only" onClick={onClose} type="button">
+          카테고리 관리 닫기
+        </button>
+        <header>
+          <div>
+            <h2 id="column-category-title">카테고리 관리</h2>
+            <p id="column-category-description">
+              사용자 치카피디아 화면에 노출되는 콘텐츠 카테고리를 관리합니다.
+            </p>
+          </div>
+          <button
+            onClick={() =>
+              setCategoryEditor({ mode: "add", order: rows.length + 1, row: null })
+            }
+            type="button"
+          >
+            <Image
+              alt=""
+              height={16}
+              src="/dentalpedia/column-category-add.svg"
+              width={16}
+            />
+            카테고리 추가
+          </button>
+        </header>
+
+        <div className="admin-information-column-category-table-wrap">
+          <table>
+            <caption className="sr-only">치카피디아 카테고리 목록</caption>
+            <colgroup>
+              <col className="is-drag" />
+              <col className="is-name" />
+              <col className="is-display" />
+              <col className="is-order" />
+              <col className="is-status" />
+              <col className="is-count" />
+              <col className="is-action" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th aria-label="순서 변경" />
+                <th>카테고리명</th>
+                <th>사용자 노출명</th>
+                <th>노출 순서</th>
+                <th>사용 상태</th>
+                <th>등록 콘텐츠 수</th>
+                <th>관리</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => (
+                <tr key={row.id}>
+                  <td>
+                    <Image
+                      alt=""
+                      height={20}
+                      src="/dentalpedia/column-category-drag.svg"
+                      width={20}
+                    />
+                  </td>
+                  <td>
+                    <strong>{row.name}</strong>
+                  </td>
+                  <td>{row.displayName}</td>
+                  <td>{index + 1}</td>
+                  <td>
+                    <span className={row.active ? undefined : "is-inactive"}>
+                      {row.active ? "사용 중" : "사용 안 함"}
+                    </span>
+                  </td>
+                  <td>{row.count}개</td>
+                  <td>
+                    <button
+                      onClick={() =>
+                        setCategoryEditor({ mode: "edit", order: index + 1, row })
+                      }
+                      type="button"
+                    >
+                      수정
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <footer>
+          <Image
+            alt=""
+            height={16}
+            src="/dentalpedia/column-category-info.svg"
+            width={16}
+          />
+          <p>
+            * 노출 순서를 변경하면 사용자 치카피디아 카테고리 탭에 즉시
+            반영됩니다.
+          </p>
+        </footer>
+      </section>
+
+      {categoryEditor ? (
+        <ColumnCategoryFormDialog
+          editor={categoryEditor}
+          obscured={Boolean(warningRow)}
+          onClose={() => setCategoryEditor(null)}
+          onDelete={(row) => {
+            if (row.count === 0) {
+              setRows((currentRows) =>
+                currentRows.filter((currentRow) => currentRow.id !== row.id),
+              );
+              setCategoryEditor(null);
+              return;
+            }
+            setWarningRow(row);
+          }}
+          onSave={saveCategory}
+        />
+      ) : null}
+      {warningRow ? (
+        <ColumnCategoryDeleteWarningDialog
+          count={warningRow.count}
+          onClose={() => setWarningRow(null)}
+          onDisable={disableWarningCategory}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function ColumnCategoryFormDialog({
+  editor,
+  obscured,
+  onClose,
+  onDelete,
+  onSave,
+}: {
+  editor: CategoryEditorState;
+  obscured: boolean;
+  onClose: () => void;
+  onDelete: (row: CategoryManagementRow) => void;
+  onSave: (input: {
+    active: boolean;
+    displayName: string;
+    name: string;
+    order: number;
+  }) => void;
+}) {
+  const dialogRef = useRef<HTMLElement>(null);
+  const [name, setName] = useState(editor.row?.name ?? "");
+  const [displayName, setDisplayName] = useState(editor.row?.displayName ?? "");
+  const [order, setOrder] = useState(String(editor.order));
+  const [active, setActive] = useState(editor.row?.active ?? true);
+  const editedRow = editor.row;
+  const trimmedName = name.trim();
+
+  useEffect(() => {
+    if (!obscured) dialogRef.current?.focus();
+  }, [obscured]);
+
+  function save() {
+    if (!trimmedName) return;
+    onSave({
+      active,
+      displayName: displayName.trim(),
+      name: trimmedName,
+      order: Math.max(1, Number.parseInt(order, 10) || 1),
+    });
+  }
+
+  return (
+    <div
+      aria-hidden={obscured ? true : undefined}
+      className="admin-information-column-category-subdialog-layer"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      role="presentation"
+    >
+      <section
+        aria-labelledby="column-category-form-title"
+        aria-modal="true"
+        className="admin-information-column-category-form-dialog"
+        ref={dialogRef}
+        role="dialog"
+        tabIndex={-1}
+      >
+        <header>
+          <h2 id="column-category-form-title">
+            {editor.mode === "add" ? "카테고리 추가" : "카테고리 수정"}
+          </h2>
+          <button aria-label="닫기" onClick={onClose} type="button">
+            <Image
+              alt=""
+              height={24}
+              src="/dentalpedia/column-category-close.svg"
+              width={24}
+            />
+          </button>
+        </header>
+
+        <div className="admin-information-column-category-form-body">
+          <label>
+            <span>
+              카테고리명 <b aria-hidden>*</b>
+            </span>
+            <input
+              autoFocus
+              maxLength={40}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="예) 구강 관리, 임플란트"
+              value={name}
+            />
+          </label>
+          <label>
+            <span>사용자 노출명</span>
+            <input
+              maxLength={40}
+              onChange={(event) => setDisplayName(event.target.value)}
+              placeholder="화면에 표시될 카테고리명을 입력하세요"
+              value={displayName}
+            />
+            <small>비워두면 카테고리명이 그대로 사용됩니다.</small>
+          </label>
+          <label className="admin-information-column-category-order-field">
+            <span>노출 순서</span>
+            <input
+              inputMode="numeric"
+              min={1}
+              onChange={(event) => setOrder(event.target.value)}
+              type="number"
+              value={order}
+            />
+          </label>
+          <div className="admin-information-column-category-toggle-field">
+            <span>
+              <strong>사용 여부</strong>
+              <small>게시판 목록 활성화 여부를 결정합니다.</small>
+            </span>
+            <button
+              aria-label={active ? "카테고리 사용 중" : "카테고리 사용 안 함"}
+              aria-pressed={active}
+              className={active ? "is-active" : undefined}
+              onClick={() => setActive((current) => !current)}
+              type="button"
+            >
+              {active ? (
+                <Image
+                  alt=""
+                  height={28}
+                  src="/dentalpedia/column-category-toggle-on.svg"
+                  width={44}
+                />
+              ) : null}
+            </button>
+          </div>
+        </div>
+
+        <footer className={editor.mode === "edit" ? "has-delete" : undefined}>
+          {editor.mode === "edit" && editedRow ? (
+            <button
+              className="is-delete"
+              onClick={() => onDelete(editedRow)}
+              type="button"
+            >
+              카테고리 삭제
+            </button>
+          ) : null}
+          <div>
+            <button onClick={onClose} type="button">
+              취소
+            </button>
+            <button disabled={!trimmedName} onClick={save} type="button">
+              {editor.mode === "add" ? "카테고리 추가" : "저장"}
+            </button>
+          </div>
+        </footer>
+      </section>
+    </div>
+  );
+}
+
+function ColumnCategoryDeleteWarningDialog({
+  count,
+  onClose,
+  onDisable,
+}: {
+  count: number;
+  onClose: () => void;
+  onDisable: () => void;
+}) {
+  const dialogRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    dialogRef.current?.focus();
+  }, []);
+
+  return (
+    <div
+      className="admin-information-column-category-subdialog-layer is-warning"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      role="presentation"
+    >
+      <section
+        aria-describedby="column-category-warning-description"
+        aria-labelledby="column-category-warning-title"
+        aria-modal="true"
+        className="admin-information-column-category-warning-dialog"
+        ref={dialogRef}
+        role="alertdialog"
+        tabIndex={-1}
+      >
+        <div className="admin-information-column-category-warning-body">
+          <span>
+            <Image
+              alt=""
+              height={28}
+              src="/dentalpedia/column-category-warning.svg"
+              width={28}
+            />
+          </span>
+          <div>
+            <h2 id="column-category-warning-title">
+              카테고리를 삭제할 수 없습니다
+            </h2>
+            <p id="column-category-warning-description">
+              이 카테고리에 <strong>{count}개의 콘텐츠</strong>가 연결되어 있습니다.
+              <br />
+              삭제하려면 먼저 콘텐츠를 다른 카테고리로 변경해 주세요.
+            </p>
+          </div>
+        </div>
+        <footer>
+          <button onClick={onDisable} type="button">
+            사용 안 함으로 변경
+          </button>
+          <button onClick={onClose} type="button">
+            확인
+          </button>
+        </footer>
+      </section>
     </div>
   );
 }
