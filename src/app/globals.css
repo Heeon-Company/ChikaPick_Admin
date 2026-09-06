@@ -2261,6 +2261,17 @@ textarea:focus-visible {
   min-width: 0;
 }
 
+.admin-content.admin-content--information-upload {
+  flex: 1 1 auto;
+  gap: 0;
+  padding: 0;
+}
+
+.admin-content--information-upload > .admin-information-upload {
+  width: 100%;
+  min-width: 0;
+}
+
 .admin-content--layout-compact,
 .admin-content--layout-form {
   --admin-content-inner-max: 100%;
@@ -13343,6 +13354,7 @@ td span {
 }
 
 .admin-information-video-layout {
+  min-height: calc(100dvh - 56px);
   display: grid;
   grid-template-columns: minmax(0, 2.2fr) minmax(330px, 1fr);
   align-items: stretch;
@@ -13353,7 +13365,7 @@ td span {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  padding-right: 28px;
+  padding: 24px 28px 48px 32px;
 }
 
 .admin-information-video-tabs {
@@ -13487,6 +13499,14 @@ td span {
 .admin-information-video-url-row > input,
 .admin-information-video-date-grid input {
   height: 44px;
+}
+
+.admin-information-video-field > input.sr-only {
+  width: 1px;
+  height: 1px;
+  min-width: 0;
+  border: 0;
+  padding: 0;
 }
 
 .admin-information-video-field > textarea {
@@ -14215,7 +14235,7 @@ td span {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-top: 24px;
+  margin-top: 0;
   padding: 18px 0;
   backdrop-filter: blur(8px);
 }
@@ -14365,13 +14385,13 @@ td span {
 
   .admin-information-video-editor {
     border-right: 0;
-    padding-right: 0;
+    padding: 24px 32px 48px;
   }
 
   .admin-information-video-preview {
     border-left: 0;
     border-top: 1px solid #e2e8f0;
-    margin-top: 28px;
+    margin-top: 0;
   }
 
   .admin-information-video-preview > * {
@@ -14411,6 +14431,10 @@ td span {
 }
 
 @container (max-width: 480px) {
+  .admin-information-video-editor {
+    padding: 20px 16px 32px;
+  }
+
   .admin-information-video-tabs button {
     min-width: 0;
     flex: 1 1 auto;
@@ -14746,7 +14770,6 @@ td span {
   object-fit: cover;
 }
 
-.admin-information-post .admin-information-video-preview-status,
 .admin-information-post-home-preview > header span {
   font-size: 11px;
   line-height: 13px;
@@ -15862,10 +15885,6 @@ td span {
   color: #787e8c;
   font-size: 13px;
   line-height: 16px;
-}
-
-.admin-information-column .admin-information-video-preview-status {
-  font-size: 13px;
 }
 
 .admin-information-column .admin-information-video-switch {

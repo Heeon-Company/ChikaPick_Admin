@@ -925,6 +925,14 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                     <small>같은 카테고리/태그 기반으로 자동 추천도 가능합니다.</small>
                   </div>
                 </EditorSection>
+
+                <footer className="admin-information-video-actions">
+                  <button disabled={loadingDraft || saving} onClick={resetVideo} type="button">취소</button>
+                  <div>
+                    <button disabled={loadingDraft || saving} onClick={() => void saveVideo("draft")} type="button">{saving ? "저장 중..." : "임시저장"}</button>
+                    <button disabled={loadingDraft || saving} type="submit">{saving ? "처리 중..." : "발행하기"}</button>
+                  </div>
+                </footer>
               </div>
 
               <VideoPreview
@@ -940,14 +948,6 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                 unoptimized={Boolean(previewThumbnailUrl)}
               />
             </div>
-
-            <footer className="admin-information-video-actions">
-              <button disabled={loadingDraft || saving} onClick={resetVideo} type="button">취소</button>
-              <div>
-                <button disabled={loadingDraft || saving} onClick={() => void saveVideo("draft")} type="button">{saving ? "저장 중..." : "임시저장"}</button>
-                <button disabled={loadingDraft || saving} type="submit">{saving ? "처리 중..." : "발행하기"}</button>
-              </div>
-            </footer>
 
             {relatedDialogOpen ? (
               <RelatedContentDialog

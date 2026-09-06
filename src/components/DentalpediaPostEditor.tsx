@@ -794,6 +794,24 @@ export function DentalpediaPostEditor({
                 <small>같은 카테고리/태그 기반으로 자동 추천도 가능합니다.</small>
               </div>
             </PostSection>
+
+            <footer className="admin-information-video-actions">
+              <button disabled={loadingDraft || saving} onClick={resetPost} type="button">
+                취소
+              </button>
+              <div>
+                <button
+                  disabled={loadingDraft || saving}
+                  onClick={() => void savePost("draft")}
+                  type="button"
+                >
+                  {saving ? "저장 중..." : "임시저장"}
+                </button>
+                <button disabled={loadingDraft || saving} type="submit">
+                  {saving ? "처리 중..." : "발행하기"}
+                </button>
+              </div>
+            </footer>
           </div>
 
           <PostPreview
@@ -808,24 +826,6 @@ export function DentalpediaPostEditor({
             title={title}
           />
         </div>
-
-        <footer className="admin-information-video-actions">
-          <button disabled={loadingDraft || saving} onClick={resetPost} type="button">
-            취소
-          </button>
-          <div>
-            <button
-              disabled={loadingDraft || saving}
-              onClick={() => void savePost("draft")}
-              type="button"
-            >
-              {saving ? "저장 중..." : "임시저장"}
-            </button>
-            <button disabled={loadingDraft || saving} type="submit">
-              {saving ? "처리 중..." : "발행하기"}
-            </button>
-          </div>
-        </footer>
 
         {relatedDialogOpen ? (
           <PostRelatedContentDialog
