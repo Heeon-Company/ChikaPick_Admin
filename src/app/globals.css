@@ -1925,6 +1925,19 @@ textarea:focus-visible {
   grid-template-columns: 208px minmax(0, 1fr);
 }
 
+.admin-shell--information-upload {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.admin-shell--information-upload > .admin-main,
+.admin-shell--information-upload .admin-content--information-upload {
+  min-height: 0;
+  overflow: hidden;
+}
+
 .admin-sidebar {
   position: sticky;
   top: 0;
@@ -14469,6 +14482,19 @@ td span {
   .admin-information-video-preview > :last-child {
     overflow: visible;
     overscroll-behavior-y: auto;
+  }
+
+  .admin-shell--information-upload {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .admin-shell--information-upload .admin-content--information-upload {
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+
+  .admin-shell--information-upload .admin-information-video-layout {
+    min-height: 0;
   }
 }
 

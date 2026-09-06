@@ -936,7 +936,13 @@ export default function AdminHome() {
   }
 
   return (
-    <main className="admin-shell">
+    <main
+      className={`admin-shell${
+        activePrimaryTab === "information-upload"
+          ? " admin-shell--information-upload"
+          : ""
+      }`}
+    >
       <aside className="admin-sidebar" aria-label="관리자 메뉴">
         <div className="admin-sidebar-brand">
           <span className="admin-sidebar-brand-symbol">
