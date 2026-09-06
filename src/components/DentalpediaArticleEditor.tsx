@@ -1960,11 +1960,15 @@ function ColumnPreview({
           </header>
           <article>
             <div className="admin-information-column-preview-image">
-              <ArticleImage
-                alt={`${displayTitle} 홈 카드 미리보기`}
-                fallback="/dentalpedia/column-sample-cover.png"
-                src={coverUrl}
-              />
+              {coverUrl ? (
+                <ArticleImage
+                  alt={`${displayTitle} 홈 카드 미리보기`}
+                  fallback="/dentalpedia/column-sample-cover.png"
+                  src={coverUrl}
+                />
+              ) : (
+                <ColumnPreviewImagePlaceholder />
+              )}
             </div>
             <div>
               <p className="admin-information-column-preview-badges">
@@ -1979,11 +1983,15 @@ function ColumnPreview({
       ) : (
         <article className="admin-information-column-detail-preview">
           <div className="admin-information-column-detail-image">
-            <ArticleImage
-              alt={`${displayTitle} 상세 미리보기`}
-              fallback="/dentalpedia/column-sample-cover.png"
-              src={coverUrl}
-            />
+            {coverUrl ? (
+              <ArticleImage
+                alt={`${displayTitle} 상세 미리보기`}
+                fallback="/dentalpedia/column-sample-cover.png"
+                src={coverUrl}
+              />
+            ) : (
+              <ColumnPreviewImagePlaceholder />
+            )}
           </div>
           <span>COLUMN · {categoryLabel}</span>
           <h3>{displayTitle}</h3>
@@ -2011,6 +2019,15 @@ function ColumnPreview({
         </article>
       )}
     </aside>
+  );
+}
+
+function ColumnPreviewImagePlaceholder() {
+  return (
+    <div className="admin-information-preview-placeholder">
+      <span aria-hidden>＋</span>
+      이미지 미리보기
+    </div>
   );
 }
 

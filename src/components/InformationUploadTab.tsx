@@ -473,10 +473,9 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
 
   const isVideo = informationType === "video";
   const isPost = informationType === "post";
+  const previewThumbnailUrl = thumbnailObjectUrl ?? thumbnailImageUrl;
   const visibleThumbnailUrl =
-    thumbnailObjectUrl ??
-    thumbnailImageUrl ??
-    "/dentalpedia/article-consultation-cover.png";
+    previewThumbnailUrl ?? "/dentalpedia/article-consultation-cover.png";
   const selectedVideoName = videoFile?.name ?? videoFileName;
   const selectedVideoSize = videoFile?.size ?? videoSizeBytes;
   const categoryLabel =
@@ -936,9 +935,9 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                 previewMode={previewMode}
                 saved={Boolean(videoId)}
                 setPreviewMode={setPreviewMode}
-                src={visibleThumbnailUrl}
+                src={previewThumbnailUrl}
                 title={title}
-                unoptimized={Boolean(thumbnailObjectUrl ?? thumbnailImageUrl)}
+                unoptimized={Boolean(previewThumbnailUrl)}
               />
             </div>
 
@@ -1006,15 +1005,19 @@ function ToggleRow({ checked, description, disabled, label, onChange }: { checke
   return <div className="admin-information-video-toggle-row"><span><strong>{label}</strong><small>{description}</small></span><Switch checked={checked} disabled={disabled} label={label} onChange={onChange} /></div>;
 }
 
-function VideoPreview({ categoryLabel, description, duration, isRecommended, previewMode, saved, setPreviewMode, src, title, unoptimized }: { categoryLabel: string; description: string; duration: string; isRecommended: boolean; previewMode: PreviewMode; saved: boolean; setPreviewMode: (mode: PreviewMode) => void; src: string; title: string; unoptimized: boolean }) {
+function VideoPreview({ categoryLabel, description, duration, isRecommended, previewMode, saved, setPreviewMode, src, title, unoptimized }: { categoryLabel: string; description: string; duration: string; isRecommended: boolean; previewMode: PreviewMode; saved: boolean; setPreviewMode: (mode: PreviewMode) => void; src: string | null; title: string; unoptimized: boolean }) {
   const displayTitle = title.trim() || "콘텐츠 제목";
   const displayDescription = description.trim() || "카드 요약이 여기에 표시됩니다.";
   return <aside className="admin-information-video-preview" aria-label="실시간 미리보기">
     <header><span><Image alt="" aria-hidden height={24} src="/dentalpedia/article-preview.svg" width={24} /><strong>실시간 미리보기</strong></span><em>{saved ? "저장된 영상" : "미발행 미리보기"}</em></header>
     <div className="admin-information-video-preview-tabs" role="tablist"><button aria-selected={previewMode === "home"} className={previewMode === "home" ? "is-active" : undefined} onClick={() => setPreviewMode("home")} role="tab" type="button">홈 카드</button><button aria-selected={previewMode === "detail"} className={previewMode === "detail" ? "is-active" : undefined} onClick={() => setPreviewMode("detail")} role="tab" type="button">상세 페이지</button></div>
     <p className="admin-information-video-preview-status"><span aria-hidden />입력 내용이 실시간으로 자동 반영됩니다.</p>
-    {previewMode === "home" ? <div className="admin-information-video-home-preview"><header><strong>치카픽 추천 칼럼</strong><span>전체보기 &gt;</span></header><article><div className="admin-information-video-preview-image"><Image alt={`${displayTitle} 카드 미리보기`} fill sizes="354px" src={src} unoptimized={unoptimized} /><span>▶ {duration || "00:00"}</span></div><div><p><span>{categoryLabel}</span>{isRecommended ? <em>추천</em> : null}</p><h3>{displayTitle}</h3><small>{displayDescription}</small></div></article></div> : <div className="admin-information-video-detail-preview"><div><Image alt={`${displayTitle} 상세 미리보기`} fill sizes="354px" src={src} unoptimized={unoptimized} /><span>▶</span></div><strong>{displayTitle}</strong><p>{displayDescription}</p></div>}
+    {previewMode === "home" ? <div className="admin-information-video-home-preview"><header><strong>치카픽 추천 칼럼</strong><span>전체보기 &gt;</span></header><article><div className="admin-information-video-preview-image">{src ? <Image alt={`${displayTitle} 카드 미리보기`} fill sizes="354px" src={src} unoptimized={unoptimized} /> : <PreviewImagePlaceholder />}{src ? <span>▶ {duration || "00:00"}</span> : null}</div><div><p><span>{categoryLabel}</span>{isRecommended ? <em>추천</em> : null}</p><h3>{displayTitle}</h3><small>{displayDescription}</small></div></article></div> : <div className="admin-information-video-detail-preview"><div>{src ? <><Image alt={`${displayTitle} 상세 미리보기`} fill sizes="354px" src={src} unoptimized={unoptimized} /><span>▶</span></> : <PreviewImagePlaceholder />}</div><strong>{displayTitle}</strong><p>{displayDescription}</p></div>}
   </aside>;
+}
+
+function PreviewImagePlaceholder() {
+  return <div className="admin-information-preview-placeholder"><span aria-hidden>＋</span>이미지 미리보기</div>;
 }
 
 function RelatedContentDialog({ currentVideoId, onChange, onClose, options, selectedIds }: { currentVideoId: string | null; onChange: (ids: string[]) => void; onClose: () => void; options: DentalpediaRelatedContentOption[]; selectedIds: string[] }) {

@@ -965,7 +965,7 @@ function PostPreview({
       {previewMode === "home" ? (
         <div className="admin-information-video-home-preview admin-information-post-home-preview">
           <header>
-            <strong>치카피디아</strong>
+            <strong>치카픽 추천 칼럼</strong>
             <span>전체보기 &gt;</span>
           </header>
           <article>
@@ -1020,12 +1020,12 @@ function PostPreviewImage({
       {src ? (
         <Image alt={alt} fill sizes="354px" src={src} unoptimized />
       ) : (
-        <div className="admin-information-post-preview-placeholder">
+        <div className="admin-information-preview-placeholder">
           <span aria-hidden>＋</span>
           이미지 미리보기
         </div>
       )}
-      {count > 1 ? <span>▧ 1/{count}</span> : null}
+      {count > 1 ? <span>1/{count}</span> : null}
     </div>
   );
 }
