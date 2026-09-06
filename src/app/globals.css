@@ -14979,7 +14979,7 @@ td span {
 
 .admin-information-column-category-table-wrap table {
   width: 100%;
-  min-width: 1008px;
+  min-width: 1006px;
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -15249,6 +15249,16 @@ td span {
 
 .admin-information-column-category-order-field input {
   width: 80px;
+  padding-right: 0;
+  padding-left: 0;
+  appearance: textfield;
+  text-align: center;
+}
+
+.admin-information-column-category-order-field input::-webkit-inner-spin-button,
+.admin-information-column-category-order-field input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
 }
 
 .admin-information-column-category-toggle-field {
@@ -15278,7 +15288,11 @@ td span {
   padding: 0;
 }
 
-.admin-information-column-category-toggle-field > button:not(.is-active)::after {
+.admin-information-column-category-toggle-field > button.is-active {
+  background: #0f766e;
+}
+
+.admin-information-column-category-toggle-field > button::after {
   position: absolute;
   top: 2px;
   left: 2px;
@@ -15289,12 +15303,8 @@ td span {
   content: "";
 }
 
-.admin-information-column-category-toggle-field > button img {
-  position: absolute;
-  top: -2px;
-  left: 0;
-  width: 44px;
-  height: 28px;
+.admin-information-column-category-toggle-field > button.is-active::after {
+  left: 22px;
 }
 
 .admin-information-column-category-form-dialog > footer {

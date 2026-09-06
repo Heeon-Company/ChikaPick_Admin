@@ -1583,16 +1583,7 @@ function ColumnCategoryFormDialog({
               className={active ? "is-active" : undefined}
               onClick={() => setActive((current) => !current)}
               type="button"
-            >
-              {active ? (
-                <Image
-                  alt=""
-                  height={28}
-                  src="/dentalpedia/column-category-toggle-on.svg"
-                  width={44}
-                />
-              ) : null}
-            </button>
+            />
           </div>
         </div>
 
