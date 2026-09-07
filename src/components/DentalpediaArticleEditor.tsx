@@ -725,8 +725,9 @@ export function DentalpediaArticleEditor({
                       >
                         <Image
                           alt=""
+                          aria-hidden
                           height={18}
-                          src="/dentalpedia/column-delete.svg"
+                          src="/dentalpedia/article-delete.svg"
                           width={24}
                         />
                       </button>

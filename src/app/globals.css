@@ -15680,7 +15680,11 @@ td span {
 
 .admin-information-column-cover-actions button {
   width: 36px;
+  min-height: 36px;
+  border-color: #e2e8f0;
+  color: #334155;
   padding: 6px;
+  font-weight: 400;
 }
 
 .admin-information-column-cover-actions label:has(input:disabled),
