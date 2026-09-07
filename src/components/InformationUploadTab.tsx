@@ -581,9 +581,9 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                     />
                   </Field>
 
-                  <div className="admin-information-video-field">
+                  <div className="admin-information-video-field admin-information-video-category-field">
                     <div className="admin-information-video-label-row">
-                      <span>
+                      <span className="admin-information-video-required-label">
                         <strong>카테고리</strong>
                         <b aria-hidden>*</b>
                       </span>

@@ -14675,14 +14675,12 @@ td span {
   margin: 0;
 }
 
-.admin-information-post .admin-information-video-category-chips button.is-active {
-  border-color: #0f172a;
-  background: #0f172a;
-  color: #fff;
-}
-
 .admin-information-post .admin-information-video-field > small {
   align-self: flex-end;
+}
+
+.admin-information-post .admin-information-video-category-field > small {
+  align-self: flex-start;
 }
 
 .admin-information-post-type-field {
@@ -14972,43 +14970,6 @@ td span {
 
 .admin-information-column .admin-information-upload-feedback {
   margin: 0;
-}
-
-.admin-information-column .admin-information-video-category-chips button {
-  border-color: #d4d6da;
-  background: #f3f4f6;
-  color: #3b4358;
-  font-weight: 600;
-}
-
-.admin-information-column .admin-information-video-category-chips button.is-active {
-  border-color: #000b26;
-  background: #000b26;
-  color: #fff;
-}
-
-.admin-information-column-category-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.admin-information-column-category-heading > button {
-  border: 0;
-  background: transparent;
-  color: #66738c;
-  cursor: pointer;
-  padding: 5px 10px;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  text-decoration: underline;
-}
-
-.admin-information-column-category-heading > button:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
 }
 
 .admin-information-column-category-dialog-layer {

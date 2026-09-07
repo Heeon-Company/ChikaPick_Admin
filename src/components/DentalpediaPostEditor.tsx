@@ -485,8 +485,8 @@ export function DentalpediaPostEditor({
                 <small>{title.length}/120</small>
               </PostField>
 
-              <div className="admin-information-video-field">
-                <div className="admin-information-column-category-heading">
+              <div className="admin-information-video-field admin-information-video-category-field">
+                <div className="admin-information-video-label-row">
                   <span className="admin-information-video-required-label">
                     <strong>카테고리</strong>
                     <b aria-hidden>*</b>
@@ -498,6 +498,7 @@ export function DentalpediaPostEditor({
                 <div className="admin-information-video-category-chips">
                   {categories.filter((option) => option.isActive || option.code === category).map((option) => (
                     <button
+                      aria-pressed={category === option.code}
                       className={category === option.code ? "is-active" : undefined}
                       disabled={saving}
                       key={option.id}
@@ -508,6 +509,7 @@ export function DentalpediaPostEditor({
                     </button>
                   ))}
                 </div>
+                <small>사용자 상단 필터와 연결됩니다.</small>
               </div>
 
               <PostField label="카드 요약">

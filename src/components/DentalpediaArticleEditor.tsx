@@ -658,8 +658,8 @@ export function DentalpediaArticleEditor({
                 />
               </ColumnField>
 
-              <div className="admin-information-video-field">
-                <div className="admin-information-column-category-heading">
+              <div className="admin-information-video-field admin-information-video-category-field">
+                <div className="admin-information-video-label-row">
                   <span className="admin-information-video-required-label">
                     <strong>카테고리</strong>
                     <b aria-hidden>*</b>
@@ -675,6 +675,7 @@ export function DentalpediaArticleEditor({
                 <div className="admin-information-video-category-chips">
                   {categories.filter((option) => option.isActive || option.code === category).map((option) => (
                     <button
+                      aria-pressed={category === option.code}
                       className={category === option.code ? "is-active" : undefined}
                       disabled={saving}
                       key={option.id}
