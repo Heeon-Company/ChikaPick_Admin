@@ -693,11 +693,14 @@ export function DentalpediaArticleEditor({
                 </span>
                 <div className="admin-information-column-cover-field">
                   <div className="admin-information-column-cover-image">
-                    <ArticleImage
-                      alt={title || "칼럼 대표 이미지"}
-                      fallback="/dentalpedia/column-sample-cover.png"
-                      src={visibleCoverUrl}
-                    />
+                    {visibleCoverUrl ? (
+                      <ArticleImage
+                        alt={title || "칼럼 대표 이미지"}
+                        src={visibleCoverUrl}
+                      />
+                    ) : (
+                      <ColumnPreviewImagePlaceholder />
+                    )}
                   </div>
                   <div className="admin-information-column-cover-actions">
                     <div>
@@ -913,7 +916,7 @@ export function DentalpediaArticleEditor({
                 </button>
                 <input
                   accept="image/jpeg,image/png,image/webp"
-                  className="sr-only"
+                  hidden
                   multiple
                   onChange={(event) => {
                     addBodyImages(event.currentTarget.files);
@@ -1809,11 +1812,11 @@ function ColumnCrop({
   return (
     <figure>
       <div style={{ aspectRatio: ratio }}>
-        <ArticleImage
-          alt={`${label} 대표 이미지 미리보기`}
-          fallback="/dentalpedia/column-sample-cover.png"
-          src={src}
-        />
+        {src ? (
+          <ArticleImage alt={`${label} 대표 이미지 미리보기`} src={src} />
+        ) : (
+          <ColumnPreviewImagePlaceholder />
+        )}
       </div>
       <figcaption>
         <strong>{label}</strong>
@@ -1963,7 +1966,6 @@ function ColumnPreview({
               {coverUrl ? (
                 <ArticleImage
                   alt={`${displayTitle} 홈 카드 미리보기`}
-                  fallback="/dentalpedia/column-sample-cover.png"
                   src={coverUrl}
                 />
               ) : (
@@ -1986,7 +1988,6 @@ function ColumnPreview({
             {coverUrl ? (
               <ArticleImage
                 alt={`${displayTitle} 상세 미리보기`}
-                fallback="/dentalpedia/column-sample-cover.png"
                 src={coverUrl}
               />
             ) : (
@@ -2109,20 +2110,18 @@ function ColumnRelatedContentDialog({
 
 function ArticleImage({
   alt,
-  fallback,
   src,
 }: {
   alt: string;
-  fallback: string;
-  src: string | null;
+  src: string;
 }) {
   return (
     <Image
       alt={alt}
       fill
       sizes="(max-width: 1050px) 100vw, 420px"
-      src={src ?? fallback}
-      unoptimized={Boolean(src)}
+      src={src}
+      unoptimized
     />
   );
 }

@@ -12974,7 +12974,9 @@ td span {
 
 .admin-information-video-thumbnail-controls input,
 .admin-information-video-dropzone input {
-  position: absolute;
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 1px;
   height: 1px;
   overflow: hidden;
@@ -14839,7 +14841,9 @@ td span {
 }
 
 .admin-information-post-add-image input {
-  position: absolute;
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 1px;
   height: 1px;
   overflow: hidden;
@@ -15686,7 +15690,9 @@ td span {
 }
 
 .admin-information-column-cover-actions input {
-  position: absolute;
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 1px;
   height: 1px;
   overflow: hidden;
