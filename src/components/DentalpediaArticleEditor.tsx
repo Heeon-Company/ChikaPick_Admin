@@ -142,8 +142,18 @@ export function DentalpediaArticleEditor({
     message: string;
     tone: "error" | "success";
   } | null>(null);
+  const [publishToast, setPublishToast] = useState<{
+    message: string;
+    tone: "error" | "success";
+  } | null>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const bodyImageInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!publishToast) return;
+    const timer = window.setTimeout(() => setPublishToast(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [publishToast]);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -396,6 +406,7 @@ export function DentalpediaArticleEditor({
 
   async function save(status: DentalpediaArticleStatus) {
     if (!accessToken || saving || loadingDraft) return;
+    if (status === "published") setPublishToast(null);
     const resolvedSlug = slug || `column-${crypto.randomUUID()}`;
     const pendingCoverPath =
       coverImagePath ?? (coverFile ? "pending-cover" : null);
@@ -414,7 +425,9 @@ export function DentalpediaArticleEditor({
       status === "published",
     );
     if (preUploadError) {
-      setFeedback({ tone: "error", message: preUploadError });
+      const outcome = { tone: "error" as const, message: preUploadError };
+      setFeedback(outcome);
+      if (status === "published") setPublishToast(outcome);
       return;
     }
     if (
@@ -423,10 +436,12 @@ export function DentalpediaArticleEditor({
       (!preUploadInput.publishAt ||
         new Date(preUploadInput.publishAt).getTime() <= Date.now())
     ) {
-      setFeedback({
+      const outcome = {
         tone: "error",
         message: "예약 발행일은 현재 이후로 설정해 주세요.",
-      });
+      } as const;
+      setFeedback(outcome);
+      setPublishToast(outcome);
       return;
     }
 
@@ -487,21 +502,25 @@ export function DentalpediaArticleEditor({
       pendingBodyImages.forEach((image) => URL.revokeObjectURL(image.objectUrl));
       applyArticle(result.article);
       window.localStorage.setItem(draftStorageKey, result.article.id);
-      setFeedback({
+      const outcome = {
         tone: "success",
         message:
           status === "published" && !isVisible
             ? "칼럼을 발행했지만 공개 상태가 꺼져 있어 앱에는 노출되지 않습니다."
             : result.message,
-      });
+      } as const;
+      setFeedback(outcome);
+      if (status === "published") setPublishToast(outcome);
     } catch (error) {
-      setFeedback({
+      const outcome = {
         tone: "error",
         message:
           error instanceof Error
             ? error.message
             : "칼럼을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-      });
+      } as const;
+      setFeedback(outcome);
+      if (status === "published") setPublishToast(outcome);
     } finally {
       setSaving(false);
     }
@@ -542,6 +561,7 @@ export function DentalpediaArticleEditor({
     setRelatedContentIds([]);
     setDisclaimerEnabled(true);
     setFeedback(null);
+    setPublishToast(null);
   }
 
   function submitArticle(event: FormEvent<HTMLFormElement>) {
@@ -1162,6 +1182,16 @@ export function DentalpediaArticleEditor({
             title={title}
           />
         </div>
+
+        {publishToast ? (
+          <div
+            aria-atomic="true"
+            className={`admin-information-video-toast is-${publishToast.tone}`}
+            role={publishToast.tone === "error" ? "alert" : "status"}
+          >
+            {publishToast.message}
+          </div>
+        ) : null}
 
         {relatedDialogOpen ? (
           <ColumnRelatedContentDialog

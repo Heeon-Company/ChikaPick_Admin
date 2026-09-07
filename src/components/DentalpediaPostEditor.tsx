@@ -93,6 +93,10 @@ export function DentalpediaPostEditor({
     message: string;
     tone: "error" | "success";
   } | null>(null);
+  const [publishToast, setPublishToast] = useState<{
+    message: string;
+    tone: "error" | "success";
+  } | null>(null);
   const imagesRef = useRef(images);
 
   useEffect(() => {
@@ -105,6 +109,12 @@ export function DentalpediaPostEditor({
     },
     [],
   );
+
+  useEffect(() => {
+    if (!publishToast) return;
+    const timer = window.setTimeout(() => setPublishToast(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [publishToast]);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -329,6 +339,7 @@ export function DentalpediaPostEditor({
 
   async function savePost(status: DentalpediaPostStatus) {
     if (saving || loadingDraft) return;
+    if (status === "published") setPublishToast(null);
     const pendingPaths = images.map(
       (image) => image.path ?? `pending/${image.key}`,
     );
@@ -337,7 +348,9 @@ export function DentalpediaPostEditor({
       status === "published",
     );
     if (preUploadError) {
-      setFeedback({ tone: "error", message: preUploadError });
+      const outcome = { tone: "error" as const, message: preUploadError };
+      setFeedback(outcome);
+      if (status === "published") setPublishToast(outcome);
       return;
     }
 
@@ -366,21 +379,25 @@ export function DentalpediaPostEditor({
         : await createAdminDentalpediaPost(accessToken, input);
       applyPost(result.post);
       window.localStorage.setItem(postDraftStorageKey, result.post.id);
-      setFeedback({
+      const outcome = {
         tone: "success",
         message:
           status === "published" && !isVisible
             ? "게시물을 발행했지만 공개 상태가 꺼져 있어 앱에는 노출되지 않습니다."
             : result.message,
-      });
+      } as const;
+      setFeedback(outcome);
+      if (status === "published") setPublishToast(outcome);
     } catch (error) {
-      setFeedback({
+      const outcome = {
         tone: "error",
         message:
           error instanceof Error
             ? error.message
             : "게시물을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-      });
+      } as const;
+      setFeedback(outcome);
+      if (status === "published") setPublishToast(outcome);
     } finally {
       setSaving(false);
     }
@@ -409,6 +426,7 @@ export function DentalpediaPostEditor({
     setEndAt("");
     setRelatedContentIds([]);
     setFeedback(null);
+    setPublishToast(null);
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -825,6 +843,16 @@ export function DentalpediaPostEditor({
             title={title}
           />
         </div>
+
+        {publishToast ? (
+          <div
+            aria-atomic="true"
+            className={`admin-information-video-toast is-${publishToast.tone}`}
+            role={publishToast.tone === "error" ? "alert" : "status"}
+          >
+            {publishToast.message}
+          </div>
+        ) : null}
 
         {relatedDialogOpen ? (
           <PostRelatedContentDialog
