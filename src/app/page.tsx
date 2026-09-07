@@ -451,6 +451,27 @@ export default function AdminHome() {
     ? "form"
     : primaryTabContentLayouts[activePrimaryTab];
 
+  useEffect(() => {
+    const scrollLockClass = "admin-document--information-upload";
+    const root = document.documentElement;
+    const body = document.body;
+
+    if (activePrimaryTab !== "information-upload") {
+      root.classList.remove(scrollLockClass);
+      body.classList.remove(scrollLockClass);
+      return;
+    }
+
+    root.classList.add(scrollLockClass);
+    body.classList.add(scrollLockClass);
+    window.scrollTo(0, 0);
+
+    return () => {
+      root.classList.remove(scrollLockClass);
+      body.classList.remove(scrollLockClass);
+    };
+  }, [activePrimaryTab]);
+
   const applyDetailSelection = useCallback(
     (selection: AdminDetailHistorySelection | null) => {
       if (selection?.tab === "dental-sales") {

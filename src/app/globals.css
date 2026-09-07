@@ -1357,6 +1357,14 @@ body {
   font-family: var(--font-sans);
 }
 
+html.admin-document--information-upload,
+body.admin-document--information-upload {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 button,
 input,
 textarea,
