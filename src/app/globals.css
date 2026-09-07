@@ -2282,7 +2282,11 @@ textarea:focus-visible {
 
 .admin-content--information-upload > .admin-information-upload {
   width: 100%;
+  height: 100%;
   min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
 }
 
 .admin-content--layout-compact,
@@ -12737,7 +12741,9 @@ td span {
 
 .admin-information-upload-card {
   width: 100%;
+  height: 100%;
   min-width: 0;
+  min-height: 0;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   background: var(--surface);
@@ -13368,6 +13374,9 @@ td span {
 }
 
 .admin-information-video {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
   color: #1e293b;
   font-family: "Inter", "Pretendard", ui-sans-serif, system-ui, sans-serif;
 }
@@ -13394,7 +13403,7 @@ td span {
 }
 
 .admin-information-video-layout {
-  height: calc(100dvh - 56px);
+  height: 100%;
   min-height: 0;
   overflow: hidden;
   display: grid;
@@ -14437,10 +14446,10 @@ td span {
   font-weight: 600;
 }
 
-@container (max-width: 1050px) {
+@container (max-width: 760px) {
   .admin-information-video-layout {
     height: auto;
-    min-height: calc(100dvh - 56px);
+    min-height: 0;
     overflow: visible;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto;
@@ -14487,34 +14496,32 @@ td span {
 }
 
 @media (max-width: 1100px) {
-  .admin-information-video-layout {
-    height: auto;
-    min-height: calc(100dvh - 56px);
-    overflow: visible;
-  }
-
-  .admin-information-video-editor,
-  .admin-information-video-preview {
-    overflow: visible;
-    overscroll-behavior-y: auto;
-  }
-
-  .admin-information-video-preview > :last-child {
-    overflow: visible;
-    overscroll-behavior-y: auto;
-  }
-
   .admin-shell--information-upload {
     grid-template-rows: auto minmax(0, 1fr);
   }
 
   .admin-shell--information-upload .admin-content--information-upload {
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
+    overflow: hidden;
   }
 
   .admin-shell--information-upload .admin-information-video-layout {
     min-height: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-shell--information-upload .admin-content--information-upload {
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+
+  .admin-shell--information-upload .admin-content--information-upload > .admin-information-upload,
+  .admin-shell--information-upload .admin-information-upload-card,
+  .admin-shell--information-upload .admin-information-video,
+  .admin-shell--information-upload .admin-information-post > form,
+  .admin-shell--information-upload .admin-information-column > form {
+    height: auto;
+    overflow: visible;
   }
 }
 
@@ -14639,7 +14646,10 @@ td span {
 .admin-information-post,
 .admin-information-post > form {
   width: 100%;
+  height: 100%;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .admin-information-post-loading {
@@ -14663,57 +14673,6 @@ td span {
 
 .admin-information-post .admin-information-video-field > small {
   align-self: flex-end;
-}
-
-.admin-information-post-tag-entry {
-  width: 100%;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.admin-information-post-tag-entry input {
-  width: 100%;
-  min-width: 0;
-  height: 44px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  outline: 0;
-  padding: 0 16px;
-  color: #1e293b;
-  font: inherit;
-  font-size: 14px;
-}
-
-.admin-information-post-tag-entry input:focus {
-  border-color: #0f766e;
-  box-shadow: 0 0 0 1px #0f766e;
-}
-
-.admin-information-post-tag-entry button {
-  height: 44px;
-  flex: 0 0 auto;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: #fff;
-  color: #334155;
-  cursor: pointer;
-  padding: 0 16px;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.admin-information-post-tag-entry button:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
-.admin-information-post .admin-information-video-tags button {
-  color: #047857;
-  font-size: 17px;
-  line-height: 1;
 }
 
 .admin-information-post-type-field {
@@ -14979,11 +14938,6 @@ td span {
 }
 
 @container (max-width: 480px) {
-  .admin-information-post-tag-entry {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
   .admin-information-post-images-grid {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -14998,7 +14952,10 @@ td span {
 .admin-information-column,
 .admin-information-column > form {
   width: 100%;
+  height: 100%;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .admin-information-column .admin-information-upload-feedback {
@@ -15646,43 +15603,6 @@ td span {
   .admin-information-column-category-warning-dialog > footer button {
     width: 100%;
   }
-}
-
-.admin-information-column-tags {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.admin-information-column-tags > span {
-  min-height: 28px;
-  border: 1px solid #dcfce7;
-  border-radius: 6px;
-  background: #f0fdf4;
-  color: #166534;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 8px 5px 12px;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.admin-information-column-tags button {
-  width: 24px;
-  height: 16px;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  padding: 0;
-}
-
-.admin-information-column-tags button img {
-  width: 24px;
-  height: 16px;
 }
 
 .admin-information-column-cover-field {

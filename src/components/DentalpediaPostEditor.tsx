@@ -201,11 +201,8 @@ export function DentalpediaPostEditor({
   function addTag() {
     const tag = tagDraft.trim().replace(/^#+/, "");
     if (!tag || tags.includes(tag)) return;
-    if (tags.length >= 10 || tag.length > 30) {
-      setFeedback({
-        tone: "error",
-        message: "태그는 30자 이내로 최대 10개까지 등록할 수 있습니다.",
-      });
+    if (tags.length >= 10) {
+      setFeedback({ tone: "error", message: "태그는 최대 10개까지 등록할 수 있습니다." });
       return;
     }
     setTags((current) => [...current, tag]);
@@ -500,19 +497,6 @@ export function DentalpediaPostEditor({
 
               <div className="admin-information-video-field">
                 <strong>태그</strong>
-                <div className="admin-information-post-tag-entry">
-                  <input
-                    disabled={saving || tags.length >= 10}
-                    maxLength={30}
-                    onChange={(event) => setTagDraft(event.target.value)}
-                    onKeyDown={handleTagKeyDown}
-                    placeholder="태그 입력"
-                    value={tagDraft}
-                  />
-                  <button disabled={saving || !tagDraft.trim()} onClick={addTag} type="button">
-                    추가
-                  </button>
-                </div>
                 {tags.length ? (
                   <div className="admin-information-video-tags">
                     {tags.map((tag) => (
@@ -524,13 +508,28 @@ export function DentalpediaPostEditor({
                           onClick={() => setTags((current) => current.filter((item) => item !== tag))}
                           type="button"
                         >
-                          ×
+                          <Image
+                            alt=""
+                            aria-hidden
+                            height={16}
+                            src="/dentalpedia/article-delete.svg"
+                            width={24}
+                          />
                         </button>
                       </span>
                     ))}
                   </div>
                 ) : null}
-                <small>최대 10개</small>
+                <input
+                  aria-label="새 태그"
+                  disabled={loadingDraft || saving}
+                  maxLength={30}
+                  onChange={(event) => setTagDraft(event.target.value)}
+                  onKeyDown={handleTagKeyDown}
+                  placeholder="태그를 입력하세요 (엔터로 추가)"
+                  type="text"
+                  value={tagDraft}
+                />
               </div>
 
               <PostField label="검색 키워드">

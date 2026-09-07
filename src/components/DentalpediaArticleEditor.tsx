@@ -257,11 +257,8 @@ export function DentalpediaArticleEditor({
   function addTag() {
     const tag = tagDraft.trim().replace(/^#+/, "");
     if (!tag || tags.includes(tag)) return;
-    if (tags.length >= 10 || tag.length > 30) {
-      setFeedback({
-        tone: "error",
-        message: "태그는 30자 이내로 최대 10개까지 등록할 수 있습니다.",
-      });
+    if (tags.length >= 10) {
+      setFeedback({ tone: "error", message: "태그는 최대 10개까지 등록할 수 있습니다." });
       return;
     }
     setTags((current) => [...current, tag]);
@@ -639,7 +636,7 @@ export function DentalpediaArticleEditor({
               <div className="admin-information-video-field">
                 <strong>태그</strong>
                 {tags.length ? (
-                  <div className="admin-information-column-tags">
+                  <div className="admin-information-video-tags">
                     {tags.map((tag) => (
                       <span key={tag}>
                         #{tag}
@@ -655,8 +652,9 @@ export function DentalpediaArticleEditor({
                         >
                           <Image
                             alt=""
+                            aria-hidden
                             height={16}
-                            src="/dentalpedia/column-tag-delete.svg"
+                            src="/dentalpedia/article-delete.svg"
                             width={24}
                           />
                         </button>
@@ -665,11 +663,13 @@ export function DentalpediaArticleEditor({
                   </div>
                 ) : null}
                 <input
-                  disabled={saving || tags.length >= 10}
+                  aria-label="새 태그"
+                  disabled={loadingDraft || saving}
                   maxLength={30}
                   onChange={(event) => setTagDraft(event.target.value)}
                   onKeyDown={handleTagKeyDown}
                   placeholder="태그를 입력하세요 (엔터로 추가)"
+                  type="text"
                   value={tagDraft}
                 />
               </div>
