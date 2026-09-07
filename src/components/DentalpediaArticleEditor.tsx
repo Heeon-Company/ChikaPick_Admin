@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { FormEvent, KeyboardEvent, ReactNode } from "react";
-import ReactMarkdown from "react-markdown";
+import type { FormEvent, KeyboardEvent, MouseEvent, ReactNode } from "react";
+import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import {
@@ -33,6 +33,14 @@ import {
 } from "@/lib/dentalpedia";
 import type { DentalpediaRelatedContentOption } from "@/lib/dentalpedia-video";
 import type { AdminDentalpediaCategory } from "@/lib/dentalpedia-category";
+import {
+  dentalpediaLocalImageUrl,
+  dentalpediaMarkdownImageUrls,
+  insertDentalpediaEditorText,
+  insertDentalpediaImages,
+  resolveDentalpediaLocalImages,
+  type DentalpediaEditorSelection,
+} from "@/lib/dentalpedia-editor";
 
 type PreviewMode = "home" | "detail";
 type PublishMode = "immediate" | "scheduled";
@@ -43,22 +51,6 @@ type PendingBodyImage = {
 };
 
 const draftStorageKey = "chikapick.admin.dentalpedia.currentArticleId";
-const initialTitle = "치과 가기 전에 알아두면 좋은 임플란트 비용 구조";
-const initialSummary =
-  "임플란트 비용이 병원마다 다른 이유와 합리적인 비용 판단 기준을 알려드립니다.";
-const initialBody = `## 왜 병원마다 임플란트 비용이 다를까?
-
-임플란트 시술을 고려할 때 가장 먼저 부딪히는 질문이 바로 '왜 병원마다 가격이 이렇게 다를까?'입니다.
-
-임플란트 비용은 크게 다음 요소에 의해 결정됩니다:
-
-1. 사용하는 임플란트 제품 (국산/수입)
-2. 뼈이식 필요 여부
-3. 상악동 거상술 여부
-4. 보철물 종류
-5. 병원의 시설 및 장비 수준
-
-> 💡 알아두세요: 가장 비싼 임플란트가 반드시 가장 좋은 결과를 보장하지는 않습니다.`;
 
 type CategoryManagementRow = {
   active: boolean;
@@ -90,37 +82,30 @@ export function DentalpediaArticleEditor({
   const today = toDateTimeLocalValue(new Date()).slice(0, 10);
   const [articleId, setArticleId] = useState<string | null>(null);
   const [slug, setSlug] = useState("");
-  const [title, setTitle] = useState(initialTitle);
-  const [category, setCategory] =
-    useState<DentalpediaArticleCategory>("implant");
-  const [summary, setSummary] = useState(initialSummary);
-  const [tags, setTags] = useState([
-    "임플란트비용",
-    "임플란트가격",
-    "치과비용",
-  ]);
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState<DentalpediaArticleCategory>("");
+  const [summary, setSummary] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [tagDraft, setTagDraft] = useState("");
-  const [searchKeywords, setSearchKeywords] = useState(
-    "임플란트 비용 구조, 임플란트 가격 비교, 합리적인 임플란트 치과",
-  );
+  const [searchKeywords, setSearchKeywords] = useState("");
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverObjectUrl, setCoverObjectUrl] = useState<string | null>(null);
   const [coverImagePath, setCoverImagePath] = useState<string | null>(null);
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
-  const [bodyMarkdown, setBodyMarkdown] = useState(initialBody);
-  const [bodyEditing, setBodyEditing] = useState(false);
+  const [bodyMarkdown, setBodyMarkdown] = useState("");
+  const [bodyEditing, setBodyEditing] = useState(true);
   const [storedImagePaths, setStoredImagePaths] = useState<
     Record<string, string>
   >({});
   const [pendingBodyImages, setPendingBodyImages] = useState<
     PendingBodyImage[]
   >([]);
-  const [authorLabel, setAuthorLabel] = useState("치카픽 콘텐츠팀");
+  const [authorLabel, setAuthorLabel] = useState("");
   const [authoredAt, setAuthoredAt] = useState(today);
   const [reviewedAt, setReviewedAt] = useState(today);
   const [reviewerLabel, setReviewerLabel] = useState("");
   const [isVisible, setIsVisible] = useState(true);
-  const [isRecommended, setIsRecommended] = useState(true);
+  const [isRecommended, setIsRecommended] = useState(false);
   const [isHero, setIsHero] = useState(false);
   const [homeVisible, setHomeVisible] = useState(true);
   const [homeOrder, setHomeOrder] = useState("2");
@@ -148,6 +133,11 @@ export function DentalpediaArticleEditor({
   } | null>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const bodyImageInputRef = useRef<HTMLInputElement>(null);
+  const bodySelectionRef = useRef<DentalpediaEditorSelection>({
+    end: 0,
+    start: 0,
+  });
+  const bodyScrollTopRef = useRef(0);
 
   useEffect(() => {
     if (!publishToast) return;
@@ -170,13 +160,10 @@ export function DentalpediaArticleEditor({
     };
   }, [accessToken]);
 
-  const previewBody = useMemo(() => {
-    let markdown = bodyMarkdown;
-    pendingBodyImages.forEach((image) => {
-      markdown = markdown.replaceAll(localImageUrl(image.token), image.objectUrl);
-    });
-    return markdown;
-  }, [bodyMarkdown, pendingBodyImages]);
+  const previewBody = useMemo(
+    () => resolveDentalpediaLocalImages(bodyMarkdown, pendingBodyImages),
+    [bodyMarkdown, pendingBodyImages],
+  );
   const selectedRelatedOptions = useMemo(
     () =>
       relatedContentIds.map(
@@ -195,7 +182,7 @@ export function DentalpediaArticleEditor({
 
   const applyArticle = useCallback((article: AdminDentalpediaArticle) => {
     const markdown = article.bodyMarkdown ?? "";
-    const imageUrls = markdownImageUrls(markdown);
+    const imageUrls = dentalpediaMarkdownImageUrls(markdown);
     setArticleId(article.id);
     setSlug(article.slug);
     setTitle(article.title);
@@ -209,7 +196,7 @@ export function DentalpediaArticleEditor({
     setCoverImagePath(article.coverImagePath);
     setCoverImageUrl(article.coverImageUrl);
     setBodyMarkdown(markdown);
-    setBodyEditing(false);
+    setBodyEditing(true);
     setStoredImagePaths(
       Object.fromEntries(
         imageUrls
@@ -251,6 +238,10 @@ export function DentalpediaArticleEditor({
     let active = true;
     fetchAdminDentalpediaArticle(accessToken, savedId)
       .then(({ article }) => {
+        if (article.status !== "draft") {
+          window.localStorage.removeItem(draftStorageKey);
+          return;
+        }
         if (active) applyArticle(article);
       })
       .catch(() => {
@@ -302,31 +293,80 @@ export function DentalpediaArticleEditor({
     setCoverImageUrl(null);
   }
 
+  function rememberBodySelection(textarea = bodyRef.current) {
+    if (!textarea) return;
+    bodySelectionRef.current = {
+      end: textarea.selectionEnd,
+      start: textarea.selectionStart,
+    };
+    bodyScrollTopRef.current = textarea.scrollTop;
+  }
+
+  function restoreBodySelection(selection: DentalpediaEditorSelection) {
+    bodySelectionRef.current = selection;
+    window.requestAnimationFrame(() => {
+      const textarea = bodyRef.current;
+      if (!textarea) return;
+      textarea.focus({ preventScroll: true });
+      textarea.setSelectionRange(selection.start, selection.end);
+      textarea.scrollTop = bodyScrollTopRef.current;
+    });
+  }
+
+  function keepBodyFocus(event: MouseEvent<HTMLElement>) {
+    event.preventDefault();
+    rememberBodySelection();
+  }
+
+  function openBodyImagePicker() {
+    rememberBodySelection();
+    bodyImageInputRef.current?.click();
+  }
+
+  function showBodyEditor() {
+    setBodyEditing(true);
+    restoreBodySelection(bodySelectionRef.current);
+  }
+
+  function handleBodyKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Tab") return;
+    event.preventDefault();
+    const result = insertDentalpediaEditorText(
+      event.currentTarget.value,
+      {
+        end: event.currentTarget.selectionEnd,
+        start: event.currentTarget.selectionStart,
+      },
+      "  ",
+    );
+    setBodyMarkdown(result.value);
+    restoreBodySelection(result.selection);
+  }
+
   function applyFormat(prefix: string, suffix: string, placeholder: string) {
     const textarea = bodyRef.current;
     if (!textarea) return;
+    setBodyEditing(true);
+    bodyScrollTopRef.current = textarea.scrollTop;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selected = bodyMarkdown.slice(start, end) || placeholder;
     const next = `${bodyMarkdown.slice(0, start)}${prefix}${selected}${suffix}${bodyMarkdown.slice(end)}`;
     setBodyMarkdown(next.slice(0, 50_000));
-    window.requestAnimationFrame(() => {
-      textarea.focus();
-      textarea.setSelectionRange(
-        start + prefix.length,
-        start + prefix.length + selected.length,
-      );
+    restoreBodySelection({
+      start: start + prefix.length,
+      end: start + prefix.length + selected.length,
     });
   }
 
   function addBodyImages(files: FileList | null) {
     if (!files) return;
-    const referencedImages = markdownImageUrls(bodyMarkdown);
+    const referencedImages = dentalpediaMarkdownImageUrls(bodyMarkdown);
     const existingImageCount = referencedImages.filter(
       (url) => !url.startsWith("dentalpedia-local://"),
     ).length;
     const pendingImageCount = pendingBodyImages.filter((image) =>
-      referencedImages.includes(localImageUrl(image.token)),
+      referencedImages.includes(dentalpediaLocalImageUrl(image.token)),
     ).length;
     const available = Math.max(0, 10 - existingImageCount - pendingImageCount);
     const selected = Array.from(files).slice(0, available);
@@ -348,15 +388,17 @@ export function DentalpediaArticleEditor({
       token: crypto.randomUUID(),
     }));
     setPendingBodyImages((current) => [...current, ...images]);
-    setBodyMarkdown((current) => {
-      const separator = current && !current.endsWith("\n") ? "\n\n" : "";
-      return `${current}${separator}${images
-        .map(
-          (image) =>
-            `![${safeMarkdownAlt(image.file.name)}](${localImageUrl(image.token)})`,
-        )
-        .join("\n\n")}`.slice(0, 50_000);
-    });
+    const result = insertDentalpediaImages(
+      bodyMarkdown,
+      bodySelectionRef.current,
+      images.map((image) => ({ fileName: image.file.name, token: image.token })),
+    );
+    setBodyMarkdown(result.value);
+    if (bodyEditing) {
+      restoreBodySelection(result.selection);
+    } else {
+      bodySelectionRef.current = result.selection;
+    }
     setFeedback(null);
   }
 
@@ -410,7 +452,7 @@ export function DentalpediaArticleEditor({
     const resolvedSlug = slug || `column-${crypto.randomUUID()}`;
     const pendingCoverPath =
       coverImagePath ?? (coverFile ? "pending-cover" : null);
-    const pendingBodyPaths = markdownImageUrls(bodyMarkdown).map(
+    const pendingBodyPaths = dentalpediaMarkdownImageUrls(bodyMarkdown).map(
       (url, index) => storedImagePaths[url] ?? `pending-body-${index}`,
     );
     const preUploadInput = articleInput(
@@ -456,7 +498,7 @@ export function DentalpediaArticleEditor({
       }
 
       const referencedPendingImages = pendingBodyImages.filter((image) =>
-        bodyMarkdown.includes(localImageUrl(image.token)),
+        bodyMarkdown.includes(dentalpediaLocalImageUrl(image.token)),
       );
       const uploadedBodyImages = await Promise.all(
         referencedPendingImages.map(async (image) => ({
@@ -468,12 +510,12 @@ export function DentalpediaArticleEditor({
       const nextStoredPaths = { ...storedImagePaths };
       uploadedBodyImages.forEach(({ image, upload }) => {
         resolvedBody = resolvedBody.replaceAll(
-          localImageUrl(image.token),
+          dentalpediaLocalImageUrl(image.token),
           upload.publicUrl,
         );
         nextStoredPaths[upload.publicUrl] = upload.path;
       });
-      const resolvedImagePaths = markdownImageUrls(resolvedBody).map(
+      const resolvedImagePaths = dentalpediaMarkdownImageUrls(resolvedBody).map(
         (url) => nextStoredPaths[url],
       );
       if (resolvedImagePaths.some((path) => !path)) {
@@ -501,7 +543,11 @@ export function DentalpediaArticleEditor({
       if (coverObjectUrl) URL.revokeObjectURL(coverObjectUrl);
       pendingBodyImages.forEach((image) => URL.revokeObjectURL(image.objectUrl));
       applyArticle(result.article);
-      window.localStorage.setItem(draftStorageKey, result.article.id);
+      if (status === "draft") {
+        window.localStorage.setItem(draftStorageKey, result.article.id);
+      } else {
+        window.localStorage.removeItem(draftStorageKey);
+      }
       const outcome = {
         tone: "success",
         message:
@@ -533,7 +579,7 @@ export function DentalpediaArticleEditor({
     setArticleId(null);
     setSlug("");
     setTitle("");
-    setCategory("implant");
+    setCategory("");
     setSummary("");
     setTags([]);
     setTagDraft("");
@@ -543,10 +589,10 @@ export function DentalpediaArticleEditor({
     setCoverImagePath(null);
     setCoverImageUrl(null);
     setBodyMarkdown("");
-    setBodyEditing(false);
+    setBodyEditing(true);
     setStoredImagePaths({});
     setPendingBodyImages([]);
-    setAuthorLabel("치카픽 콘텐츠팀");
+    setAuthorLabel("");
     setAuthoredAt(toDateTimeLocalValue(new Date()).slice(0, 10));
     setReviewedAt(toDateTimeLocalValue(new Date()).slice(0, 10));
     setReviewerLabel("");
@@ -791,10 +837,40 @@ export function DentalpediaArticleEditor({
               </div>
 
               <div className="admin-information-video-field">
-                <strong>본문 내용</strong>
+                <div className="admin-information-column-body-heading">
+                  <strong>본문 내용</strong>
+                  <div aria-label="본문 보기 방식" role="tablist">
+                    <button
+                      aria-selected={bodyEditing}
+                      className={bodyEditing ? "is-active" : undefined}
+                      onClick={showBodyEditor}
+                      role="tab"
+                      type="button"
+                    >
+                      작성
+                    </button>
+                    <button
+                      aria-selected={!bodyEditing}
+                      className={!bodyEditing ? "is-active" : undefined}
+                      onClick={() => {
+                        rememberBodySelection();
+                        setBodyEditing(false);
+                      }}
+                      role="tab"
+                      type="button"
+                    >
+                      미리보기
+                    </button>
+                  </div>
+                </div>
                 <div
                   aria-label="본문 편집 도구"
                   className="admin-information-column-toolbar"
+                  onMouseDown={(event) => {
+                    if ((event.target as HTMLElement).closest("button")) {
+                      keepBodyFocus(event);
+                    }
+                  }}
                   role="toolbar"
                 >
                   <button
@@ -841,7 +917,7 @@ export function DentalpediaArticleEditor({
                   </button>
                   <button
                     aria-label="이미지 삽입"
-                    onClick={() => bodyImageInputRef.current?.click()}
+                    onClick={openBodyImagePicker}
                     type="button"
                   >
                     <Image
@@ -880,15 +956,12 @@ export function DentalpediaArticleEditor({
                 </div>
                 <div
                   className={`admin-information-column-body-editor${bodyEditing ? " is-editing" : ""}`}
-                  onClick={() => bodyRef.current?.focus()}
                 >
                   <div
                     aria-hidden
                     className="admin-information-column-body-rendered"
                   >
-                    {bodyMarkdown === initialBody ? (
-                      <InitialColumnBodyPreview />
-                    ) : (
+                    {previewBody.trim() ? (
                       <ReactMarkdown
                         components={{
                           img: ({ alt, src }) => (
@@ -904,9 +977,14 @@ export function DentalpediaArticleEditor({
                           ),
                         }}
                         remarkPlugins={[remarkGfm]}
+                        urlTransform={dentalpediaBodyUrlTransform}
                       >
                         {previewBody}
                       </ReactMarkdown>
+                    ) : (
+                      <p className="admin-information-column-body-placeholder">
+                        본문 내용을 입력해 주세요.
+                      </p>
                     )}
                   </div>
                   <textarea
@@ -914,9 +992,15 @@ export function DentalpediaArticleEditor({
                     className="admin-information-column-body"
                     disabled={saving}
                     maxLength={50_000}
-                    onBlur={() => setBodyEditing(false)}
-                    onChange={(event) => setBodyMarkdown(event.target.value)}
-                    onFocus={() => setBodyEditing(true)}
+                    onChange={(event) => {
+                      setBodyMarkdown(event.target.value);
+                      rememberBodySelection(event.currentTarget);
+                    }}
+                    onKeyDown={handleBodyKeyDown}
+                    onSelect={(event) =>
+                      rememberBodySelection(event.currentTarget)
+                    }
+                    placeholder="본문 내용을 입력해 주세요."
                     ref={bodyRef}
                     value={bodyMarkdown}
                   />
@@ -924,7 +1008,8 @@ export function DentalpediaArticleEditor({
                 <button
                   className="admin-information-column-insert-image"
                   disabled={saving}
-                  onClick={() => bodyImageInputRef.current?.click()}
+                  onClick={openBodyImagePicker}
+                  onMouseDown={keepBodyFocus}
                   type="button"
                 >
                   <Image
@@ -1891,39 +1976,6 @@ function ColumnToggleRow({
   );
 }
 
-function InitialColumnBodyPreview() {
-  return (
-    <>
-      <h2>왜 병원마다 임플란트 비용이 다를까?</h2>
-      <p>
-        임플란트 시술을 고려할 때 가장 먼저 부딪히는 질문이 바로
-        &apos;왜 병원마다 가격이 이렇게 다를까?&apos;입니다.
-      </p>
-      <p>임플란트 비용은 크게 다음 요소에 의해 결정됩니다:</p>
-      <ol>
-        <li>사용하는 임플란트 제품 (국산/수입)</li>
-        <li>뼈이식 필요 여부</li>
-        <li>상악동 거상술 여부</li>
-        <li>보철물 종류</li>
-        <li>병원의 시설 및 장비 수준</li>
-      </ol>
-      <span className="admin-information-column-demo-body-image">
-        <Image
-          alt="임플란트 치아 모형을 설명하는 모습"
-          fill
-          sizes="760px"
-          src="/dentalpedia/column-sample-body.png"
-        />
-      </span>
-      <small>임플란트 가격은 다양한 구강 구조 요인과 수술 현황에 의해 세분화됩니다.</small>
-      <blockquote>
-        💡 알아두세요: 가장 비싼 임플란트가 반드시 가장 좋은 결과를 보장하지는
-        않습니다.
-      </blockquote>
-    </>
-  );
-}
-
 function ColumnPreview({
   body,
   categoryLabel,
@@ -2044,6 +2096,7 @@ function ColumnPreview({
                 ),
               }}
               remarkPlugins={[remarkGfm]}
+              urlTransform={dentalpediaBodyUrlTransform}
             >
               {body}
             </ReactMarkdown>
@@ -2157,18 +2210,10 @@ function ArticleImage({
   );
 }
 
-function localImageUrl(token: string) {
-  return `dentalpedia-local://${token}`;
-}
-
-function safeMarkdownAlt(value: string) {
-  return value.replace(/[\[\]]/g, "");
-}
-
-function markdownImageUrls(markdown: string) {
-  return [
-    ...markdown.matchAll(/!\[[^\]]*\]\(([^\s)]+)(?:\s+"[^"]*")?\)/g),
-  ].map((match) => match[1]);
+function dentalpediaBodyUrlTransform(value: string, key: string) {
+  return key === "src" && value.startsWith("blob:")
+    ? value
+    : defaultUrlTransform(value);
 }
 
 function commaSeparatedValues(value: string, limit: number) {

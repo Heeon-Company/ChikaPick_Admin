@@ -140,6 +140,10 @@ export function DentalpediaPostEditor({
     let active = true;
     fetchAdminDentalpediaPost(accessToken, savedId)
       .then(({ post }) => {
+        if (post.status !== "draft") {
+          window.localStorage.removeItem(postDraftStorageKey);
+          return;
+        }
         if (active) applyPost(post);
       })
       .catch(() => {
@@ -378,7 +382,11 @@ export function DentalpediaPostEditor({
         ? await updateAdminDentalpediaPost(accessToken, postId, input)
         : await createAdminDentalpediaPost(accessToken, input);
       applyPost(result.post);
-      window.localStorage.setItem(postDraftStorageKey, result.post.id);
+      if (status === "draft") {
+        window.localStorage.setItem(postDraftStorageKey, result.post.id);
+      } else {
+        window.localStorage.removeItem(postDraftStorageKey);
+      }
       const outcome = {
         tone: "success",
         message:

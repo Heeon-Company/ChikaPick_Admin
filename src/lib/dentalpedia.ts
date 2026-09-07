@@ -89,6 +89,7 @@ export function validateDentalpediaArticle(
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(input.slug.trim())) {
     return "페이지 주소는 영문 소문자, 숫자, 하이픈으로 입력해 주세요.";
   }
+  if (!input.category.trim()) return "카테고리를 선택해 주세요.";
   if (!Number.isInteger(input.homeOrder) || input.homeOrder < 1) {
     return "홈 노출 순서를 확인해 주세요.";
   }

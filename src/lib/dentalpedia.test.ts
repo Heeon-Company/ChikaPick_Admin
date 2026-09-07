@@ -89,6 +89,13 @@ test("Dentalpedia publication validation rejects invalid slugs and missing cover
   );
 });
 
+test("Dentalpedia validation rejects an unselected category", () => {
+  assert.equal(
+    validateDentalpediaArticle({ ...validInput, category: "" }, false),
+    "카테고리를 선택해 주세요.",
+  );
+});
+
 test("datetime-local values preserve local wall-clock components", () => {
   const date = new Date(2026, 8, 5, 10, 30);
   assert.equal(toDateTimeLocalValue(date), "2026-09-05T10:30");

@@ -184,6 +184,10 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
     let active = true;
     fetchAdminDentalpediaVideo(accessToken, savedId)
       .then(({ video }) => {
+        if (video.status !== "draft") {
+          window.localStorage.removeItem(videoDraftStorageKey);
+          return;
+        }
         if (active) applyVideo(video);
       })
       .catch(() => {
@@ -438,7 +442,11 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
         ? await updateAdminDentalpediaVideo(accessToken, videoId, input)
         : await createAdminDentalpediaVideo(accessToken, input);
       applyVideo(result.video);
-      window.localStorage.setItem(videoDraftStorageKey, result.video.id);
+      if (status === "draft") {
+        window.localStorage.setItem(videoDraftStorageKey, result.video.id);
+      } else {
+        window.localStorage.removeItem(videoDraftStorageKey);
+      }
       const outcome = {
         tone: "success",
         message:
