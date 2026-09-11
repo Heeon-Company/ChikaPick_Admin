@@ -1,5 +1,11 @@
 # ChikaPick Admin
 
+## ChikaTalk moderation
+
+The report detail includes a user moderation form and recent user action history. Operators can warn, suspend writing/access immediately for 1–365 days, permanently restrict access, release active restrictions, or restore hidden content. Internal reasons and user-visible guidance are separate required fields. Changing the action clears both drafts; failed requests preserve drafts and retry with the same exact-payload request ID. Completed reports remain eligible for user moderation and restoration. Deleted content cannot be restored.
+
+Deploy the API's `20260911140000` / `20260911150000` migrations and matching API first. PM publishes the new `CHIKA_TALK_COMMUNITY_POLICY` document using the existing terms management panel and Notion preview/publication flow. Do not publish placeholder policy text. Release retains historical strike counts and action history; user messages enter independent ChikaTalk operation notifications even if the user's operation push preference is off.
+
 ChikaPick Admin is the internal operations console for ChikaPick. It is a
 Next.js App Router app intended for Vercel deployment and uses Supabase Auth for
 administrator login.

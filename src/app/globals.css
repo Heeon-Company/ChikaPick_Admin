@@ -1,5 +1,24 @@
 @import "tailwindcss";
 
+.admin-chika-sanction { margin-top:24px; padding:20px; border:1px solid var(--border); border-radius:16px; background:var(--surface); font-family:"Pretendard",ui-sans-serif,system-ui,sans-serif; }
+.admin-chika-sanction h3 { font-size:20px; font-weight:700; margin-bottom:16px; }
+.admin-chika-sanction h4 { font-weight:600; margin:24px 0 12px; }
+.admin-chika-sanction-summary { display:grid; gap:8px; padding:16px; background:var(--chika-base-1); border-radius:12px; font-size:14px; }
+.admin-chika-sanction fieldset { display:grid; gap:16px; border:0; padding:20px 0 0; min-width:0; }
+.admin-chika-sanction label { display:grid; gap:7px; font-size:14px; color:var(--text-secondary); }
+.admin-chika-sanction input, .admin-chika-sanction textarea { width:100%; min-width:0; border:1px solid var(--chika-base-4); border-radius:12px; padding:12px 16px; color:var(--text-primary); background:var(--surface); font:inherit; }
+.admin-chika-sanction textarea { min-height:104px; resize:vertical; }
+.admin-chika-sanction p { font-size:13px; line-height:1.5; white-space:pre-wrap; overflow-wrap:anywhere; }
+.admin-chika-sanction-days { display:flex; gap:4px; flex-wrap:wrap; margin:8px 0; }
+.admin-chika-sanction-days button { padding:6px 10px; background:var(--chika-base-1); border:1px solid transparent; border-radius:6px; }
+.admin-chika-sanction-days button[aria-pressed=true] { background:var(--chika-secondary-1); border-color:var(--chika-secondary-6); color:var(--chika-secondary-6); }
+.admin-chika-sanction button[type=submit] { justify-self:end; padding:12px 24px; border-radius:16px; color:white; font-weight:700; min-height:52px; }
+.admin-chika-sanction .is-sanction { background:var(--danger); }
+.admin-chika-sanction .is-release { background:var(--chika-secondary-6); }
+.admin-chika-sanction button:disabled { opacity:.5; cursor:not-allowed; }
+.admin-chika-sanction article { padding:12px 0; border-top:1px solid var(--border-subtle); }
+.admin-chika-sanction time { color:var(--text-tertiary); font-size:12px; }
+
 :root {
   --chika-base-0: #ffffff;
   --chika-base-1: #f4f6f8;

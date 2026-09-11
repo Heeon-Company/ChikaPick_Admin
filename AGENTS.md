@@ -74,6 +74,8 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Project Essentials
 
+ChikaTalk report detail includes `ChikaTalkSanctionForm`: warning, write/access suspension, permanent restriction, release and hidden-content restoration go through the protected API. Require separate internal detailed reason and user-visible notification message; reset both when switching action, preserve form values on failure, and reuse a request ID only for the exact same action payload. Suspensions begin immediately and accept 1–365 days. Release clears active restrictions while retaining cumulative strikes and audit history; expired restrictions display as normal. PM publishes CHIKA_TALK_COMMUNITY_POLICY in the existing terms panel before the consent-dependent writing flow goes live.
+
 ChikaPick Admin is the internal administrator web console for ChikaPick operations. It is a Next.js 16 App Router application deployed to Vercel and backed by Supabase Auth in the browser.
 
 The Korean `main` branch intentionally disables all specialist-consultation directories, counters, clinic metrics, and operational views. The former implementation is preserved in the pushed remote `origin/abroad` branch at baseline commit `45dd944bdfce7f7a22c9a2c8478598193b35ab04`; restore it only for the overseas product line. Do not reconnect the disabled API consultation routes from Korean Admin.

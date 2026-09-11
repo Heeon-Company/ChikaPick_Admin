@@ -1,4 +1,12 @@
 export type AdminChikaTalkReportTargetType = "post" | "comment" | "user";
+
+export function adminChikaTalkSanctionState(sanctions: Record<string, unknown> | null, now = new Date()) {
+  const future = (value: unknown) => typeof value === "string" && Date.parse(value) > now.getTime();
+  if (sanctions?.banned_at) return { label: "영구 이용 제한", active: true, until: null };
+  if (future(sanctions?.access_suspended_until)) return { label: "이용 제한", active: true, until: String(sanctions?.access_suspended_until) };
+  if (future(sanctions?.write_suspended_until)) return { label: "글쓰기 제한", active: true, until: String(sanctions?.write_suspended_until) };
+  return { label: "정상", active: false, until: null };
+}
 export type AdminChikaTalkReportStatus =
   | "unresolved"
   | "dismissed"
@@ -21,7 +29,8 @@ export type AdminChikaTalkModerationActionName =
   | "warn_user"
   | "suspend_writes"
   | "suspend_access"
-  | "ban_user";
+  | "ban_user"
+  | "release_sanctions";
 
 export interface AdminChikaTalkModerationActionInput {
   reportId: string | null;
@@ -31,6 +40,8 @@ export interface AdminChikaTalkModerationActionInput {
   reasonCode: string;
   requestId: string;
   suspensionSeconds?: number | null;
+  detailedReason?: string;
+  userMessage?: string;
 }
 
 export interface AdminChikaTalkModerationActionResult {
@@ -108,6 +119,8 @@ export interface AdminChikaTalkModerationAction {
   id: string;
   action: string;
   reasonCode: string;
+  detailedReason?: string;
+  userMessage?: string;
   createdAt: string;
 }
 
@@ -126,7 +139,7 @@ export interface AdminChikaTalkReportDetailPayload {
     resolvedAt: string | null;
   };
   current: Record<string, unknown> | null;
-  author: { displayName: string } | null;
+  author: { displayName: string; joinedAt?: string | null; ageGroup?: string; reportCount?: number } | null;
   contextPost: {
     id: string;
     title: string;
@@ -166,13 +179,14 @@ const statusLabels: Record<AdminChikaTalkReportStatus, string> = {
 };
 
 const actionLabels: Record<string, string> = {
+  release_sanctions: "이용 제한 해제",
   dismiss_report: "문제없음 처리",
   hide_content: "콘텐츠 숨김",
   restore_content: "콘텐츠 복원",
   warn_user: "사용자 경고",
-  suspend_writes: "작성 정지",
-  suspend_access: "접근 정지",
-  ban_user: "영구 이용 정지",
+  suspend_writes: "글쓰기 제한",
+  suspend_access: "치아톡 이용 제한",
+  ban_user: "영구 이용 제한",
 };
 
 export const adminChikaTalkReasonOptions = [
@@ -181,6 +195,8 @@ export const adminChikaTalkReasonOptions = [
 ] as ReadonlyArray<{ label: string; value: "all" | AdminChikaTalkReportReason }>;
 
 export function adminChikaTalkReasonLabel(reason: string) {
+  if (reason === "sanction_released") return "제재 해제";
+  if (reason === "content_restored") return "콘텐츠 복원";
   return reasonLabels[reason as AdminChikaTalkReportReason] ?? reason;
 }
 

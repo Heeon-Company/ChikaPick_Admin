@@ -3,6 +3,7 @@ import { test } from "node:test";
 
 import {
   adminChikaTalkActionLabel,
+  adminChikaTalkSanctionState,
   adminChikaTalkMetricCards,
   adminChikaTalkReasonLabel,
   adminChikaTalkRecordString,
@@ -17,7 +18,15 @@ test("ChikaTalk moderation labels present API values in Korean", () => {
   assert.equal(adminChikaTalkReasonLabel("personal_information"), "개인정보 노출");
   assert.equal(adminChikaTalkReportStatusLabel("content_removed"), "콘텐츠 삭제");
   assert.equal(adminChikaTalkTargetTypeLabel("comment"), "댓글/답글");
-  assert.equal(adminChikaTalkActionLabel("suspend_writes"), "작성 정지");
+  assert.equal(adminChikaTalkActionLabel("suspend_writes"), "글쓰기 제한");
+});
+
+test("expired restrictions show normal state and active access restrictions take precedence", () => {
+  const now = new Date("2026-09-11T00:00:00Z");
+  assert.deepEqual(adminChikaTalkSanctionState({write_suspended_until:"2026-09-10T00:00:00Z"}, now), {label:"정상",active:false,until:null});
+  assert.equal(adminChikaTalkSanctionState({write_suspended_until:"2027-01-01",access_suspended_until:"2027-02-01"}, now).label, "이용 제한");
+  assert.equal(adminChikaTalkSanctionState({banned_at:"2026-01-01"}, now).label, "영구 이용 제한");
+  assert.equal(adminChikaTalkReasonLabel("sanction_released"), "제재 해제");
 });
 
 test("ChikaTalk moderation helpers preserve safe fallbacks", () => {

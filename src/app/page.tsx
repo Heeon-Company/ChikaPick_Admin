@@ -9,6 +9,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { AdminSelect } from "@/components/AdminSelect";
+import { ChikaTalkSanctionForm, type ChikaTalkActionDetails } from "@/components/ChikaTalkSanctionForm";
 import { InformationUploadTab } from "@/components/InformationUploadTab";
 import { ServiceExpansionRequestsTab } from "@/components/ServiceExpansionRequestsTab";
 import {
@@ -1480,9 +1481,9 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
   }, []);
 
   const applyDetailAction = useCallback(
-    async (action: Extract<AdminChikaTalkModerationActionName, "dismiss_report" | "hide_content">) => {
+    async (action: AdminChikaTalkModerationActionName, details?: ChikaTalkActionDetails) => {
       const detail = selectedReport;
-      if (!detail || detail.report.status !== "unresolved" || isDetailActionPending) {
+      if (!detail || isDetailActionPending || (["dismiss_report", "hide_content"].includes(action) && detail.report.status !== "unresolved")) {
         return;
       }
       if (
@@ -1493,7 +1494,7 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
       ) {
         return;
       }
-      const requestKey = `${detail.report.id}:${action}`;
+      const requestKey = `${detail.report.id}:${action}:${JSON.stringify(details ?? {})}`;
       const requestId =
         actionRequestIdsRef.current.get(requestKey) ?? crypto.randomUUID();
       actionRequestIdsRef.current.set(requestKey, requestId);
@@ -1510,6 +1511,7 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
               ? "no_policy_violation"
               : detail.report.reason,
           requestId,
+          ...details,
         });
         actionRequestIdsRef.current.delete(requestKey);
         detailRequestIdRef.current += 1;
@@ -1741,10 +1743,8 @@ function ChikaTalkReportDetail({
   onClose: () => void;
   onRetry: () => void;
   onAction: (
-    action: Extract<
-      AdminChikaTalkModerationActionName,
-      "dismiss_report" | "hide_content"
-    >,
+    action: AdminChikaTalkModerationActionName,
+    details?: ChikaTalkActionDetails,
   ) => Promise<void>;
   onOpenEvidenceImage: (imageUrl: string) => void;
 }) {
@@ -1800,6 +1800,7 @@ function ChikaTalkReportDetail({
                 onOpenEvidenceImage={onOpenEvidenceImage}
               />
               <ChikaTalkReportHistory items={report.relatedReports} />
+              <ChikaTalkSanctionForm key={report.report.id} detail={report} pending={isActionPending} onAction={onAction} />
             </>
           ) : null}
         </div>
