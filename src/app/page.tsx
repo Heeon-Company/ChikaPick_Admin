@@ -117,6 +117,8 @@ import {
   adminMembershipRoleLabel,
   adminTermAudienceLabel,
   sortAdminTermsByAudienceAndKoreanTitle,
+  pendingAdminTermVersion,
+  adminTermRequirementLabel,
   defaultAdminAuditLogFilters,
   defaultAdminClinicMembershipRequestFilters,
   // 전문의 소견 관련 코드
@@ -9009,6 +9011,7 @@ function TermsManagementTab({
     useState<AdminManagedTermDocument | null>(null);
   const [contentUrl, setContentUrl] = useState("");
   const [changeSummary, setChangeSummary] = useState("");
+  const [checkedAt, setCheckedAt] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
@@ -9022,6 +9025,7 @@ function TermsManagementTab({
     setError("");
     try {
       setData(await fetchAdminTerms(accessToken));
+      setCheckedAt(Date.now());
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -9039,6 +9043,7 @@ function TermsManagementTab({
   }, [loadTerms]);
 
   function openPublish(document: AdminManagedTermDocument) {
+    if (pendingAdminTermVersion(document)) return;
     setSelectedDocument(document);
     setContentUrl(
       document.activeVersion?.sourceUrl ??
@@ -9112,7 +9117,10 @@ function TermsManagementTab({
       {error ? <p className="admin-operational-error">{error}</p> : null}
       {isLoading ? <p className="admin-operational-loading">약관을 불러오는 중입니다.</p> : null}
       <div className="admin-terms-grid">
-        {sortedDocuments.map((document) => (
+        {sortedDocuments.map((document) => {
+          const pending = pendingAdminTermVersion(document, checkedAt);
+          const current = document.activeVersion?.id === pending?.id ? null : document.activeVersion;
+          return (
           <article className="admin-term-card" key={document.id}>
             <div className="admin-term-card-heading">
               <div>
@@ -9120,28 +9128,35 @@ function TermsManagementTab({
                 <h2>{document.title}</h2>
               </div>
               <span className="admin-operational-status">
-                {document.isRequired ? "필수" : "선택"}
+                {adminTermRequirementLabel(document)}
               </span>
             </div>
             <dl className="admin-term-summary">
               <div><dt>적용 서비스</dt><dd>{adminTermAudienceLabel(document.appliesTo)}</dd></div>
               <div><dt>언어</dt><dd>{document.locale}</dd></div>
-              <div><dt>활성 버전</dt><dd>{document.activeVersion ? `v${document.activeVersion.version}` : "—"}</dd></div>
-              <div><dt>시행 일시</dt><dd>{adminDirectoryDateTime(document.activeVersion?.effectiveAt ?? null)}</dd></div>
+              <div><dt>활성 버전</dt><dd>{current ? `v${current.version}` : "—"}</dd></div>
+              <div><dt>시행 일시</dt><dd>{adminDirectoryDateTime(current?.effectiveAt ?? null)}</dd></div>
             </dl>
-            {document.activeVersion ? (
+            {current ? (
               <a
                 className="admin-term-content-link"
                 href={
-                  document.activeVersion.contentUrl.startsWith("/")
-                    ? `${adminApiBaseUrl()}${document.activeVersion.contentUrl}`
-                    : document.activeVersion.contentUrl
+                  current.contentUrl.startsWith("/")
+                    ? `${adminApiBaseUrl()}${current.contentUrl}`
+                    : current.contentUrl
                 }
                 target="_blank"
                 rel="noreferrer"
               >
                 현재 약관 열기
               </a>
+            ) : null}
+            {pending ? (
+              <div className="admin-terms-guidance" role="status">
+                <strong>v{pending.version} {Date.parse(pending.effectiveAt) > checkedAt ? "적용 예정" : "적용 대기 · 확인 필요"}</strong>
+                <p>{adminDirectoryDateTime(pending.effectiveAt)} 적용 예정. 적용 대기 중에는 새 버전을 게시할 수 없습니다.</p>
+                <a href={pending.contentUrl.startsWith("/") ? `${adminApiBaseUrl()}${pending.contentUrl}` : pending.contentUrl} target="_blank" rel="noreferrer">적용 예정 약관 열기</a>
+              </div>
             ) : null}
             <details className="admin-term-history">
               <summary>버전 이력 {document.versions.length}개</summary>
@@ -9151,7 +9166,7 @@ function TermsManagementTab({
                     <li key={version.id}>
                       <div>
                         <strong>v{version.version}</strong>
-                        {version.isActive ? <span>활성</span> : null}
+                        {version.id === pending?.id ? <span>적용 대기</span> : version.isActive ? <span>활성</span> : null}
                       </div>
                       <p>{version.changeSummary ?? "변경 요약 없음"}</p>
                       <small>{adminDirectoryDateTime(version.effectiveAt)}</small>
@@ -9164,13 +9179,15 @@ function TermsManagementTab({
               <button
                 type="button"
                 className="admin-term-publish-trigger"
+                disabled={Boolean(pending)}
                 onClick={() => openPublish(document)}
               >
                 새 버전 게시
               </button>
             ) : null}
           </article>
-        ))}
+          );
+        })}
       </div>
       {!isLoading && (data?.items.length ?? 0) === 0 ? (
         <div className="admin-operational-empty">등록된 약관 문서가 없습니다.</div>

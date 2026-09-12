@@ -55,6 +55,20 @@ export interface AdminTermsManagementPayload {
   canManage: boolean;
 }
 
+export function pendingAdminTermVersion(document: AdminManagedTermDocument, now = Date.now()) {
+  return document.versions.find(version =>
+    (version.isActive && Date.parse(version.effectiveAt) > now) ||
+    (!version.isActive && version.version > (document.activeVersion?.version ?? 0)),
+  ) ?? null;
+}
+
+export function adminTermRequirementLabel(document: AdminManagedTermDocument) {
+  if (["CHIKA_TALK_COMMUNITY_POLICY", "CHIKA_TALK_PRIVACY_CONSENT"].includes(document.code)) {
+    return "치아톡 작성 시 필수";
+  }
+  return document.isRequired ? "필수" : "선택";
+}
+
 export interface AdminReservationDirectoryItem {
   id: string;
   clinic: AdminDirectoryIdentity;
