@@ -281,6 +281,8 @@ import {
 import { signInWithAdminPassword } from "@/lib/password-auth";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 
+import { SupportManagementTab } from "@/components/SupportManagementTab";
+
 const primaryTabs = [
   { id: "dashboard", label: "운영 현황", icon: "/Type=Dashboard.svg" },
   { id: "dental-sales", label: "치과 영업 관리", icon: "/Type=Graph.svg" },
@@ -300,6 +302,7 @@ const primaryTabs = [
   { id: "partner-invites", label: "파트너 초대코드 관리", icon: "/Type=Settings.svg" },
   { id: "memberships", label: "멤버십 관리", icon: "/Type=Ticket.svg" },
   { id: "terms-management", label: "약관 관리", icon: "/Type=Diary.svg" },
+  { id: "support-management", label: "고객지원 관리", icon: "/Type=Opinion.svg" },
   { id: "sales-performance", label: "영업 성과 관리", icon: "/Type=Price.svg" },
   { id: "admin-accounts", label: "어드민 계정 관리", icon: "/Type=Mypage.svg" },
   { id: "external-connectors", label: "외부 연결자 관리", icon: "/Type=Share.svg" },
@@ -311,6 +314,7 @@ type PrimaryAdminTab = (typeof primaryTabs)[number]["id"];
 type AdminContentLayout = "fluid" | "compact" | "form";
 
 const primaryTabContentLayouts: Record<PrimaryAdminTab, AdminContentLayout> = {
+  "support-management": "form",
   dashboard: "fluid",
   "dental-sales": "fluid",
   "partner-clinics": "fluid",
@@ -337,6 +341,7 @@ const primaryTabContentLayouts: Record<PrimaryAdminTab, AdminContentLayout> = {
 };
 
 const primaryTabDescriptions: Record<PrimaryAdminTab, string> = {
+  "support-management": "앱 공지사항, 자주 묻는 질문과 의견 보내기 연결을 관리합니다.",
   dashboard: "치카픽의 주요 운영 지표를 확인하고 각 관리 메뉴로 바로 이동할 수 있습니다.",
   "dental-sales":
     "전국 치과를 지역별로 조회하고 초대 코드를 확인 할 수 있으며 영업 현황을 관리합니다.",
@@ -1338,6 +1343,8 @@ export default function AdminHome() {
                 runAction((token) => revokeInvite(token, inviteId))
               }
             />
+          ) : activePrimaryTab === "support-management" ? (
+            <SupportManagementTab accessToken={session?.access_token ?? ""} />
           ) : activePrimaryTab === "terms-management" ? (
             <TermsManagementTab
               accessToken={session?.access_token ?? ""}

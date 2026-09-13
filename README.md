@@ -15,6 +15,13 @@ stores or uses Supabase service-role credentials.
 
 ## Features
 
+- 고객지원 관리: 공지사항 / FAQ tabs, category ordering and visibility, plain-text
+  preview and publish/unpublish, plus a shared Google Forms respondent-link setting.
+  Uses protected `GET` / `PUT /api/v1/admin/support`; deploy the API migration
+  `20260913130000_support_content_management.sql` and API before this UI/Client.
+  New entries start private. Hidden categories also hide their questions in the app.
+  An unset feedback URL displays a Korean unavailable message in the Client.
+
 - 관리자 Supabase 이메일/비밀번호 로그인
 - 1시간 유효한 관리자 초대, 재전송/취소, 초대 수락 및 비밀번호 재설정
 - Admin browser session registration with `appSurface: "admin"`

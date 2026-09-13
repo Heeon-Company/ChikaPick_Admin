@@ -1,3 +1,15 @@
+import type { SupportContent, SupportMutation } from "./support-content";
+
+export function fetchAdminSupportContent(accessToken: string) {
+  return adminFetch<SupportContent>("/api/v1/admin/support", accessToken, { cache: "no-store" });
+}
+
+export function saveAdminSupportContent(accessToken: string, mutation: SupportMutation) {
+  return adminFetch<AdminActionResult>("/api/v1/admin/support", accessToken, {
+    method: "PUT", body: JSON.stringify(mutation),
+  });
+}
+
 export type AdminReviewStatus =
   | "pending_review"
   | "approved"

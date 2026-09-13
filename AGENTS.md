@@ -74,6 +74,8 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Project Essentials
 
+`고객지원 관리` is the support-content sidebar page with announcement/FAQ editing, category ordering, plain-text preview, publish/unpublish controls and a Google Forms respondent-link setting. `SupportManagementTab` uses only protected `GET`/`PUT /api/v1/admin/support`; hidden categories also hide their questions in Client. Deploy API migration `20260913130000_support_content_management.sql` and API before this UI. See README and the sibling API's `docs/support-content-management.md`.
+
 ChikaTalk report detail includes `ChikaTalkSanctionForm`: warning, write/access suspension, permanent restriction, release and hidden-content restoration go through the protected API. Require separate internal detailed reason and user-visible notification message; reset both when switching action, preserve form values on failure, and reuse a request ID only for the exact same action payload. Suspensions begin immediately and accept 1–365 days. Release clears active restrictions while retaining cumulative strikes and audit history; expired restrictions display as normal. PM publishes CHIKA_TALK_COMMUNITY_POLICY in the existing terms panel before the consent-dependent writing flow goes live.
 
 ChikaPick Admin is the internal administrator web console for ChikaPick operations. It is a Next.js 16 App Router application deployed to Vercel and backed by Supabase Auth in the browser.
