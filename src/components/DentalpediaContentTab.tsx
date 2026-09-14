@@ -718,6 +718,8 @@ function ContentActionDialog({
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+  const descriptionId = useId();
+  const contentTitleId = useId();
   useEffect(() => {
     const element = dialog.current;
     element?.showModal();
@@ -727,27 +729,57 @@ function ContentActionDialog({
   return (
     <dialog
       ref={dialog}
-      className="admin-dentalpedia-action-dialog"
+      className={`admin-dentalpedia-action-dialog${deleting ? " is-delete" : ""}`}
       aria-labelledby={titleId}
+      aria-describedby={`${contentTitleId} ${descriptionId}`}
+      aria-busy={busy}
       onCancel={(event) => {
         event.preventDefault();
         if (!busy) onClose();
       }}
     >
-      <h2 id={titleId}>
-        {deleting ? "콘텐츠를 삭제할까요?" : "콘텐츠를 보관할까요?"}
-      </h2>
-      <strong>{pending.item.title}</strong>
-      <p>
-        {deleting
-          ? "삭제한 콘텐츠는 목록과 앱에서 사라지며 복구할 수 없습니다."
-          : "앱에 더 이상 노출되지 않습니다. 보관 목록에서 확인하고 다시 편집·발행할 수 있습니다."}
-      </p>
-      {error ? (
-        <p role="alert" className="is-error">
-          {error}
-        </p>
-      ) : null}
+      <div className="admin-dentalpedia-action-body">
+        <span className="admin-dentalpedia-action-icon" aria-hidden="true">
+          <Image
+            alt=""
+            src={`/dentalpedia/content-${deleting ? "delete" : "archive"}-info.svg`}
+            width={28}
+            height={28}
+          />
+        </span>
+        <div className="admin-dentalpedia-action-copy">
+          <h2 id={titleId}>
+            {deleting
+              ? "콘텐츠를 삭제하시겠습니까?"
+              : "콘텐츠를 보관하시겠습니까?"}
+          </h2>
+          <span id={contentTitleId} className="sr-only">
+            {pending.item.title}
+          </span>
+          <div id={descriptionId}>
+            {deleting ? (
+              <>
+                <p>삭제한 콘텐츠는 다시 복구할 수 없습니다.</p>
+                <p>
+                  해당 콘텐츠가 홈, 추천 또는 상단 대표 콘텐츠로 설정되어 있는
+                  경우
+                </p>
+                <p>해당 노출도 함께 해제됩니다.</p>
+              </>
+            ) : (
+              <>
+                <p>보관된 콘텐츠는 사용자에게 노출되지 않으며,</p>
+                <p>보관함에서 다시 복원할 수 있습니다.</p>
+              </>
+            )}
+          </div>
+        </div>
+        {error ? (
+          <p role="alert" className="is-error">
+            {error}
+          </p>
+        ) : null}
+      </div>
       <footer>
         <button type="button" disabled={busy} onClick={onClose} autoFocus>
           취소
