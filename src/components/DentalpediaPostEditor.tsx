@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useUnsavedChanges } from "@/components/AdminNavigation";
 import { dentalpediaImmediatePublishAt } from "@/lib/dentalpedia-content";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type {
@@ -110,6 +111,15 @@ export function DentalpediaPostEditor({
     tone: "error" | "success";
   } | null>(null);
   const imagesRef = useRef(images);
+
+  const markSaved = useUnsavedChanges({
+    title, category, cardSummary, tags, tagDraft, searchKeywords, postType,
+    images: images.map(({ path, file }) => ({ path, file })), bodyText,
+    isVisible, isRecommended, isHero, homeVisible, homeOrder, publishMode,
+    publishAt, endAt, relatedContentIds,
+  }, { ready: !loadingDraft && !loadFailed, busy: saving,
+    message: "저장하지 않은 변경 사항은 사라집니다. 콘텐츠 목록으로 돌아갈까요?",
+  });
 
   useEffect(() => {
     imagesRef.current = images;
@@ -416,6 +426,7 @@ export function DentalpediaPostEditor({
       } as const;
       setFeedback(outcome);
       if (status === "published") setPublishToast(outcome);
+      markSaved();
       onSaved?.(outcome.message);
     } catch (error) {
       const outcome = {

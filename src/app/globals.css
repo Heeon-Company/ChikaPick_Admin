@@ -17563,6 +17563,7 @@ td span {
 .admin-dentalpedia-status-filters button[aria-pressed="true"] { border-color: #f56e00; background: #fee9d9; color: #f56e00; }
 .admin-dentalpedia-search-row { display: flex; gap: 12px; padding-bottom: 16px; }
 .admin-dentalpedia-search { display: flex; flex: 1; min-width: 0; align-items: center; gap: 10px; border: 1px solid #d4d6da; border-radius: 8px; background: #fff; padding: 8px 14px; }
+.admin-dentalpedia-search > img { width: 24px; height: 24px; flex: 0 0 24px; }
 .admin-dentalpedia-search input { width: 100%; min-width: 0; border: 0; background: transparent; color: #1e293b; font: inherit; font-size: 14px; outline: none; }
 .admin-dentalpedia-search:focus-within { outline: 2px solid #0f766e; outline-offset: 2px; }
 .admin-dentalpedia-search input::placeholder { color: #999da8; }

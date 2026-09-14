@@ -1,5 +1,7 @@
 "use client";
 
+import { useUnsavedChanges } from "@/components/AdminNavigation";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 
@@ -66,6 +68,8 @@ export function ServiceAreaCopyManagementView({
     return () => window.clearTimeout(timeout);
   }, [loadConfig]);
 
+  const markSaved = useUnsavedChanges(draft, { ready: !isLoading && !!draft, busy: isSaving });
+
   const isDirty = useMemo(
     () =>
       Boolean(
@@ -88,6 +92,7 @@ export function ServiceAreaCopyManagementView({
       const nextDraft = configToDraft(payload.config);
       setSavedDraft(nextDraft);
       setDraft(nextDraft);
+      markSaved();
       setFeedback(payload.message);
     } catch (saveError) {
       setError(

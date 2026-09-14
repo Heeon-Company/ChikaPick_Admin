@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAdminNavigation, useUnsavedChanges } from "@/components/AdminNavigation";
+import { supportDraftForSelection } from "@/lib/support-content";
 import { AdminSelect } from "./AdminSelect";
 import {
   fetchAdminSupportContent,
@@ -10,8 +12,14 @@ import type { SupportContent, SupportMutation } from "@/lib/support-content";
 
 export function SupportManagementTab({ accessToken }: { accessToken: string }) {
   const [data, setData] = useState<SupportContent | null>(null);
-  const [tab, setTab] = useState<"announcements" | "faq">("announcements");
-  const [draft, setDraft] = useState<SupportMutation | null>(null);
+  const { screen, navigate, returnTo } = useAdminNavigation();
+  const tab = screen.view === "faq" ? "faq" : "announcements";
+  const setTab = (view: "announcements" | "faq") => navigate({
+    tab: "support-management", ...(view === "faq" ? { view } : {}),
+  });
+  const listScreen = { tab: "support-management", ...(tab === "faq" ? { view: "faq" as const } : {}) } as const;
+  const draft = useMemo(() => data && screen.supportEditor
+    ? supportDraftForSelection(data, screen.supportEditor) : null, [data, screen.supportEditor]);
   const [feedbackUrl, setFeedbackUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -37,31 +45,40 @@ export function SupportManagementTab({ accessToken }: { accessToken: string }) {
   }, [load]);
 
   async function save(mutation: SupportMutation) {
-    if (saving) return;
+    if (saving) return false;
     setSaving(true);
     setError("");
     setMessage("");
     try {
       await saveAdminSupportContent(accessToken, mutation);
       setMessage("저장했습니다. 공개된 내용은 앱에서 다음에 열 때 반영됩니다.");
-      setDraft(null);
       await load();
+      markSettingsSaved();
+      return true;
     } catch (cause) {
       setError(
         cause instanceof Error && /[가-힣]/.test(cause.message)
           ? cause.message
           : "저장하지 못했습니다. 입력 내용은 유지됩니다.",
       );
+      return false;
     } finally {
       setSaving(false);
     }
   }
 
-  function edit(value: SupportMutation) {
-    setDraft(value);
+  function edit(value: Exclude<SupportMutation, { kind: "settings" }>) {
+    const existing = data && supportDraftForSelection(data, { kind: value.kind, id: value.record.id });
+    navigate({ ...listScreen, supportEditor: { kind: value.kind, id: value.record.id, isNew: !existing } });
     setError("");
     setMessage("");
   }
+
+  const markSettingsSaved = useUnsavedChanges(feedbackUrl, {
+    ready: !!data && !loading, busy: saving, enabled: !draft,
+  });
+
+  const unavailable = !loading && !!screen.supportEditor && !draft;
 
   if (!data)
     return (
@@ -109,20 +126,20 @@ export function SupportManagementTab({ accessToken }: { accessToken: string }) {
           새로고침
         </button>
       </div>
-      {error && (
+      {(error || unavailable) && (
         <p className="support-error" role="alert">
-          {error}
+          {error || "선택한 항목을 찾을 수 없습니다. 목록에서 다시 선택해 주세요."}
         </p>
       )}
       {message && <p role="status">{message}</p>}
-      {draft && draft.kind !== "settings" ? (
+      {draft ? (
         <SupportEditor
           key={`${draft.kind}-${draft.record.id}`}
           initial={draft}
           data={data}
           saving={saving}
           onSave={save}
-          onCancel={() => setDraft(null)}
+          onCancel={() => returnTo(listScreen)}
         />
       ) : (
         <>
@@ -333,10 +350,11 @@ function SupportEditor({
   initial: ContentDraft;
   data: SupportContent;
   saving: boolean;
-  onSave: (value: SupportMutation) => Promise<void>;
+  onSave: (value: SupportMutation) => Promise<boolean>;
   onCancel: () => void;
 }) {
   const [draft, setDraft] = useState(initial);
+  const markSaved = useUnsavedChanges(draft, { busy: saving });
   const record = draft.record;
   function update(fields: Record<string, string | boolean | number>) {
     setDraft(
@@ -360,7 +378,9 @@ function SupportEditor({
       className="support-card"
       onSubmit={(event) => {
         event.preventDefault();
-        void onSave(draft);
+        void onSave(draft).then((success) => {
+          if (success) { markSaved(); onCancel(); }
+        });
       }}
     >
       <h2>

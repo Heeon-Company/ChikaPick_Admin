@@ -160,14 +160,7 @@ export function DentalpediaContentTab({
         initialType={editor.type}
         initialContentId={editor.id}
         startNew
-        onBack={() => {
-          if (
-            window.confirm(
-              "저장하지 않은 변경 사항은 사라집니다. 콘텐츠 목록으로 돌아갈까요?",
-            )
-          )
-            onEditorChange(null);
-        }}
+        onBack={() => onEditorChange(null)}
         onSaved={(message) => {
           setNotice(message);
           setLoading(true);
@@ -262,7 +255,7 @@ export function DentalpediaContentTab({
             <Image
               alt=""
               src="/dentalpedia/content-search.svg"
-              width={16}
+              width={24}
               height={24}
             />
             <input

@@ -96,13 +96,8 @@ import {
   isAdminConsoleReady,
   shouldAutoLoadAdminConsole,
 } from "@/lib/admin-auth-session";
-import {
-  adminDetailFromHistoryState,
-  pushAdminDetailHistory,
-  replaceAdminDetailHistory,
-  requestAdminDetailBack,
-  type AdminDetailHistorySelection,
-} from "@/lib/admin-detail-history";
+import { primaryTabs, type PrimaryAdminTab } from "@/lib/admin-tabs";
+import { AdminNavigationProvider, useAdminNavigation, useUnsavedChanges } from "@/components/AdminNavigation";
 import {
   reservationSourceLabel,
   statusLabel,
@@ -284,34 +279,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase";
 
 import { SupportManagementTab } from "@/components/SupportManagementTab";
 
-const primaryTabs = [
-  { id: "dashboard", label: "운영 현황", icon: "/Type=Dashboard.svg" },
-  { id: "dental-sales", label: "치과 영업 관리", icon: "/Type=Graph.svg" },
-  { id: "partner-clinics", label: "파트너 치과 관리", icon: "/Type=Hospital.svg" },
-  { id: "hospital-review", label: "병원 가입 심사", icon: "/Type=Accept.svg" },
-  { id: "license-review", label: "치과의사 면허 인증", icon: "/Type=Accept.svg" },
-  { id: "clinic-membership-requests", label: "소속 신청 관리", icon: "/Type=Staff.svg" },
-  { id: "reservations", label: "예약 운영 관리", icon: "/Type=Diary.svg" },
-  // 전문의 소견 관련 코드
-  // { id: "consultations", label: "전문의 소견 운영", icon: "/Type=Response.svg" },
-  { id: "secret-feedback", label: "시크릿 피드백", icon: "/Type=Opinion.svg" },
-  { id: "information-upload", label: "치카피디아", icon: "/Type=Dashboard.svg" },
-  { id: "chika-talk", label: "치아톡 관리", icon: "/Type=Dashboard.svg" },
-  { id: "service-expansion-requests", label: "서비스 확대 요청 관리", icon: "/Type=Dashboard.svg" },
-  { id: "chikapick-accounts", label: "치카픽 계정 조회", icon: "/Type=Family.svg" },
-  { id: "partner-accounts", label: "파트너스 계정 조회", icon: "/Type=Family.svg" },
-  { id: "partner-invites", label: "파트너 초대코드 관리", icon: "/Type=Settings.svg" },
-  { id: "memberships", label: "멤버십 관리", icon: "/Type=Ticket.svg" },
-  { id: "terms-management", label: "약관 관리", icon: "/Type=Diary.svg" },
-  { id: "support-management", label: "고객지원 관리", icon: "/Type=Opinion.svg" },
-  { id: "sales-performance", label: "영업 성과 관리", icon: "/Type=Price.svg" },
-  { id: "admin-accounts", label: "어드민 계정 관리", icon: "/Type=Mypage.svg" },
-  { id: "external-connectors", label: "외부 연결자 관리", icon: "/Type=Share.svg" },
-  { id: "audit-log", label: "감사 로그", icon: "/Type=Log.svg" },
-  { id: "settings", label: "설정", icon: "/Type=Settings.svg" },
-] as const;
-
-type PrimaryAdminTab = (typeof primaryTabs)[number]["id"];
+type AdminDetailHistorySelection = { tab: "dental-sales" | "partner-clinics"; id: string };
 type AdminContentLayout = "fluid" | "compact" | "form";
 
 const primaryTabContentLayouts: Record<PrimaryAdminTab, AdminContentLayout> = {
@@ -404,17 +372,27 @@ const emptyConsole: AdminConsolePayload = {
 };
 
 export default function AdminHome() {
-  const [dentalpediaEditor, setDentalpediaEditor] = useState<DentalpediaContentSelection | null>(null);
+  return <AdminNavigationProvider><AdminConsole /></AdminNavigationProvider>;
+}
+
+function AdminConsole() {
+  const { screen, navigate, returnTo } = useAdminNavigation();
+  const activePrimaryTab = screen.tab;
+  const dentalpediaEditor = screen.tab === "information-upload" ? screen.editor ?? null : null;
+  const selectedDentalSalesProfileId = screen.tab === "dental-sales" ? screen.id ?? null : null;
+  const selectedPartnerClinicId = screen.tab === "partner-clinics" ? screen.id ?? null : null;
+  const isPartnerAccountSearchView = screen.tab === "partner-accounts" && screen.view === "search";
+  const isMembershipRegistrationView = screen.tab === "memberships" && screen.view === "registration";
+  const setDentalpediaEditor = (editor: DentalpediaContentSelection | null) => {
+    if (editor) navigate({ tab: "information-upload", editor });
+    else returnTo({ tab: "information-upload" });
+  };
+  const setIsMembershipRegistrationView = (open: boolean) => {
+    if (open) navigate({ tab: "memberships", view: "registration" });
+    else returnTo({ tab: "memberships" });
+  };
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
-  const [activePrimaryTab, setActivePrimaryTab] =
-    useState<PrimaryAdminTab>("dashboard");
-  const [selectedDentalSalesProfileId, setSelectedDentalSalesProfileId] = useState<
-    string | null
-  >(null);
-  const [selectedPartnerClinicId, setSelectedPartnerClinicId] = useState<string | null>(
-    null,
-  );
   const [consoleData, setConsoleData] = useState<AdminConsolePayload>(emptyConsole);
   const [isLoadingConsole, setIsLoadingConsole] = useState(false);
   const [hasLoadedConsole, setHasLoadedConsole] = useState(false);
@@ -428,9 +406,6 @@ export default function AdminHome() {
   const [loginPassword, setLoginPassword] = useState("");
   const [message, setMessage] = useState("");
   const [adminAccountDialog, setAdminAccountDialog] = useState<"invite" | null>(null);
-  const [isPartnerAccountSearchView, setIsPartnerAccountSearchView] = useState(false);
-  const [isMembershipRegistrationView, setIsMembershipRegistrationView] =
-    useState(false);
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const lastAutoLoadedAccessTokenRef = useRef<string | null>(null);
@@ -482,56 +457,24 @@ export default function AdminHome() {
     };
   }, [activePrimaryTab, dentalpediaEditor]);
 
-  const applyDetailSelection = useCallback(
-    (selection: AdminDetailHistorySelection | null) => {
-      if (selection?.tab === "dental-sales") {
-        setActivePrimaryTab("dental-sales");
-        setSelectedDentalSalesProfileId(selection.id);
-        setSelectedPartnerClinicId(null);
-      } else if (selection?.tab === "partner-clinics") {
-        setActivePrimaryTab("partner-clinics");
-        setSelectedPartnerClinicId(selection.id);
-        setSelectedDentalSalesProfileId(null);
-      } else {
-        setSelectedDentalSalesProfileId(null);
-        setSelectedPartnerClinicId(null);
-      }
-    },
-    [],
-  );
-
   const openAdminDetail = useCallback(
-    (selection: AdminDetailHistorySelection) => {
-      pushAdminDetailHistory(window.history, window.location.href, selection);
-      applyDetailSelection(selection);
-    },
-    [applyDetailSelection],
+    (selection: AdminDetailHistorySelection) => navigate(selection), [navigate],
   );
-
   const closeAdminDetail = useCallback(
-    (tab: AdminDetailHistorySelection["tab"]) => {
-      if (!requestAdminDetailBack(window.history, tab)) {
-        applyDetailSelection(null);
-      }
-    },
-    [applyDetailSelection],
+    (tab: AdminDetailHistorySelection["tab"]) => returnTo({ tab }), [returnTo],
   );
-
-  const clearAdminDetail = useCallback(() => {
-    replaceAdminDetailHistory(window.history, window.location.href, null);
-    applyDetailSelection(null);
-  }, [applyDetailSelection]);
-
   const navigateToPrimaryTab = useCallback(
-    (tab: PrimaryAdminTab) => {
-      clearAdminDetail();
-      setIsPartnerAccountSearchView(false);
-      setIsMembershipRegistrationView(false);
-      if (tab !== activePrimaryTab) setMessage("");
-      setActivePrimaryTab(tab);
-    },
-    [activePrimaryTab, clearAdminDetail],
+    (tab: PrimaryAdminTab) => navigate({ tab }), [navigate],
   );
+
+  const previousPrimaryTab = useRef(activePrimaryTab);
+  useEffect(() => {
+    const changed = previousPrimaryTab.current !== activePrimaryTab;
+    previousPrimaryTab.current = activePrimaryTab;
+    if (!changed || !session) return;
+    const timer = window.setTimeout(() => setMessage(""), 0);
+    return () => window.clearTimeout(timer);
+  }, [activePrimaryTab, session]);
 
   const loadConsole = useCallback(
     async (currentSession: Session | null) => {
@@ -685,15 +628,6 @@ export default function AdminHome() {
   }, [authorizedAdminUserId, session, supabase]);
 
   useEffect(() => {
-    const syncFromHistory = () => {
-      applyDetailSelection(adminDetailFromHistoryState(window.history.state));
-    };
-    syncFromHistory();
-    window.addEventListener("popstate", syncFromHistory);
-    return () => window.removeEventListener("popstate", syncFromHistory);
-  }, [applyDetailSelection]);
-
-  useEffect(() => {
     if (!session || authorizedAdminUserId !== session.user.id) return;
 
     const markActivity = () => {
@@ -801,7 +735,7 @@ export default function AdminHome() {
         setConsoleData(emptyConsole);
         setHasLoadedConsole(false);
         setAuthorizedAdminUserId(null);
-        setActivePrimaryTab("dashboard");
+        navigate({ tab: "dashboard" }, true);
         setMessage(
           error
             ? "어드민 계정은 탈퇴 처리되었지만 브라우저 로그아웃을 완료하지 못했습니다. 이 창을 닫고 다시 접속해 주세요."
@@ -1109,7 +1043,7 @@ export default function AdminHome() {
               <button
                 type="button"
                 className="admin-partner-accounts-lookup-trigger"
-                onClick={() => setIsPartnerAccountSearchView(true)}
+                onClick={() => navigate({ tab: "partner-accounts", view: "search" })}
               >
                 단일 계정 정보 상세 조회하기
               </button>
@@ -2666,6 +2600,13 @@ function MembershipRegistrationView({
   const richContentRef = useRef<HTMLTextAreaElement>(null);
   const richContentImageInputRef = useRef<HTMLInputElement>(null);
 
+  const markSaved = useUnsavedChanges({
+    name, category, recommendedOrder, description, cardImage, isPreferred, isVisible,
+    detailTitle, detailDescription, detailImage, inquiryButtonLabel, inquiryMethod,
+    inquiryValue, intro, serviceTags, tagDraft, strengths, benefitItems, contentType,
+    richContent, richContentImages, attachmentLabel, attachmentFile,
+  }, { busy: isSaving });
+
   function addTag() {
     const normalized = tagDraft.trim();
     if (!normalized || serviceTags.includes(normalized)) return;
@@ -2800,6 +2741,7 @@ function MembershipRegistrationView({
     setError("");
     try {
       const result = await createAdminMembershipPartner(accessToken, input);
+      markSaved();
       await onSaved(result.message);
     } catch (saveError) {
       setError(

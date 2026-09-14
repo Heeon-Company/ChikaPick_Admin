@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useUnsavedChanges, useAdminNavigation } from "@/components/AdminNavigation";
 import { dentalpediaImmediatePublishAt } from "@/lib/dentalpedia-content";
 import { useEffect, useMemo, useState } from "react";
 import type {
@@ -107,8 +108,12 @@ export function InformationUploadTab({ accessToken, initialType = "video", initi
   onBack?: () => void;
   onSaved?: (message: string) => void;
 }) {
-  const [informationType, setInformationType] =
-    useState<DentalpediaInformationType>(initialType);
+  const { navigate } = useAdminNavigation();
+  const informationType = initialType;
+  const setInformationType = (type: DentalpediaInformationType) => {
+    if (type === informationType || initialContentId) return;
+    navigate({ tab: "information-upload", editor: { type } }, true);
+  };
   const [categories, setCategories] = useState<AdminDentalpediaCategory[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
@@ -166,6 +171,15 @@ export function InformationUploadTab({ accessToken, initialType = "video", initi
     message: string;
     tone: "error" | "success";
   } | null>(null);
+
+  const markSaved = useUnsavedChanges({
+    title, category, description, tags, tagDraft, searchKeywords, thumbnailFile,
+    thumbnailImagePath, videoFile, videoFilePath, url, duration, isVisible,
+    isRecommended, isHero, homeVisible, homeOrder, exposurePriority, publishMode,
+    publishAt, endAt, relatedContentIds,
+  }, { ready: !loadingDraft && !loadFailed, busy: saving, enabled: informationType === "video",
+    message: "저장하지 않은 변경 사항은 사라집니다. 콘텐츠 목록으로 돌아갈까요?",
+  });
 
   useEffect(() => {
     if (!accessToken) {
@@ -485,6 +499,7 @@ export function InformationUploadTab({ accessToken, initialType = "video", initi
       } as const;
       setFeedback(outcome);
       if (status === "published") setPublishToast(outcome);
+      markSaved();
       onSaved?.(outcome.message);
     } catch (error) {
       const outcome = {

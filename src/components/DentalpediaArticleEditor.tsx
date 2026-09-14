@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useUnsavedChanges } from "@/components/AdminNavigation";
 import { dentalpediaImmediatePublishAt } from "@/lib/dentalpedia-content";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, KeyboardEvent, MouseEvent, ReactNode } from "react";
@@ -150,6 +151,15 @@ export function DentalpediaArticleEditor({
     start: 0,
   });
   const bodyScrollTopRef = useRef(0);
+
+  const markSaved = useUnsavedChanges({
+    slug, title, category, summary, tags, tagDraft, searchKeywords, coverFile,
+    coverImagePath, bodyMarkdown, authorLabel, authoredAt, reviewedAt, reviewerLabel,
+    isVisible, isRecommended, isHero, homeVisible, homeOrder, publishMode,
+    publishAt, endAt, relatedContentIds, disclaimerEnabled,
+  }, { ready: !loadingDraft && !loadFailed, busy: saving,
+    message: "저장하지 않은 변경 사항은 사라집니다. 콘텐츠 목록으로 돌아갈까요?",
+  });
 
   useEffect(() => {
     if (!publishToast) return;
@@ -577,6 +587,7 @@ export function DentalpediaArticleEditor({
       } as const;
       setFeedback(outcome);
       if (status === "published") setPublishToast(outcome);
+      markSaved();
       onSaved?.(outcome.message);
     } catch (error) {
       const outcome = {

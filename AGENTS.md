@@ -141,7 +141,7 @@ Before pushing, always run `npm run test`, `npm run lint`, and `npm run build`.
 - `src/lib/partner-accounts.ts` - Partners account directory/detail payloads plus classification, status, provider, and Korea-time presentation helpers.
 - `src/lib/admin-auth-session.ts` - Guards automatic console loading so repeated auth notifications do not trigger repeated fetches for the same access token.
 - `src/lib/partner-clinics.ts` - Partner-clinic directory/detail payloads plus Korea-time activity, registration, duration, response-rate, and feedback labels.
-- `src/lib/admin-detail-history.ts` - Shared browser-history state for the dental-sales and partner-clinic full-page detail views. Opening a detail pushes history; browser Back/Forward restores the list/detail selection.
+- `src/lib/admin-navigation.ts`, `src/components/AdminNavigation.tsx` and `src/lib/admin-tabs.ts` - Shared primary-tab/full-page browser history for Dentalpedia, dental sales, partner clinics/accounts, membership registration, support editing and service-expansion subpages. Preserve owning-tab Back/Forward, parent traversal, Next.js state, and dirty-form cancellation without duplicate entries. Editable snapshots become clean after load/save or reverting changes; previews do not mark dirty. See `docs/admin-navigation.md`.
 - `src/lib/license-verifications.ts` - Dentist-license review summary, status classification/filtering, Korea-time request labels, and membership-role labels.
 - `src/lib/membership-management.ts` - ChikaPick membership partner/inquiry payloads, registration form contracts and upload validation, category/sort labels, Korea-date formatting, and compact pagination helpers.
 - `public/` - Tracked brand/navigation assets used by the admin UI.

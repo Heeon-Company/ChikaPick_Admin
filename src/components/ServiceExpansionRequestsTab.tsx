@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import Image from "next/image";
 
+import { useAdminNavigation } from "@/components/AdminNavigation";
 import { ServiceAreaCopyManagementView } from "@/components/ServiceAreaCopyManagementView";
 import {
   fetchAdminClinicPartnershipRequests,
@@ -22,7 +23,11 @@ import {
 type RequestView = "area" | "clinic" | "copy";
 
 export function ServiceExpansionRequestsTab({ accessToken }: { accessToken: string }) {
-  const [activeView, setActiveView] = useState<RequestView>("area");
+  const { screen, navigate } = useAdminNavigation();
+  const activeView: RequestView = screen.view === "clinic" || screen.view === "copy" ? screen.view : "area";
+  const setActiveView = (view: RequestView) => navigate({
+    tab: "service-expansion-requests", ...(view === "area" ? {} : { view }),
+  });
   const [overview, setOverview] = useState<ServiceExpansionOverviewPayload | null>(null);
   const [clinicData, setClinicData] = useState<ClinicPartnershipRequestPayload | null>(null);
   const [areaDraftQuery, setAreaDraftQuery] = useState("");
