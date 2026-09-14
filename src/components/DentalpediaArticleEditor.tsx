@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { dentalpediaImmediatePublishAt } from "@/lib/dentalpedia-content";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, KeyboardEvent, MouseEvent, ReactNode } from "react";
 import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
@@ -8,6 +9,7 @@ import remarkGfm from "remark-gfm";
 
 import {
   DentalpediaInformationTypeTabs,
+  DentalpediaEditorLoadFailure,
   DentalpediaWorkspaceHeading,
   type DentalpediaInformationType,
 } from "@/components/DentalpediaEditorNavigation";
@@ -72,8 +74,16 @@ export function DentalpediaArticleEditor({
   informationType,
   onManageCategories,
   onInformationTypeChange,
+  initialContentId,
+  startNew = false,
+  onBack,
+  onSaved,
 }: {
   accessToken: string;
+  initialContentId?: string;
+  startNew?: boolean;
+  onBack?: () => void;
+  onSaved?: (message: string) => void;
   categories: AdminDentalpediaCategory[];
   informationType: DentalpediaInformationType;
   onManageCategories: () => void;
@@ -121,6 +131,8 @@ export function DentalpediaArticleEditor({
   const [relatedDialogOpen, setRelatedDialogOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("home");
   const [disclaimerEnabled, setDisclaimerEnabled] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [savedPublishAt, setSavedPublishAt] = useState<string | null>(null);
   const [loadingDraft, setLoadingDraft] = useState(true);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{
@@ -184,6 +196,8 @@ export function DentalpediaArticleEditor({
     const markdown = article.bodyMarkdown ?? "";
     const imageUrls = dentalpediaMarkdownImageUrls(markdown);
     setArticleId(article.id);
+    setLoadFailed(false);
+    setSavedPublishAt(article.status === "published" ? article.publishAt : null);
     setSlug(article.slug);
     setTitle(article.title);
     setCategory(article.category);
@@ -230,7 +244,7 @@ export function DentalpediaArticleEditor({
   }, []);
 
   useEffect(() => {
-    const savedId = window.localStorage.getItem(draftStorageKey);
+    const savedId = initialContentId ?? (startNew ? null : window.localStorage.getItem(draftStorageKey));
     if (!savedId || !accessToken) {
       const timer = window.setTimeout(() => setLoadingDraft(false), 0);
       return () => window.clearTimeout(timer);
@@ -238,14 +252,20 @@ export function DentalpediaArticleEditor({
     let active = true;
     fetchAdminDentalpediaArticle(accessToken, savedId)
       .then(({ article }) => {
-        if (article.status !== "draft") {
+        if (!initialContentId && article.status !== "draft") {
           window.localStorage.removeItem(draftStorageKey);
           return;
         }
         if (active) applyArticle(article);
       })
-      .catch(() => {
-        window.localStorage.removeItem(draftStorageKey);
+      .catch((error) => {
+        if (!active) return;
+        if (initialContentId) {
+          setLoadFailed(true);
+          setFeedback({ tone: "error", message: error instanceof Error ? error.message : "콘텐츠를 불러오지 못했습니다. 목록에서 다시 열어 주세요." });
+        } else {
+          window.localStorage.removeItem(draftStorageKey);
+        }
       })
       .finally(() => {
         if (active) setLoadingDraft(false);
@@ -253,7 +273,7 @@ export function DentalpediaArticleEditor({
     return () => {
       active = false;
     };
-  }, [accessToken, applyArticle]);
+  }, [initialContentId, startNew, accessToken, applyArticle]);
 
   function addTag() {
     const tag = tagDraft.trim().replace(/^#+/, "");
@@ -429,7 +449,7 @@ export function DentalpediaArticleEditor({
         status === "published"
           ? publishMode === "scheduled"
             ? localDateTimeToIso(publishAt)
-            : new Date().toISOString()
+            : dentalpediaImmediatePublishAt(savedPublishAt)
           : publishMode === "scheduled"
             ? localDateTimeToIso(publishAt)
             : null,
@@ -447,7 +467,7 @@ export function DentalpediaArticleEditor({
   }
 
   async function save(status: DentalpediaArticleStatus) {
-    if (!accessToken || saving || loadingDraft) return;
+    if (!accessToken || saving || loadingDraft || loadFailed) return;
     if (status === "published") setPublishToast(null);
     const resolvedSlug = slug || `column-${crypto.randomUUID()}`;
     const pendingCoverPath =
@@ -557,6 +577,7 @@ export function DentalpediaArticleEditor({
       } as const;
       setFeedback(outcome);
       if (status === "published") setPublishToast(outcome);
+      onSaved?.(outcome.message);
     } catch (error) {
       const outcome = {
         tone: "error",
@@ -573,6 +594,8 @@ export function DentalpediaArticleEditor({
   }
 
   function resetToNewArticle() {
+    if (onBack) { onBack(); return; }
+    setSavedPublishAt(null);
     window.localStorage.removeItem(draftStorageKey);
     if (coverObjectUrl) URL.revokeObjectURL(coverObjectUrl);
     pendingBodyImages.forEach((image) => URL.revokeObjectURL(image.objectUrl));
@@ -615,13 +638,18 @@ export function DentalpediaArticleEditor({
     void save("published");
   }
 
+  if (loadFailed) {
+    return <DentalpediaEditorLoadFailure message={feedback?.message ?? "콘텐츠를 불러오지 못했습니다."} onBack={onBack} />;
+  }
+
   return (
     <div className="admin-information-video admin-information-column">
       <form id="information-upload-form" onSubmit={submitArticle}>
         <div className="admin-information-video-layout">
           <div className="admin-information-video-editor">
-            <DentalpediaWorkspaceHeading />
+            <DentalpediaWorkspaceHeading onBack={saving ? undefined : onBack} />
             <DentalpediaInformationTypeTabs
+              disabled={Boolean(initialContentId)}
               informationType={informationType}
               onChange={onInformationTypeChange}
             />
@@ -731,7 +759,7 @@ export function DentalpediaArticleEditor({
                 ) : null}
                 <input
                   aria-label="새 태그"
-                  disabled={loadingDraft || saving}
+                  disabled={loadingDraft || loadFailed || saving}
                   maxLength={30}
                   onChange={(event) => setTagDraft(event.target.value)}
                   onKeyDown={handleTagKeyDown}
@@ -1239,19 +1267,19 @@ export function DentalpediaArticleEditor({
           </div>
 
           <footer className="admin-information-video-actions">
-            <button disabled={loadingDraft || saving} onClick={resetToNewArticle} type="button">
+            <button disabled={saving} onClick={resetToNewArticle} type="button">
               취소
             </button>
             <div>
               <button
-                disabled={loadingDraft || saving}
+                disabled={loadingDraft || loadFailed || saving}
                 onClick={() => void save("draft")}
                 type="button"
               >
                 {saving ? "저장 중..." : "임시저장"}
               </button>
-              <button disabled={loadingDraft || saving} type="submit">
-                {saving ? "처리 중..." : "발행하기"}
+              <button disabled={loadingDraft || loadFailed || saving} type="submit">
+                {saving ? "처리 중..." : savedPublishAt ? "수정 완료" : "발행하기"}
               </button>
             </div>
           </footer>

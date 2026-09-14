@@ -1,0 +1,11 @@
+# Dentalpedia content directory
+
+The 치카피디아 tab now opens `DentalpediaContentTab` following Figma `7960:68825`. It lists all three content types with title/category search, publication-state filters, thumbnails, exposure badges, Korea dates and server pagination. Titles and 수정하기 open the existing type-specific editor by its exact ID. 신규 콘텐츠 생성 opens a blank editor. 보관하기 and 삭제하기 require a confirmation, preserve the dialog on failure, and refresh the list on success.
+
+`page.tsx` owns the editor selection so the Dentalpedia document/shell scroll lock applies only while editing. The directory uses normal document scrolling and confines narrow-screen table overflow to the table region. `AdminSelect` remains the category picker. The row menu uses a viewport-positioned portal, keyboard navigation and Escape dismissal; native modal dialogs trap focus and initially focus Cancel.
+
+The editors accept `initialContentId`, `startNew`, `onBack` and `onSaved`. An explicit ID may load draft, published or archived content; a failed load blocks all saves to prevent accidental duplicate creation. Content type changes are disabled while editing an existing ID. Publication updates preserve the stored publication timestamp; saving returns to the filtered list. Returning without saving asks before discarding edits. Existing standalone draft-resume behavior remains available, while this directory opens drafts explicitly from its list.
+
+Deploy API migration `20260914100000_dentalpedia_content_management.sql`, then the API, then Admin. The directory uses protected `/api/v1/admin/dentalpedia/content` requests; existing editors retain their type-specific API endpoints. See `../../ChikaPick_API/docs/dentalpedia-content-management.md` for state semantics, deletion/storage behavior and public-cache propagation. This change does not publish new content or apply the migration automatically.
+
+Run `npm run test`, `npm run lint` and `npm run build`. Browser checks should use local fixture responses for all three editors, search/category/status filters, pagination, archive/delete confirmation and errors, missing-editor records, and a narrow viewport. Never use production content as a deletion fixture. Exported Figma directory icons are tracked under `public/dentalpedia/content-*.svg`.

@@ -17549,3 +17549,84 @@ td span {
     height: 140px;
   }
 }
+/* Figma 7960:68825 — Dentalpedia content directory. */
+.admin-dentalpedia-directory { width: 100%; min-width: 0; background: #f8fafc; color: #1e293b; }
+.admin-dentalpedia-directory-heading { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 24px 32px; }
+.admin-dentalpedia-directory-heading h1 { margin: 0; color: #000; font-size: 24px; font-weight: 700; line-height: 32px; }
+.admin-dentalpedia-directory-heading p { margin: 4px 0 0; color: #999da8; font-size: 14px; line-height: 20px; }
+.admin-dentalpedia-create { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; gap: 8px; padding: 10px 16px; border: 0; border-radius: 8px; background: #0f766e; color: #fff; font-size: 14px; font-weight: 600; }
+.admin-dentalpedia-directory-body { padding: 32px; padding-top: 24px; }
+.admin-dentalpedia-type-filters, .admin-dentalpedia-status-filters { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 16px; }
+.admin-dentalpedia-type-filters button { border: 1px solid #d4d6da; border-radius: 99px; background: #f3f4f6; padding: 10px 24px; color: #3b4358; font-size: 14px; font-weight: 500; line-height: 20px; }
+.admin-dentalpedia-type-filters button[aria-pressed="true"] { border-color: #000b26; background: #000b26; color: #fff; font-weight: 700; }
+.admin-dentalpedia-status-filters button { border: 1px solid #d4d6da; border-radius: 20px; background: #fff; padding: 6px 14px; color: #596072; font-size: 13px; font-weight: 600; line-height: 19.5px; }
+.admin-dentalpedia-status-filters button[aria-pressed="true"] { border-color: #f56e00; background: #fee9d9; color: #f56e00; }
+.admin-dentalpedia-search-row { display: flex; gap: 12px; padding-bottom: 16px; }
+.admin-dentalpedia-search { display: flex; flex: 1; min-width: 0; align-items: center; gap: 10px; border: 1px solid #d4d6da; border-radius: 8px; background: #fff; padding: 8px 14px; }
+.admin-dentalpedia-search input { width: 100%; min-width: 0; border: 0; background: transparent; color: #1e293b; font: inherit; font-size: 14px; outline: none; }
+.admin-dentalpedia-search:focus-within { outline: 2px solid #0f766e; outline-offset: 2px; }
+.admin-dentalpedia-search input::placeholder { color: #999da8; }
+.admin-dentalpedia-category { width: 180px; flex: 0 0 180px; }
+.admin-dentalpedia-category .admin-select-button { min-height: 42px; border-color: #d4d6da; border-radius: 8px; background: #fff; font-size: 14px; }
+.admin-dentalpedia-table-scroll { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; }
+.admin-dentalpedia-table { width: 100%; min-width: 1060px; table-layout: fixed; border-collapse: collapse; text-align: left; font-size: 14px; }
+.admin-dentalpedia-table .content-spacer { width: 64px; }
+.admin-dentalpedia-table .content-type { width: 100px; }
+.admin-dentalpedia-table .content-category { width: 120px; }
+.admin-dentalpedia-table .content-status, .admin-dentalpedia-table .content-exposure { width: 100px; }
+.admin-dentalpedia-table .content-date { width: 110px; }
+.admin-dentalpedia-table .content-actions { width: 84px; }
+.admin-dentalpedia-table th { height: 56px; padding: 14px 0; background: #f8fafc; color: #1e293b; font-size: 14px; font-weight: 600; }
+.admin-dentalpedia-table td { height: 132px; padding: 16px 8px 16px 0; border-top: 1px solid #e2e8f0; }
+.admin-dentalpedia-table th:nth-child(5), .admin-dentalpedia-table td:nth-child(5), .admin-dentalpedia-table th:nth-child(6), .admin-dentalpedia-table td:nth-child(6) { text-align: center; }
+.admin-dentalpedia-table th:last-child, .admin-dentalpedia-table td:last-child { padding-right: 24px; text-align: right; }
+.admin-dentalpedia-content-title { display: flex; align-items: center; gap: 16px; width: 100%; min-width: 0; padding: 0 16px 0 0; border: 0; background: none; text-align: left; color: #1e293b; }
+.admin-dentalpedia-content-title > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #1e293b; font-size: 14px; font-weight: 600; }
+.admin-dentalpedia-thumbnail { display: flex; flex: 0 0 64px; align-items: center; justify-content: center; width: 64px; height: 64px; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 6px; background: #f8fafc; }
+.admin-dentalpedia-thumbnail img[width="64"] { width: 100%; height: 100%; object-fit: cover; }
+.admin-dentalpedia-status { display: inline-block; border-radius: 999px; padding: 4px 8px; font-size: 12px; font-weight: 600; line-height: 16px; white-space: nowrap; }
+.admin-dentalpedia-status.is-published { background: #f0fdf4; color: #0f766e; }
+.admin-dentalpedia-status.is-scheduled { background: #eff6ff; color: #2563eb; }
+.admin-dentalpedia-status.is-draft { background: #fffbeb; color: #d97706; }
+.admin-dentalpedia-status.is-archived { background: #e2e8f0; color: #475569; }
+.admin-dentalpedia-visibility-note { display: block; margin-top: 4px; color: #64748b; font-size: 11px; }
+.admin-dentalpedia-exposure { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
+.admin-dentalpedia-exposure span { border-radius: 4px; padding: 2px 8px; background: #fee9d9; color: #f56e00; font-size: 11px; font-weight: 600; }
+.admin-dentalpedia-exposure span.is-home { background: #e6ecf9; color: #023dc7; }
+.admin-dentalpedia-more { display: inline-flex; padding: 8px; border: 0; border-radius: 4px; background: #fff; }
+.admin-dentalpedia-more:hover { background: #f1f5f9; }
+.admin-dentalpedia-menu { position: fixed; z-index: 1200; width: 160px; overflow: hidden; border: 1px solid #e2e5ea; border-radius: 8px; background: #fff; box-shadow: 0 4px 6px #0000001a; }
+.admin-dentalpedia-menu button { display: block; width: 100%; padding: 12px 16px; border: 0; background: #fff; text-align: left; color: #334155; font-size: 14px; font-weight: 500; }
+.admin-dentalpedia-menu button:hover, .admin-dentalpedia-menu button:focus-visible { background: #f8fafc; }
+.admin-dentalpedia-menu .is-danger { border-top: 1px solid #e2e5ea; color: #ef4444; }
+.admin-dentalpedia-pagination { display: flex; align-items: center; justify-content: center; gap: 8px; padding-top: 16px; }
+.admin-dentalpedia-pagination button { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; padding: 4px 10px; border: 0; border-radius: 4px; background: transparent; color: #3b4358; font-size: 14px; }
+.admin-dentalpedia-pagination button[aria-current="page"] { background: #000b26; color: #fff; }
+.admin-dentalpedia-directory button:disabled, .admin-dentalpedia-menu button:disabled { cursor: default; opacity: .45; }
+.admin-dentalpedia-table .admin-dentalpedia-empty { height: 360px; padding: 32px; text-align: center; color: #64748b; }
+.admin-dentalpedia-empty button, .admin-dentalpedia-feedback button { border: 0; background: none; color: #0f766e; text-decoration: underline; }
+.admin-dentalpedia-feedback { display: flex; justify-content: space-between; gap: 16px; margin: 0 0 16px; padding: 12px 16px; border-radius: 8px; background: #fff1f2; color: #b91c1c; font-size: 14px; }
+.admin-dentalpedia-feedback.is-success { background: #f0fdf4; color: #0f766e; }
+.admin-dentalpedia-action-dialog { width: min(440px, calc(100vw - 32px)); margin: auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; color: #1e293b; box-shadow: 0 20px 60px #0003; }
+.admin-dentalpedia-action-dialog::backdrop { background: #000b2670; }
+.admin-dentalpedia-action-dialog h2 { margin: 0 0 20px; font-size: 20px; font-weight: 700; }
+.admin-dentalpedia-action-dialog strong { display: block; overflow-wrap: anywhere; font-size: 15px; }
+.admin-dentalpedia-action-dialog p { margin: 12px 0 24px; color: #64748b; font-size: 14px; line-height: 1.6; }
+.admin-dentalpedia-action-dialog p.is-error { color: #b91c1c; }
+.admin-dentalpedia-action-dialog footer { display: flex; justify-content: flex-end; gap: 8px; }
+.admin-dentalpedia-action-dialog button { padding: 10px 16px; border: 1px solid #d4d6da; border-radius: 8px; background: #fff; font-size: 14px; font-weight: 600; }
+.admin-dentalpedia-action-dialog button.is-danger { border-color: #ef4444; background: #ef4444; color: #fff; }
+.admin-dentalpedia-action-dialog button.is-primary { border-color: #0f766e; background: #0f766e; color: #fff; }
+.admin-dentalpedia-back { margin: 0 0 12px; padding: 0; border: 0; background: none; color: #0f766e; font-size: 13px; }
+.admin-information-upload-tabs button:disabled { cursor: default; opacity: .45; }
+@media (max-width: 700px) {
+  .admin-dentalpedia-directory-heading { align-items: flex-start; flex-direction: column; gap: 16px; padding: 24px 16px; }
+  .admin-dentalpedia-directory-body { padding: 16px; }
+  .admin-dentalpedia-search-row { flex-direction: column; }
+  .admin-dentalpedia-category { width: 100%; flex-basis: auto; }
+  .admin-dentalpedia-type-filters button { padding-right: 16px; padding-left: 16px; }
+}
+
+.admin-dentalpedia-editor-error { padding: 32px; }
+.admin-dentalpedia-editor-error > p { margin-top: 16px; color: #64748b; }
+.admin-dentalpedia-editor-error > p[role="alert"] { color: #b91c1c; }

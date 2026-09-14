@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { dentalpediaImmediatePublishAt } from "@/lib/dentalpedia-content";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type {
   ChangeEvent,
@@ -12,6 +13,7 @@ import type {
 
 import {
   DentalpediaInformationTypeTabs,
+  DentalpediaEditorLoadFailure,
   DentalpediaWorkspaceHeading,
   type DentalpediaInformationType,
 } from "@/components/DentalpediaEditorNavigation";
@@ -53,8 +55,16 @@ export function DentalpediaPostEditor({
   informationType,
   onManageCategories,
   onInformationTypeChange,
+  initialContentId,
+  startNew = false,
+  onBack,
+  onSaved,
 }: {
   accessToken: string;
+  initialContentId?: string;
+  startNew?: boolean;
+  onBack?: () => void;
+  onSaved?: (message: string) => void;
   categories: AdminDentalpediaCategory[];
   informationType: DentalpediaInformationType;
   onManageCategories: () => void;
@@ -87,6 +97,8 @@ export function DentalpediaPostEditor({
   const [relatedDialogOpen, setRelatedDialogOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("home");
   const [draggedImageKey, setDraggedImageKey] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [savedPublishAt, setSavedPublishAt] = useState<string | null>(null);
   const [loadingDraft, setLoadingDraft] = useState(true);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{
@@ -132,7 +144,7 @@ export function DentalpediaPostEditor({
   }, [accessToken]);
 
   useEffect(() => {
-    const savedId = window.localStorage.getItem(postDraftStorageKey);
+    const savedId = initialContentId ?? (startNew ? null : window.localStorage.getItem(postDraftStorageKey));
     if (!savedId || !accessToken) {
       const timer = window.setTimeout(() => setLoadingDraft(false), 0);
       return () => window.clearTimeout(timer);
@@ -140,14 +152,20 @@ export function DentalpediaPostEditor({
     let active = true;
     fetchAdminDentalpediaPost(accessToken, savedId)
       .then(({ post }) => {
-        if (post.status !== "draft") {
+        if (!initialContentId && post.status !== "draft") {
           window.localStorage.removeItem(postDraftStorageKey);
           return;
         }
         if (active) applyPost(post);
       })
-      .catch(() => {
-        window.localStorage.removeItem(postDraftStorageKey);
+      .catch((error) => {
+        if (!active) return;
+        if (initialContentId) {
+          setLoadFailed(true);
+          setFeedback({ tone: "error", message: error instanceof Error ? error.message : "콘텐츠를 불러오지 못했습니다. 목록에서 다시 열어 주세요." });
+        } else {
+          window.localStorage.removeItem(postDraftStorageKey);
+        }
       })
       .finally(() => {
         if (active) setLoadingDraft(false);
@@ -155,7 +173,7 @@ export function DentalpediaPostEditor({
     return () => {
       active = false;
     };
-  }, [accessToken]);
+  }, [initialContentId, startNew, accessToken]);
 
   const selectedRelatedOptions = useMemo(
     () =>
@@ -183,6 +201,8 @@ export function DentalpediaPostEditor({
       previewUrl: post.imageUrls[index] ?? "",
     }));
     setPostId(post.id);
+    setLoadFailed(false);
+    setSavedPublishAt(post.status === "published" ? post.publishAt : null);
     setTitle(post.title);
     setCategory(post.category ?? "");
     setCardSummary(post.cardSummary);
@@ -327,7 +347,7 @@ export function DentalpediaPostEditor({
         status === "published"
           ? publishMode === "scheduled"
             ? localDateTimeToIso(publishAt)
-            : new Date().toISOString()
+            : dentalpediaImmediatePublishAt(savedPublishAt)
           : publishMode === "scheduled"
             ? localDateTimeToIso(publishAt)
             : null,
@@ -396,6 +416,7 @@ export function DentalpediaPostEditor({
       } as const;
       setFeedback(outcome);
       if (status === "published") setPublishToast(outcome);
+      onSaved?.(outcome.message);
     } catch (error) {
       const outcome = {
         tone: "error",
@@ -412,6 +433,8 @@ export function DentalpediaPostEditor({
   }
 
   function resetPost() {
+    if (onBack) { onBack(); return; }
+    setSavedPublishAt(null);
     window.localStorage.removeItem(postDraftStorageKey);
     revokeObjectUrls(images);
     setPostId(null);
@@ -442,13 +465,18 @@ export function DentalpediaPostEditor({
     void savePost("published");
   }
 
+  if (loadFailed) {
+    return <DentalpediaEditorLoadFailure message={feedback?.message ?? "콘텐츠를 불러오지 못했습니다."} onBack={onBack} />;
+  }
+
   return (
     <div className="admin-information-video admin-information-post">
       <form id="information-upload-form" onSubmit={handleSubmit}>
         <div className="admin-information-video-layout">
           <div className="admin-information-video-editor">
-            <DentalpediaWorkspaceHeading />
+            <DentalpediaWorkspaceHeading onBack={saving ? undefined : onBack} />
             <DentalpediaInformationTypeTabs
+              disabled={Boolean(initialContentId)}
               informationType={informationType}
               onChange={onInformationTypeChange}
             />
@@ -550,7 +578,7 @@ export function DentalpediaPostEditor({
                 ) : null}
                 <input
                   aria-label="새 태그"
-                  disabled={loadingDraft || saving}
+                  disabled={loadingDraft || loadFailed || saving}
                   maxLength={30}
                   onChange={(event) => setTagDraft(event.target.value)}
                   onKeyDown={handleTagKeyDown}
@@ -824,19 +852,19 @@ export function DentalpediaPostEditor({
           </div>
 
           <footer className="admin-information-video-actions">
-            <button disabled={loadingDraft || saving} onClick={resetPost} type="button">
+            <button disabled={saving} onClick={resetPost} type="button">
               취소
             </button>
             <div>
               <button
-                disabled={loadingDraft || saving}
+                disabled={loadingDraft || loadFailed || saving}
                 onClick={() => void savePost("draft")}
                 type="button"
               >
                 {saving ? "저장 중..." : "임시저장"}
               </button>
-              <button disabled={loadingDraft || saving} type="submit">
-                {saving ? "처리 중..." : "발행하기"}
+              <button disabled={loadingDraft || loadFailed || saving} type="submit">
+                {saving ? "처리 중..." : savedPublishAt ? "수정 완료" : "발행하기"}
               </button>
             </div>
           </footer>

@@ -15,7 +15,7 @@ export interface AdminDentalpediaArticle {
   coverImageAlt: string;
   bodyMarkdown: string | null;
   bodyImagePaths: string[];
-  status: DentalpediaArticleStatus;
+  status: DentalpediaArticleStatus | "archived";
   isVisible: boolean;
   homeVisible: boolean;
   isRecommended: boolean;

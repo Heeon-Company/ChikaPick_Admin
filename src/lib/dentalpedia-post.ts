@@ -14,7 +14,7 @@ export interface AdminDentalpediaPost {
   imagePaths: string[];
   imageUrls: string[];
   bodyText: string;
-  status: DentalpediaPostStatus;
+  status: DentalpediaPostStatus | "archived";
   isVisible: boolean;
   isRecommended: boolean;
   isHero: boolean;

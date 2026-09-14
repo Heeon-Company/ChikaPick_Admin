@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { dentalpediaImmediatePublishAt } from "@/lib/dentalpedia-content";
 import { useEffect, useMemo, useState } from "react";
 import type {
   DragEvent,
@@ -16,6 +17,7 @@ import {
 } from "@/components/DentalpediaArticleEditor";
 import {
   DentalpediaInformationTypeTabs,
+  DentalpediaEditorLoadFailure,
   DentalpediaWorkspaceHeading,
   type DentalpediaInformationType,
 } from "@/components/DentalpediaEditorNavigation";
@@ -62,6 +64,10 @@ const exposurePriorities: ReadonlyArray<{
 ];
 
 type ArticleEditorProps = {
+  initialContentId?: string;
+  startNew?: boolean;
+  onBack?: () => void;
+  onSaved?: (message: string) => void;
   accessToken: string;
   categories: AdminDentalpediaCategory[];
   informationType: DentalpediaInformationType;
@@ -75,9 +81,17 @@ function ArticleEditor({
   informationType,
   onManageCategories,
   onInformationTypeChange,
+  initialContentId,
+  startNew = false,
+  onBack,
+  onSaved,
 }: ArticleEditorProps) {
   return (
     <DentalpediaArticleEditor
+      initialContentId={initialContentId}
+      startNew={startNew}
+      onBack={onBack}
+      onSaved={onSaved}
       accessToken={accessToken}
       categories={categories}
       informationType={informationType}
@@ -87,9 +101,14 @@ function ArticleEditor({
   );
 }
 
-export function InformationUploadTab({ accessToken }: { accessToken: string }) {
+export function InformationUploadTab({ accessToken, initialType = "video", initialContentId, startNew = false, onBack, onSaved }: { accessToken: string; initialType?: DentalpediaInformationType;
+  initialContentId?: string;
+  startNew?: boolean;
+  onBack?: () => void;
+  onSaved?: (message: string) => void;
+}) {
   const [informationType, setInformationType] =
-    useState<DentalpediaInformationType>("video");
+    useState<DentalpediaInformationType>(initialType);
   const [categories, setCategories] = useState<AdminDentalpediaCategory[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
@@ -135,6 +154,8 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
   >([]);
   const [relatedDialogOpen, setRelatedDialogOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("home");
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [savedPublishAt, setSavedPublishAt] = useState<string | null>(null);
   const [loadingDraft, setLoadingDraft] = useState(true);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{
@@ -176,7 +197,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
   }, [accessToken]);
 
   useEffect(() => {
-    const savedId = window.localStorage.getItem(videoDraftStorageKey);
+    const savedId = (initialType === "video" ? initialContentId : undefined) ?? (startNew ? null : window.localStorage.getItem(videoDraftStorageKey));
     if (!savedId || !accessToken) {
       const timer = window.setTimeout(() => setLoadingDraft(false), 0);
       return () => window.clearTimeout(timer);
@@ -184,14 +205,20 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
     let active = true;
     fetchAdminDentalpediaVideo(accessToken, savedId)
       .then(({ video }) => {
-        if (video.status !== "draft") {
+        if (!initialContentId && video.status !== "draft") {
           window.localStorage.removeItem(videoDraftStorageKey);
           return;
         }
         if (active) applyVideo(video);
       })
-      .catch(() => {
-        window.localStorage.removeItem(videoDraftStorageKey);
+      .catch((error) => {
+        if (!active) return;
+        if (initialContentId) {
+          setLoadFailed(true);
+          setFeedback({ tone: "error", message: error instanceof Error ? error.message : "콘텐츠를 불러오지 못했습니다. 목록에서 다시 열어 주세요." });
+        } else {
+          window.localStorage.removeItem(videoDraftStorageKey);
+        }
       })
       .finally(() => {
         if (active) setLoadingDraft(false);
@@ -199,7 +226,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
     return () => {
       active = false;
     };
-  }, [accessToken]);
+  }, [initialType, initialContentId, startNew, accessToken]);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -231,6 +258,8 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
 
   function applyVideo(video: AdminDentalpediaVideo) {
     setVideoId(video.id);
+    setLoadFailed(false);
+    setSavedPublishAt(video.status === "published" ? video.publishAt : null);
     setTitle(video.title);
     setCategory(video.category ?? "");
     setDescription(video.description);
@@ -321,7 +350,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
 
   function handleVideoDrop(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault();
-    if (loadingDraft || saving) return;
+    if (loadingDraft || loadFailed || saving) return;
     selectVideo(event.dataTransfer.files[0] ?? null);
   }
 
@@ -357,7 +386,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
       status === "published"
         ? publishMode === "scheduled"
           ? localDateTimeToIso(publishAt)
-          : new Date().toISOString()
+          : dentalpediaImmediatePublishAt(savedPublishAt)
         : publishMode === "scheduled"
           ? localDateTimeToIso(publishAt)
           : null;
@@ -456,6 +485,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
       } as const;
       setFeedback(outcome);
       if (status === "published") setPublishToast(outcome);
+      onSaved?.(outcome.message);
     } catch (error) {
       const outcome = {
         tone: "error",
@@ -472,6 +502,8 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
   }
 
   function resetVideo() {
+    if (onBack) { onBack(); return; }
+    setSavedPublishAt(null);
     window.localStorage.removeItem(videoDraftStorageKey);
     setVideoId(null);
     setTitle("");
@@ -528,6 +560,10 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
     [relatedContentIds, relatedOptions],
   );
 
+  if (loadFailed) {
+    return <DentalpediaEditorLoadFailure message={feedback?.message ?? "콘텐츠를 불러오지 못했습니다."} onBack={onBack} />;
+  }
+
   return (
     <section className="admin-information-upload" aria-label="치카피디아">
       <div
@@ -545,12 +581,13 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
             id="information-upload-form"
             onSubmit={handleSubmit}
             role="tabpanel"
-            aria-busy={loadingDraft || saving}
+            aria-busy={loadingDraft || loadFailed || saving}
           >
             <div className="admin-information-video-layout">
               <div className="admin-information-video-editor">
-                <DentalpediaWorkspaceHeading />
+                <DentalpediaWorkspaceHeading onBack={saving ? undefined : onBack} />
                 <DentalpediaInformationTypeTabs
+              disabled={Boolean(initialContentId)}
                   informationType={informationType}
                   onChange={setInformationType}
                 />
@@ -572,7 +609,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                 <EditorSection title="기본 정보">
                   <Field label="콘텐츠 제목" required>
                     <input
-                      disabled={loadingDraft || saving}
+                      disabled={loadingDraft || loadFailed || saving}
                       maxLength={120}
                       onChange={(event) => setTitle(event.target.value)}
                       placeholder="콘텐츠 제목을 입력하세요"
@@ -600,7 +637,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                         <button
                           aria-pressed={category === option.code}
                           className={category === option.code ? "is-active" : undefined}
-                          disabled={categoriesLoading || loadingDraft || saving}
+                          disabled={categoriesLoading || loadingDraft || loadFailed || saving}
                           key={option.id}
                           onClick={() => setCategory(option.code)}
                           type="button"
@@ -614,7 +651,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
 
                   <Field label="카드 요약">
                     <textarea
-                      disabled={loadingDraft || saving}
+                      disabled={loadingDraft || loadFailed || saving}
                       maxLength={200}
                       onChange={(event) => setDescription(event.target.value)}
                       placeholder="홈이나 가로형 카드에서 사용할 짧은 설명을 입력하세요"
@@ -632,7 +669,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                             #{tag}
                             <button
                               aria-label={`${tag} 태그 삭제`}
-                              disabled={loadingDraft || saving}
+                              disabled={loadingDraft || loadFailed || saving}
                               onClick={() =>
                                 setTags((current) =>
                                   current.filter((item) => item !== tag),
@@ -654,7 +691,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                     ) : null}
                     <input
                       aria-label="새 태그"
-                      disabled={loadingDraft || saving}
+                      disabled={loadingDraft || loadFailed || saving}
                       maxLength={30}
                       onChange={(event) => setTagDraft(event.target.value)}
                       onKeyDown={handleTagKeyDown}
@@ -666,7 +703,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
 
                   <Field label="검색 키워드">
                     <input
-                      disabled={loadingDraft || saving}
+                      disabled={loadingDraft || loadFailed || saving}
                       onChange={(event) => setSearchKeywords(event.target.value)}
                       placeholder="예) 임플란트 관리, 임플란트 오래 쓰는 법"
                       type="text"
@@ -703,7 +740,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                             <input
                               accept="image/jpeg,image/png,image/webp"
                               aria-label="썸네일 이미지 변경"
-                              disabled={loadingDraft || saving}
+                              disabled={loadingDraft || loadFailed || saving}
                               onChange={(event) => {
                                 selectThumbnail(event.currentTarget.files?.[0] ?? null);
                                 event.currentTarget.value = "";
@@ -713,7 +750,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                           </label>
                           <button
                             aria-label="썸네일 이미지 삭제"
-                            disabled={loadingDraft || saving}
+                            disabled={loadingDraft || loadFailed || saving}
                             onClick={removeThumbnail}
                             type="button"
                           >
@@ -759,7 +796,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                     <div className="admin-information-video-url-row">
                       <input
                         aria-invalid={urlState === "invalid"}
-                        disabled={loadingDraft || saving}
+                        disabled={loadingDraft || loadFailed || saving}
                         onChange={(event) => changeVideoUrl(event.target.value)}
                         placeholder="https://www.youtube.com/watch?v=..."
                         type="url"
@@ -784,7 +821,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                       <input
                         accept="video/mp4,video/webm"
                         aria-label="영상 파일 업로드"
-                        disabled={loadingDraft || saving}
+                        disabled={loadingDraft || loadFailed || saving}
                         onChange={(event) => {
                           selectVideo(event.currentTarget.files?.[0] ?? null);
                           event.currentTarget.value = "";
@@ -799,7 +836,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                       {selectedVideoName ? (
                         <button
                           aria-label="업로드 영상 삭제"
-                          disabled={loadingDraft || saving}
+                          disabled={loadingDraft || loadFailed || saving}
                           onClick={(event) => {
                             event.preventDefault();
                             removeVideo();
@@ -815,7 +852,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                   <Field label="재생시간">
                     <input
                       className="admin-information-video-duration"
-                      disabled={loadingDraft || saving}
+                      disabled={loadingDraft || loadFailed || saving}
                       inputMode="numeric"
                       onChange={(event) => setDuration(event.target.value)}
                       placeholder="02:18"
@@ -831,21 +868,21 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                     <ToggleRow
                       checked={isVisible}
                       description="ON이면 치카피디아 콘텐츠 목록에 노출됩니다."
-                      disabled={loadingDraft || saving}
+                      disabled={loadingDraft || loadFailed || saving}
                       label="치카피디아 노출"
                       onChange={() => setIsVisible((current) => !current)}
                     />
                     <ToggleRow
                       checked={isRecommended}
                       description="추천 콘텐츠로 강조 노출합니다."
-                      disabled={loadingDraft || saving}
+                      disabled={loadingDraft || loadFailed || saving}
                       label="추천 콘텐츠"
                       onChange={() => setIsRecommended((current) => !current)}
                     />
                     <ToggleRow
                       checked={isHero}
                       description="치카피디아 상단 Hero 영역에 노출합니다."
-                      disabled={loadingDraft || saving}
+                      disabled={loadingDraft || loadFailed || saving}
                       label="상단 대표 콘텐츠"
                       onChange={() => setIsHero((current) => !current)}
                     />
@@ -853,7 +890,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                       <ToggleRow
                         checked={homeVisible}
                         description="치카픽 홈 화면 치카피디아 영역에 노출합니다."
-                        disabled={loadingDraft || saving}
+                        disabled={loadingDraft || loadFailed || saving}
                         label="홈 노출"
                         onChange={() => setHomeVisible((current) => !current)}
                       />
@@ -862,7 +899,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                           <span>홈 노출 순서</span>
                           <input
                             aria-label="홈 노출 순서"
-                            disabled={loadingDraft || saving}
+                            disabled={loadingDraft || loadFailed || saving}
                             max={9999}
                             min={1}
                             onChange={(event) => setHomeOrder(event.target.value)}
@@ -877,7 +914,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                       <span><strong>노출 우선순위</strong><small>정렬 가중치를 설정합니다.</small></span>
                       <AdminSelect
                         className="admin-information-video-priority-select"
-                        disabled={loadingDraft || saving}
+                        disabled={loadingDraft || loadFailed || saving}
                         label="노출 우선순위"
                         onChange={setExposurePriority}
                         options={exposurePriorities}
@@ -890,18 +927,18 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                 <EditorSection title="발행 설정">
                   <fieldset className="admin-information-video-radio-field">
                     <legend>공개 상태</legend>
-                    <label><input checked={isVisible} disabled={loadingDraft || saving} name="video-visibility" onChange={() => setIsVisible(true)} type="radio" />공개</label>
-                    <label><input checked={!isVisible} disabled={loadingDraft || saving} name="video-visibility" onChange={() => setIsVisible(false)} type="radio" />비공개</label>
+                    <label><input checked={isVisible} disabled={loadingDraft || loadFailed || saving} name="video-visibility" onChange={() => setIsVisible(true)} type="radio" />공개</label>
+                    <label><input checked={!isVisible} disabled={loadingDraft || loadFailed || saving} name="video-visibility" onChange={() => setIsVisible(false)} type="radio" />비공개</label>
                   </fieldset>
                   <fieldset className="admin-information-video-radio-field">
                     <legend>발행 방식</legend>
-                    <label><input checked={publishMode === "immediate"} disabled={loadingDraft || saving} name="video-publish-mode" onChange={() => setPublishMode("immediate")} type="radio" />즉시 발행</label>
-                    <label><input checked={publishMode === "scheduled"} disabled={loadingDraft || saving} name="video-publish-mode" onChange={() => setPublishMode("scheduled")} type="radio" />예약 발행</label>
+                    <label><input checked={publishMode === "immediate"} disabled={loadingDraft || loadFailed || saving} name="video-publish-mode" onChange={() => setPublishMode("immediate")} type="radio" />즉시 발행</label>
+                    <label><input checked={publishMode === "scheduled"} disabled={loadingDraft || loadFailed || saving} name="video-publish-mode" onChange={() => setPublishMode("scheduled")} type="radio" />예약 발행</label>
                   </fieldset>
                   <div className="admin-information-video-date-grid">
                     <Field label="게시일시">
                       <input
-                        disabled={loadingDraft || saving || publishMode === "immediate"}
+                        disabled={loadingDraft || loadFailed || saving || publishMode === "immediate"}
                         onChange={(event) => setPublishAt(event.target.value)}
                         type="datetime-local"
                         value={publishAt}
@@ -909,7 +946,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                     </Field>
                     <Field label="게시 종료일 (선택)">
                       <input
-                        disabled={loadingDraft || saving}
+                        disabled={loadingDraft || loadFailed || saving}
                         onChange={(event) => setEndAt(event.target.value)}
                         type="date"
                         value={endAt}
@@ -922,7 +959,7 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
                 <EditorSection title="관련 콘텐츠">
                   <div className="admin-information-video-related">
                     <button
-                      disabled={loadingDraft || saving}
+                      disabled={loadingDraft || loadFailed || saving}
                       onClick={() => setRelatedDialogOpen(true)}
                       type="button"
                     >
@@ -957,10 +994,10 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
               </div>
 
               <footer className="admin-information-video-actions">
-                <button disabled={loadingDraft || saving} onClick={resetVideo} type="button">취소</button>
+                <button disabled={saving} onClick={resetVideo} type="button">취소</button>
                 <div>
-                  <button disabled={loadingDraft || saving} onClick={() => void saveVideo("draft")} type="button">{saving ? "저장 중..." : "임시저장"}</button>
-                  <button disabled={loadingDraft || saving} type="submit">{saving ? "처리 중..." : "발행하기"}</button>
+                  <button disabled={loadingDraft || loadFailed || saving} onClick={() => void saveVideo("draft")} type="button">{saving ? "저장 중..." : "임시저장"}</button>
+                  <button disabled={loadingDraft || loadFailed || saving} type="submit">{saving ? "처리 중..." : savedPublishAt ? "수정 완료" : "발행하기"}</button>
                 </div>
               </footer>
 
@@ -1000,6 +1037,10 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
           </form>
         ) : isPost ? (
           <DentalpediaPostEditor
+            initialContentId={initialContentId}
+            startNew={startNew}
+            onBack={onBack}
+            onSaved={onSaved}
             accessToken={accessToken}
             categories={categories}
             informationType={informationType}
@@ -1008,6 +1049,10 @@ export function InformationUploadTab({ accessToken }: { accessToken: string }) {
           />
         ) : (
           <ArticleEditor
+            initialContentId={initialContentId}
+            startNew={startNew}
+            onBack={onBack}
+            onSaved={onSaved}
             accessToken={accessToken}
             categories={categories}
             informationType={informationType}

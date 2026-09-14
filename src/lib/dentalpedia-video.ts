@@ -46,7 +46,7 @@ export interface AdminDentalpediaVideo {
   videoSizeBytes: number | null;
   videoDurationSeconds: number | null;
   youtubeVideoId: string | null;
-  status: DentalpediaVideoStatus;
+  status: DentalpediaVideoStatus | "archived";
   isVisible: boolean;
   publishAt: string | null;
   endAt: string | null;

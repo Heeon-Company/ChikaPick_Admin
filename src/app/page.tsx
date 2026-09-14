@@ -10,7 +10,8 @@ import remarkGfm from "remark-gfm";
 
 import { AdminSelect } from "@/components/AdminSelect";
 import { ChikaTalkSanctionForm, type ChikaTalkActionDetails } from "@/components/ChikaTalkSanctionForm";
-import { InformationUploadTab } from "@/components/InformationUploadTab";
+import { DentalpediaContentTab } from "@/components/DentalpediaContentTab";
+import type { DentalpediaContentSelection } from "@/lib/dentalpedia-content";
 import { ServiceExpansionRequestsTab } from "@/components/ServiceExpansionRequestsTab";
 import {
   applyAdminChikaTalkModerationAction,
@@ -403,6 +404,7 @@ const emptyConsole: AdminConsolePayload = {
 };
 
 export default function AdminHome() {
+  const [dentalpediaEditor, setDentalpediaEditor] = useState<DentalpediaContentSelection | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [activePrimaryTab, setActivePrimaryTab] =
@@ -464,7 +466,7 @@ export default function AdminHome() {
     const root = document.documentElement;
     const body = document.body;
 
-    if (activePrimaryTab !== "information-upload") {
+    if (activePrimaryTab !== "information-upload" || !dentalpediaEditor) {
       root.classList.remove(scrollLockClass);
       body.classList.remove(scrollLockClass);
       return;
@@ -478,7 +480,7 @@ export default function AdminHome() {
       root.classList.remove(scrollLockClass);
       body.classList.remove(scrollLockClass);
     };
-  }, [activePrimaryTab]);
+  }, [activePrimaryTab, dentalpediaEditor]);
 
   const applyDetailSelection = useCallback(
     (selection: AdminDetailHistorySelection | null) => {
@@ -967,7 +969,7 @@ export default function AdminHome() {
   return (
     <main
       className={`admin-shell${
-        activePrimaryTab === "information-upload"
+        activePrimaryTab === "information-upload" && dentalpediaEditor
           ? " admin-shell--information-upload"
           : ""
       }`}
@@ -1239,7 +1241,7 @@ export default function AdminHome() {
           ) : activePrimaryTab === "secret-feedback" ? (
             <SecretFeedbackTab accessToken={session?.access_token ?? ""} />
           ) : activePrimaryTab === "information-upload" ? (
-            <InformationUploadTab accessToken={session?.access_token ?? ""} />
+            <DentalpediaContentTab accessToken={session?.access_token ?? ""} editor={dentalpediaEditor} onEditorChange={setDentalpediaEditor} />
           ) : activePrimaryTab === "service-expansion-requests" ? (
             <ServiceExpansionRequestsTab accessToken={session?.access_token ?? ""} />
           ) : activePrimaryTab === "chikapick-accounts" ? (

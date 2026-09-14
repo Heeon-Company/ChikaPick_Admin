@@ -79,13 +79,8 @@ test("only Super Admins can switch active account duties", () => {
 
   assert.equal(canSwitchAdminAccountRole(true, activeAccount), true);
   assert.equal(canSwitchAdminAccountRole(false, activeAccount), false);
-  assert.equal(
-    canSwitchAdminAccountRole(true, {
-      ...activeAccount,
-      role: "super_admin",
-    }),
-    true,
-  );
+  const superAdminAccount = { ...activeAccount, role: "super_admin" as const };
+  assert.equal(canSwitchAdminAccountRole(true, superAdminAccount), true);
   assert.equal(
     canSwitchAdminAccountRole(true, { ...activeAccount, status: "locked" }),
     false,

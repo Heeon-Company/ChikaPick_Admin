@@ -1,4 +1,5 @@
 import type { SupportContent, SupportMutation } from "./support-content";
+import { dentalpediaContentQuery, type DentalpediaContentFilters, type DentalpediaContentType, type AdminDentalpediaContentPayload } from "./dentalpedia-content.ts";
 
 export function fetchAdminSupportContent(accessToken: string) {
   return adminFetch<SupportContent>("/api/v1/admin/support", accessToken, { cache: "no-store" });
@@ -747,6 +748,29 @@ export async function uploadAdminDentalpediaVideo(
     throw new Error("영상을 업로드하지 못했습니다. 잠시 후 다시 시도해 주세요.");
   }
   return upload;
+}
+
+export async function fetchAdminDentalpediaContent(
+  accessToken: string,
+  filters: DentalpediaContentFilters,
+  signal?: AbortSignal,
+) {
+  return adminFetch<AdminDentalpediaContentPayload>(
+    `/api/v1/admin/dentalpedia/content?${dentalpediaContentQuery(filters)}`,
+    accessToken, { signal, cache: "no-store" },
+  );
+}
+
+export async function manageAdminDentalpediaContent(
+  accessToken: string,
+  content: { type: DentalpediaContentType; id: string },
+  action: "archive" | "delete",
+) {
+  return adminFetch<AdminActionResult>(
+    `/api/v1/admin/dentalpedia/content/${content.type}/${encodeURIComponent(content.id)}`,
+    accessToken,
+    action === "archive" ? { method: "PATCH", body: JSON.stringify({ action }) } : { method: "DELETE" },
+  );
 }
 
 export async function createAdminDentalpediaArticle(
