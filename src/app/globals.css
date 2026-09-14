@@ -17604,6 +17604,13 @@ td span {
 .admin-dentalpedia-pagination button[aria-current="page"] { background: #000b26; color: #fff; }
 .admin-dentalpedia-directory button:disabled, .admin-dentalpedia-menu button:disabled { cursor: default; opacity: .45; }
 .admin-dentalpedia-table .admin-dentalpedia-empty { height: 360px; padding: 32px; text-align: center; color: #64748b; }
+/* Figma 7960:69679 — successful empty results replace the table and pagination. */
+.admin-dentalpedia-empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; width: 100%; min-height: 500px; padding: 80px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; text-align: center; }
+.admin-dentalpedia-empty-icon { display: flex; flex: 0 0 80px; align-items: center; justify-content: center; width: 80px; height: 80px; border-radius: 50%; background: #f8fafc; }
+.admin-dentalpedia-empty-icon img { width: 40px; height: 40px; }
+.admin-dentalpedia-empty-copy { display: flex; flex-direction: column; gap: 8px; min-width: 0; overflow-wrap: anywhere; }
+.admin-dentalpedia-empty-copy h2 { margin: 0; color: #1e293b; font-size: 18px; font-weight: 700; line-height: normal; }
+.admin-dentalpedia-empty-copy p { margin: 0; color: #64748b; font-size: 14px; font-weight: 400; line-height: normal; }
 .admin-dentalpedia-empty button, .admin-dentalpedia-feedback button { border: 0; background: none; color: #0f766e; text-decoration: underline; }
 .admin-dentalpedia-feedback { display: flex; justify-content: space-between; gap: 16px; margin: 0 0 16px; padding: 12px 16px; border-radius: 8px; background: #fff1f2; color: #b91c1c; font-size: 14px; }
 .admin-dentalpedia-feedback.is-success { background: #f0fdf4; color: #0f766e; }
@@ -17625,6 +17632,7 @@ td span {
   .admin-dentalpedia-search-row { flex-direction: column; }
   .admin-dentalpedia-category { width: 100%; flex-basis: auto; }
   .admin-dentalpedia-type-filters button { padding-right: 16px; padding-left: 16px; }
+  .admin-dentalpedia-empty-state { padding: 48px 24px; }
 }
 
 .admin-dentalpedia-editor-error { padding: 32px; }

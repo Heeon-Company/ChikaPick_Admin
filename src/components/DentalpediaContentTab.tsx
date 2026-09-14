@@ -186,6 +186,13 @@ export function DentalpediaContentTab({
     { length: Math.min(5, pageCount) },
     (_, index) => pageStart + index,
   );
+  const isEmpty = !loading && !loadError && payload?.items.length === 0;
+  const hasFilters = Boolean(
+    filters.search ||
+    filters.category ||
+    filters.type !== "all" ||
+    filters.status !== "all",
+  );
 
   return (
     <section
@@ -305,174 +312,199 @@ export function DentalpediaContentTab({
           </p>
         ) : null}
         <div
-          className="admin-dentalpedia-table-scroll"
-          tabIndex={0}
+          className={
+            isEmpty
+              ? "admin-dentalpedia-empty-state"
+              : "admin-dentalpedia-table-scroll"
+          }
+          tabIndex={isEmpty ? undefined : 0}
           role="region"
           aria-label="콘텐츠 목록"
           aria-busy={loading}
         >
-          <table className="admin-dentalpedia-table">
-            <colgroup>
-              <col className="content-spacer" />
-              <col />
-              <col className="content-type" />
-              <col className="content-category" />
-              <col className="content-status" />
-              <col className="content-exposure" />
-              <col className="content-date" />
-              <col className="content-date" />
-              <col className="content-actions" />
-            </colgroup>
-            <thead>
-              <tr>
-                <th aria-label="여백" />
-                <th scope="col">콘텐츠</th>
-                <th scope="col">유형</th>
-                <th scope="col">카테고리</th>
-                <th scope="col">노출 상태</th>
-                <th scope="col">추가 노출</th>
-                <th scope="col">게시일</th>
-                <th scope="col">최종 수정</th>
-                <th scope="col">관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
+          {isEmpty ? (
+            <>
+              <span className="admin-dentalpedia-empty-icon" aria-hidden="true">
+                <Image
+                  alt=""
+                  src="/dentalpedia/content-empty.svg"
+                  width={40}
+                  height={40}
+                />
+              </span>
+              <div className="admin-dentalpedia-empty-copy" role="status">
+                <h2>
+                  {hasFilters
+                    ? "검색 조건에 맞는 콘텐츠가 없습니다."
+                    : "아직 등록된 콘텐츠가 없습니다."}
+                </h2>
+                <p>
+                  {hasFilters
+                    ? "검색어나 필터를 변경해 보세요."
+                    : "치카피디아에 노출할 콘텐츠를 만들어보세요."}
+                </p>
+              </div>
+            </>
+          ) : (
+            <table className="admin-dentalpedia-table">
+              <colgroup>
+                <col className="content-spacer" />
+                <col />
+                <col className="content-type" />
+                <col className="content-category" />
+                <col className="content-status" />
+                <col className="content-exposure" />
+                <col className="content-date" />
+                <col className="content-date" />
+                <col className="content-actions" />
+              </colgroup>
+              <thead>
                 <tr>
-                  <td
-                    colSpan={9}
-                    className="admin-dentalpedia-empty"
-                    role="status"
-                  >
-                    콘텐츠를 불러오는 중...
-                  </td>
+                  <th aria-label="여백" />
+                  <th scope="col">콘텐츠</th>
+                  <th scope="col">유형</th>
+                  <th scope="col">카테고리</th>
+                  <th scope="col">노출 상태</th>
+                  <th scope="col">추가 노출</th>
+                  <th scope="col">게시일</th>
+                  <th scope="col">최종 수정</th>
+                  <th scope="col">관리</th>
                 </tr>
-              ) : loadError ? (
-                <tr>
-                  <td colSpan={9} className="admin-dentalpedia-empty">
-                    <p role="alert">{loadError}</p>
-                    <button
-                      type="button"
-                      onClick={() => setRefresh((value) => value + 1)}
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td
+                      colSpan={9}
+                      className="admin-dentalpedia-empty"
+                      role="status"
                     >
-                      다시 시도
-                    </button>
-                  </td>
-                </tr>
-              ) : !payload?.items.length ? (
-                <tr>
-                  <td colSpan={9} className="admin-dentalpedia-empty">
-                    {filters.search ||
-                    filters.category ||
-                    filters.type !== "all" ||
-                    filters.status !== "all"
-                      ? "검색 조건에 맞는 콘텐츠가 없습니다."
-                      : "등록된 콘텐츠가 없습니다. 새 콘텐츠를 만들어 주세요."}
-                  </td>
-                </tr>
-              ) : (
-                payload.items.map((item) => (
-                  <tr key={`${item.type}:${item.id}`}>
-                    <td />
-                    <td>
-                      <button
-                        className="admin-dentalpedia-content-title"
-                        type="button"
-                        onClick={() =>
-                          onEditorChange({ type: item.type, id: item.id })
-                        }
-                        aria-label={`${item.title} 확인 및 수정`}
-                      >
-                        <ContentThumbnail key={item.thumbnailUrl} item={item} />
-                        <span title={item.title}>{item.title}</span>
-                      </button>
-                    </td>
-                    <td>{dentalpediaTypeLabels[item.type]}</td>
-                    <td>{item.categoryLabel}</td>
-                    <td>
-                      <span
-                        className={`admin-dentalpedia-status is-${item.displayStatus}`}
-                      >
-                        {dentalpediaStatusLabels[item.displayStatus]}
-                      </span>
-                      {item.visibilityNote ? (
-                        <small className="admin-dentalpedia-visibility-note">
-                          {item.visibilityNote}
-                        </small>
-                      ) : null}
-                    </td>
-                    <td>
-                      <div className="admin-dentalpedia-exposure">
-                        {item.isRecommended ? <span>추천</span> : null}
-                        {item.homeVisible ? (
-                          <span className="is-home">홈</span>
-                        ) : null}
-                        {!item.isRecommended && !item.homeVisible ? "-" : null}
-                      </div>
-                    </td>
-                    <td>{dentalpediaContentDate(item.publishAt)}</td>
-                    <td>{dentalpediaContentDate(item.updatedAt)}</td>
-                    <td>
-                      <ContentActions
-                        item={item}
-                        onEdit={() =>
-                          onEditorChange({ type: item.type, id: item.id })
-                        }
-                        onAction={(action) => {
-                          setActionError(null);
-                          setPending({ item, action });
-                        }}
-                      />
+                      콘텐츠를 불러오는 중...
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : loadError ? (
+                  <tr>
+                    <td colSpan={9} className="admin-dentalpedia-empty">
+                      <p role="alert">{loadError}</p>
+                      <button
+                        type="button"
+                        onClick={() => setRefresh((value) => value + 1)}
+                      >
+                        다시 시도
+                      </button>
+                    </td>
+                  </tr>
+                ) : (
+                  payload?.items.map((item) => (
+                    <tr key={`${item.type}:${item.id}`}>
+                      <td />
+                      <td>
+                        <button
+                          className="admin-dentalpedia-content-title"
+                          type="button"
+                          onClick={() =>
+                            onEditorChange({ type: item.type, id: item.id })
+                          }
+                          aria-label={`${item.title} 확인 및 수정`}
+                        >
+                          <ContentThumbnail
+                            key={item.thumbnailUrl}
+                            item={item}
+                          />
+                          <span title={item.title}>{item.title}</span>
+                        </button>
+                      </td>
+                      <td>{dentalpediaTypeLabels[item.type]}</td>
+                      <td>{item.categoryLabel}</td>
+                      <td>
+                        <span
+                          className={`admin-dentalpedia-status is-${item.displayStatus}`}
+                        >
+                          {dentalpediaStatusLabels[item.displayStatus]}
+                        </span>
+                        {item.visibilityNote ? (
+                          <small className="admin-dentalpedia-visibility-note">
+                            {item.visibilityNote}
+                          </small>
+                        ) : null}
+                      </td>
+                      <td>
+                        <div className="admin-dentalpedia-exposure">
+                          {item.isRecommended ? <span>추천</span> : null}
+                          {item.homeVisible ? (
+                            <span className="is-home">홈</span>
+                          ) : null}
+                          {!item.isRecommended && !item.homeVisible
+                            ? "-"
+                            : null}
+                        </div>
+                      </td>
+                      <td>{dentalpediaContentDate(item.publishAt)}</td>
+                      <td>{dentalpediaContentDate(item.updatedAt)}</td>
+                      <td>
+                        <ContentActions
+                          item={item}
+                          onEdit={() =>
+                            onEditorChange({ type: item.type, id: item.id })
+                          }
+                          onAction={(action) => {
+                            setActionError(null);
+                            setPending({ item, action });
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
-        <nav
-          className="admin-dentalpedia-pagination"
-          aria-label="콘텐츠 목록 페이지"
-        >
-          <button
-            type="button"
-            aria-label="이전 페이지"
-            disabled={loading || filters.page <= 1}
-            onClick={() => changeFilters({ page: filters.page - 1 })}
+        {!isEmpty ? (
+          <nav
+            className="admin-dentalpedia-pagination"
+            aria-label="콘텐츠 목록 페이지"
           >
-            <Image
-              alt=""
-              src="/dentalpedia/content-prev.svg"
-              width={24}
-              height={24}
-            />
-          </button>
-          {pages.map((page) => (
             <button
-              key={page}
               type="button"
-              aria-label={`${page}페이지`}
-              aria-current={page === filters.page ? "page" : undefined}
-              disabled={loading}
-              onClick={() => changeFilters({ page })}
+              aria-label="이전 페이지"
+              disabled={loading || filters.page <= 1}
+              onClick={() => changeFilters({ page: filters.page - 1 })}
             >
-              {page}
+              <Image
+                alt=""
+                src="/dentalpedia/content-prev.svg"
+                width={24}
+                height={24}
+              />
             </button>
-          ))}
-          <button
-            type="button"
-            aria-label="다음 페이지"
-            disabled={loading || filters.page >= pageCount}
-            onClick={() => changeFilters({ page: filters.page + 1 })}
-          >
-            <Image
-              alt=""
-              src="/dentalpedia/content-next.svg"
-              width={24}
-              height={24}
-            />
-          </button>
-        </nav>
+            {pages.map((page) => (
+              <button
+                key={page}
+                type="button"
+                aria-label={`${page}페이지`}
+                aria-current={page === filters.page ? "page" : undefined}
+                disabled={loading}
+                onClick={() => changeFilters({ page })}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              type="button"
+              aria-label="다음 페이지"
+              disabled={loading || filters.page >= pageCount}
+              onClick={() => changeFilters({ page: filters.page + 1 })}
+            >
+              <Image
+                alt=""
+                src="/dentalpedia/content-next.svg"
+                width={24}
+                height={24}
+              />
+            </button>
+          </nav>
+        ) : null}
       </div>
       {pending ? (
         <ContentActionDialog
