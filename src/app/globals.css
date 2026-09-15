@@ -17578,13 +17578,11 @@ td span {
 .admin-dentalpedia-table .content-date { width: 110px; }
 .admin-dentalpedia-table .content-actions { width: 84px; }
 .admin-dentalpedia-table th { height: 56px; padding: 14px 0; background: #f8fafc; color: #1e293b; font-size: 14px; font-weight: 600; }
-.admin-dentalpedia-table td { height: 132px; padding: 16px 8px 16px 0; border-top: 1px solid #e2e8f0; }
+.admin-dentalpedia-table td { height: 68px; padding: 0 8px 0 0; border-top: 1px solid #e2e8f0; vertical-align: middle; }
 .admin-dentalpedia-table th:nth-child(5), .admin-dentalpedia-table td:nth-child(5), .admin-dentalpedia-table th:nth-child(6), .admin-dentalpedia-table td:nth-child(6) { text-align: center; }
 .admin-dentalpedia-table th:last-child, .admin-dentalpedia-table td:last-child { padding-right: 24px; text-align: right; }
-.admin-dentalpedia-content-title { display: flex; align-items: center; gap: 16px; width: 100%; min-width: 0; padding: 0 16px 0 0; border: 0; background: none; text-align: left; color: #1e293b; }
+.admin-dentalpedia-content-title { display: flex; align-items: center; width: 100%; min-width: 0; padding: 0 16px 0 0; border: 0; background: none; text-align: left; color: #1e293b; }
 .admin-dentalpedia-content-title > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #1e293b; font-size: 14px; font-weight: 600; }
-.admin-dentalpedia-thumbnail { display: flex; flex: 0 0 64px; align-items: center; justify-content: center; width: 64px; height: 64px; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 6px; background: #f8fafc; }
-.admin-dentalpedia-thumbnail img[width="64"] { width: 100%; height: 100%; object-fit: cover; }
 .admin-dentalpedia-status { display: inline-block; border-radius: 999px; padding: 4px 8px; font-size: 12px; font-weight: 600; line-height: 16px; white-space: nowrap; }
 .admin-dentalpedia-status.is-published { background: #f0fdf4; color: #0f766e; }
 .admin-dentalpedia-status.is-scheduled { background: #eff6ff; color: #2563eb; }

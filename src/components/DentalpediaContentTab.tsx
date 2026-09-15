@@ -400,10 +400,6 @@ export function DentalpediaContentTab({
                           }
                           aria-label={`${item.title} 확인 및 수정`}
                         >
-                          <ContentThumbnail
-                            key={item.thumbnailUrl}
-                            item={item}
-                          />
                           <span title={item.title}>{item.title}</span>
                         </button>
                       </td>
@@ -511,31 +507,6 @@ export function DentalpediaContentTab({
         />
       ) : null}
     </section>
-  );
-}
-
-function ContentThumbnail({ item }: { item: AdminDentalpediaContent }) {
-  const [failed, setFailed] = useState(false);
-  return (
-    <span className="admin-dentalpedia-thumbnail">
-      {item.thumbnailUrl && !failed ? (
-        <Image
-          alt=""
-          src={item.thumbnailUrl}
-          width={64}
-          height={64}
-          unoptimized
-          onError={() => setFailed(true)}
-        />
-      ) : (
-        <Image
-          alt=""
-          src="/dentalpedia/column-insert-image.svg"
-          width={24}
-          height={18}
-        />
-      )}
-    </span>
   );
 }
 

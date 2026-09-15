@@ -1,6 +1,8 @@
 # Dentalpedia content directory
 
-The 치카피디아 tab now opens `DentalpediaContentTab` following Figma `7960:68825`. It lists all three content types with title/category search, publication-state filters, thumbnails, exposure badges, Korea dates and server pagination. Titles and 수정하기 open the existing type-specific editor by its exact ID. 신규 콘텐츠 생성 opens a blank editor. 보관하기 and 삭제하기 require a confirmation, preserve the dialog on failure, and refresh the list on success.
+The 치카피디아 tab now opens `DentalpediaContentTab` following Figma `7960:68825`. It lists all three content types with title/category search, publication-state filters, title-only rows, exposure badges, Korea dates and server pagination. Titles and 수정하기 open the existing type-specific editor by its exact ID. 신규 콘텐츠 생성 opens a blank editor. 보관하기 and 삭제하기 require a confirmation, preserve the dialog on failure, and refresh the list on success.
+
+The 2026-09-15 revision of node `7960:68825` in file `I63Qe9eqRYhlzRcSxglSQl` uses 68px rows without thumbnails, with vertically centered titles, status/exposure badges and action controls. Keep the 56px header, full-title tooltip and accessible edit label, title ellipsis, and narrow-screen table scrolling. List rows do not load thumbnail images; the API and editor media contracts stay unchanged.
 
 `AdminNavigationProvider` owns the editor selection so the Dentalpedia document/shell scroll lock applies only while editing. The directory uses normal document scrolling and confines narrow-screen table overflow to the table region. `AdminSelect` remains the category picker. The row menu uses a viewport-positioned portal, keyboard navigation and Escape dismissal; native modal dialogs trap focus and initially focus Cancel.
 
