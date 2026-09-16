@@ -47,6 +47,7 @@ import {
   lookupAdminChikapickAccount,
   lookupAdminPartnerAccount,
   publishAdminTermVersion,
+  previewAdminChikaTalkModerationAction,
   previewAdminTermVersion,
   resendAdminAccountInvitation,
   revealInviteCode,
@@ -135,6 +136,12 @@ test("ChikaTalk moderation API requests protected read and action routes", async
       reasonCode: "medical_misinformation",
       requestId: "00000000-0000-4000-8000-000000000003",
     });
+    await previewAdminChikaTalkModerationAction("access-token", {
+      reportId: "00000000-0000-4000-8000-000000000001",
+      requestId: "00000000-0000-4000-8000-000000000004",
+      action: "suspend_writes",
+      suspensionSeconds: 604800,
+    });
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -163,6 +170,14 @@ test("ChikaTalk moderation API requests protected read and action routes", async
     action: "hide_content",
     reasonCode: "medical_misinformation",
     requestId: "00000000-0000-4000-8000-000000000003",
+  });
+  assert.equal(calls[4]?.input, "https://api.example.com/api/v1/admin/chika-talk/moderation/actions/preview");
+  assert.equal(calls[4]?.init?.method, "POST");
+  assert.deepEqual(JSON.parse(calls[4]?.init?.body as string), {
+    reportId: "00000000-0000-4000-8000-000000000001",
+    requestId: "00000000-0000-4000-8000-000000000004",
+    action: "suspend_writes",
+    suspensionSeconds: 604800,
   });
   for (const call of calls) {
     assert.equal(

@@ -57,6 +57,56 @@ export interface AdminChikaTalkModerationActionPayload {
   requestId: string;
 }
 
+export interface AdminChikaTalkModerationPreview {
+  alreadyApplied?: boolean;
+  evaluatedAt: string;
+  authorDisplayName: string;
+  priorSanctions: Record<string, unknown>;
+  newSanctions: Record<string, unknown>;
+}
+
+export function adminChikaTalkRestrictionLines(sanctions: Record<string, unknown>, now: Date) {
+  const lines: string[] = [];
+  if (sanctions.banned_at) lines.push("영구 이용 제한 · 종료 없음");
+  for (const [key, label] of [["write_suspended_until", "글쓰기 제한"], ["access_suspended_until", "치아톡 이용 제한"]]) {
+    const value = sanctions[key];
+    if (typeof value === "string" && Date.parse(value) > now.getTime()) {
+      lines.push(`${label}: ${formatAdminChikaTalkDate(value)}까지 (한국시간)`);
+    }
+  }
+  return lines.length ? lines : ["적용된 이용 제한 없음"];
+}
+
+export function adminChikaTalkConfirmation(
+  action: AdminChikaTalkModerationActionName,
+  preview: AdminChikaTalkModerationPreview,
+  details: { reasonCode: string; detailedReason: string; userMessage: string },
+) {
+  const now = new Date(preview.evaluatedAt);
+  return [
+    `대상: ${preview.authorDisplayName}`,
+    `선택한 처리: ${adminChikaTalkActionLabel(action)}`,
+    `사유: ${adminChikaTalkReasonLabel(details.reasonCode)}`,
+    `누적 경고·제재: ${preview.priorSanctions.strike_count}회 → ${preview.newSanctions.strike_count}회`,
+    `${preview.alreadyApplied ? "이미 처리된 당시 상태" : "처리 후 예상 상태"}: ${adminChikaTalkSanctionState(preview.newSanctions, now).label}`,
+    ...adminChikaTalkRestrictionLines(preview.newSanctions, now),
+    ...(action === "restore_content" ? ["콘텐츠가 다시 공개됩니다. 이용자 제재는 유지됩니다."] : []),
+    ...(action === "release_sanctions" ? ["활성 이용 제한을 해제합니다. 누적 횟수와 이력은 유지됩니다."] : []),
+    `내부 상세 사유: ${details.detailedReason}`,
+    `사용자 안내: ${details.userMessage}`,
+    ...(preview.alreadyApplied
+      ? ["이 요청은 이미 처리되어 새 제재를 추가하지 않습니다. 처리 결과를 다시 확인하시겠습니까?"]
+      : ["서버 최신 조회 기준 예상이며 실제 시작·종료는 처리 시각과 동시 조치에 따라 달라질 수 있습니다.", "처리 이력에서 최종 결과를 확인해 주세요. 적용하시겠습니까?"]),
+  ].join("\n");
+}
+
+export function adminChikaTalkHistoryState(state: Record<string, unknown> | undefined, at: string) {
+  if (!state || !("sanctions" in state)) return "상태 기록 없음";
+  const sanctions = state.sanctions;
+  if (!sanctions || typeof sanctions !== "object" || Array.isArray(sanctions)) return "이용 제한 없음";
+  return adminChikaTalkSanctionState(sanctions as Record<string, unknown>, new Date(at)).label;
+}
+
 export interface AdminChikaTalkReportListItem {
   id: string;
   targetType: AdminChikaTalkReportTargetType;
@@ -157,7 +207,13 @@ export interface AdminChikaTalkReportDetailPayload {
   >;
   relatedReports: AdminChikaTalkRelatedReport[];
   authorActions: Array<
-    AdminChikaTalkModerationAction & { targetType: string }
+    AdminChikaTalkModerationAction & {
+      targetType: string;
+      adminUserId?: string | null;
+      adminDisplayName?: string | null;
+      priorState?: Record<string, unknown>;
+      newState?: Record<string, unknown>;
+    }
   >;
 }
 

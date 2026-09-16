@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AdminSelect } from "./AdminSelect";
-import { adminChikaTalkActionLabel, adminChikaTalkReasonLabel, adminChikaTalkSanctionState, formatAdminChikaTalkDate, type AdminChikaTalkModerationActionName, type AdminChikaTalkReportDetailPayload } from "@/lib/chika-talk-moderation";
+import { adminChikaTalkActionLabel, adminChikaTalkHistoryState, adminChikaTalkRestrictionLines, adminChikaTalkReasonLabel, adminChikaTalkSanctionState, formatAdminChikaTalkDate, type AdminChikaTalkModerationActionName, type AdminChikaTalkReportDetailPayload } from "@/lib/chika-talk-moderation";
 
 export type ChikaTalkActionDetails = { reasonCode: string; detailedReason: string; userMessage: string; suspensionSeconds?: number };
 
@@ -42,7 +42,6 @@ export function ChikaTalkSanctionForm({ detail, pending, onAction }: {
     {detail.report.targetAuthorUserId ? <form onSubmit={event => {
       event.preventDefault();
       if (pending || !detailedReason.trim() || !userMessage.trim()) return;
-      if (!window.confirm(`${adminChikaTalkActionLabel(action)} 처리하시겠습니까? 사용자에게 안내 알림이 전달됩니다.`)) return;
       void onAction(action, {reasonCode: release ? "sanction_released" : restore ? "content_restored" : reasonCode, detailedReason: detailedReason.trim(), userMessage: userMessage.trim(), ...(timed ? {suspensionSeconds: days * 86400} : {})});
     }}>
       <fieldset disabled={pending}>
@@ -59,6 +58,14 @@ export function ChikaTalkSanctionForm({ detail, pending, onAction }: {
     <h4>사용자 처리 이력</h4>
     {detail.authorActions.length === 0 ? <p>처리 이력이 없습니다.</p> : detail.authorActions.map(item => <article key={item.id}>
       <strong>{adminChikaTalkActionLabel(item.action)}</strong> <time>{formatAdminChikaTalkDate(item.createdAt)}</time>
+      <p>처리자: {item.adminDisplayName ?? (item.adminUserId ? `관리자 ${item.adminUserId.slice(0, 4)}…${item.adminUserId.slice(-4)}` : "확인 불가")}</p>
+      <p>당시 상태: {adminChikaTalkHistoryState(item.priorState, item.createdAt)} → {adminChikaTalkHistoryState(item.newState, item.createdAt)}</p>
+      {item.newState && "sanctions" in item.newState && <>
+        <p>적용 시각: {formatAdminChikaTalkDate(item.createdAt)} (한국시간)</p>
+        {adminChikaTalkRestrictionLines((item.newState.sanctions ?? {}) as Record<string, unknown>, new Date(item.createdAt)).map(line => <p key={line}>{line}</p>)}
+        {item.action === "restore_content" && <p>콘텐츠 복원 · 이용자 제재 유지</p>}
+        {item.action === "release_sanctions" && <p>이용 제한 해제 · 누적 횟수 및 과거 이력 유지</p>}
+      </>}
       <p>{adminChikaTalkReasonLabel(item.reasonCode)}</p>
       {item.detailedReason && <p>상세 사유: {item.detailedReason}</p>}
       {item.userMessage && <p>사용자 안내: {item.userMessage}</p>}

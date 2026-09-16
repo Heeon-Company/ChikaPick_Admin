@@ -10,6 +10,8 @@ import remarkGfm from "remark-gfm";
 
 import { AdminSelect } from "@/components/AdminSelect";
 import { ChikaTalkSanctionForm, type ChikaTalkActionDetails } from "@/components/ChikaTalkSanctionForm";
+import { adminChikaTalkConfirmation } from "@/lib/chika-talk-moderation";
+import { previewAdminChikaTalkModerationAction } from "@/lib/admin-api";
 import { DentalpediaContentTab } from "@/components/DentalpediaContentTab";
 import type { DentalpediaContentSelection } from "@/lib/dentalpedia-content";
 import { ServiceExpansionRequestsTab } from "@/components/ServiceExpansionRequestsTab";
@@ -1416,6 +1418,8 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
     [accessToken],
   );
 
+  useEffect(() => () => { detailRequestIdRef.current += 1; }, []);
+
   const closeDetail = useCallback(() => {
     detailRequestIdRef.current += 1;
     setSelectedReportId(null);
@@ -1443,9 +1447,17 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
       const requestId =
         actionRequestIdsRef.current.get(requestKey) ?? crypto.randomUUID();
       actionRequestIdsRef.current.set(requestKey, requestId);
+      const actionDetailRequestId = detailRequestIdRef.current;
       setDetailActionError(null);
       setIsDetailActionPending(true);
       try {
+        if (details) {
+          const { preview } = await previewAdminChikaTalkModerationAction(accessToken, {
+            reportId: detail.report.id, requestId, action, suspensionSeconds: details.suspensionSeconds,
+          });
+          if (detailRequestIdRef.current !== actionDetailRequestId) return;
+          if (!window.confirm(adminChikaTalkConfirmation(action, preview, details))) return;
+        }
         await applyAdminChikaTalkModerationAction(accessToken, {
           reportId: detail.report.id,
           targetType: detail.report.targetType,
@@ -1459,6 +1471,10 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
           ...details,
         });
         actionRequestIdsRef.current.delete(requestKey);
+        if (detailRequestIdRef.current !== actionDetailRequestId) {
+          await loadReports();
+          return;
+        }
         detailRequestIdRef.current += 1;
         setSelectedReportId(null);
         setSelectedReport(null);
@@ -1466,6 +1482,7 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
         setEvidenceImageUrl(null);
         await loadReports();
       } catch (error) {
+        if (detailRequestIdRef.current !== actionDetailRequestId) return;
         setDetailActionError(
           error instanceof Error
             ? error.message

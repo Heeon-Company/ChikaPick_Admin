@@ -263,6 +263,16 @@ export async function applyAdminChikaTalkModerationAction(
   );
 }
 
+export async function previewAdminChikaTalkModerationAction(
+  accessToken: string,
+  input: { reportId: string; requestId: string; action: AdminChikaTalkModerationActionInput["action"]; suspensionSeconds?: number },
+) {
+  return adminFetch<{ preview: import("./chika-talk-moderation").AdminChikaTalkModerationPreview }>(
+    "/api/v1/admin/chika-talk/moderation/actions/preview", accessToken,
+    { method: "POST", body: JSON.stringify(input) },
+  );
+}
+
 export async function fetchAdminManualHospitalSubmissions(
   accessToken: string,
   page: number,
