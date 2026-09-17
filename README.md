@@ -71,6 +71,12 @@ succeed. Incomplete invitations, locked accounts, and expired sessions are
 signed out locally with a specific recovery message; transient API failures
 remain on a retry/logout gate.
 
+The Admin invitation dialog requires an email and a name (1–100 characters after
+trimming), followed by the role. It sends the entered name as `fullName` through
+the existing API: pending invitations and accepted accounts both show it in the
+directory's `사용자 이름` column. Names are no longer inferred from email addresses;
+existing accounts and invitations keep their saved names. No migration is needed.
+
 Admin invitations do not provision authorization when mail is sent. The
 recipient opens `/account/setup`, explicitly confirms the email link, and sets
 an 8–16 character password containing a digit and a supported symbol. Only the

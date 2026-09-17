@@ -6,15 +6,9 @@ import {
   adminAccountDirectoryRoleSummary,
   adminAccountDirectoryStatusLabel,
   adminAccountWithdrawalConfirmation,
-  adminInviteDisplayName,
   canSwitchAdminAccountRole,
   formatAdminAccountDirectoryDate,
 } from "./admin-accounts.ts";
-
-test("admin invitations derive the initial display name from the email", () => {
-  assert.equal(adminInviteDisplayName("  admin.user@example.com  "), "admin.user");
-  assert.equal(adminInviteDisplayName(""), "");
-});
 
 test("admin account directory uses the Figma role and status labels", () => {
   assert.equal(adminAccountDirectoryRoleLabel("super_admin"), "최고 관리자");

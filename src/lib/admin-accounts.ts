@@ -48,11 +48,6 @@ export const defaultAdminAccountDirectoryFilters: AdminAccountDirectoryFilters =
   query: "",
 };
 
-export function adminInviteDisplayName(email: string) {
-  const normalizedEmail = email.trim();
-  return normalizedEmail.split("@", 1)[0] || normalizedEmail;
-}
-
 export function adminAccountDirectoryRoleLabel(
   role: Exclude<AdminAccountDirectoryRole, "all">,
 ) {

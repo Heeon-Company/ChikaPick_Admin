@@ -74,6 +74,8 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Project Essentials
 
+Admin account invitations follow Figma `LOlL77BjIhCPTKXLECSuFr` / `5784:6076`: email, required name, then role. Send the trimmed 1–100-character name as `fullName`; never derive it from the email. The existing API persists it in the pending invitation and accepted Admin profile, so both directory states show the entered user name. Failed submissions retain the draft; successful submissions clear it. No new database migration is required.
+
 ChikaTalk sanctions retain the existing form/native confirmation layout. Before confirmation, read the protected API's `/api/v1/admin/chika-talk/moderation/actions/preview` with the same request ID used for apply. Show server-projected cumulative effects, Korean deadlines, target, reason and user message; an already-applied request shows its recorded result instead of another projected strike. Cancel, failed preview or navigation away must never send the apply request. History shows the operator and recorded before/after state at the action time. Deploy API first; see `docs/chika-talk-moderation.md`.
 
 Dentalpedia archive/delete confirmations follow Figma `7960:69980` / `7960:70151`: 400px cards with a 16px radius, exported 28px info icons in 56×28px tinted pills, centered action-specific copy, and a separated footer with Cancel on the left and teal/red confirmation on the right. Preserve native modal focus trapping, initial Cancel focus, accessible target-title/description, busy dismissal prevention, and inline API errors. See `docs/dentalpedia-content-management.md`.

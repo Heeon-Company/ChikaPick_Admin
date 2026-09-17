@@ -83,7 +83,6 @@ import {
   adminAccountDirectoryRoleSummary,
   adminAccountDirectoryStatusLabel,
   adminAccountWithdrawalConfirmation,
-  adminInviteDisplayName,
   canSwitchAdminAccountRole,
   defaultAdminAccountDirectoryFilters,
   formatAdminAccountDirectoryDate,
@@ -3335,6 +3334,7 @@ function AdminAccountsTab({
   const [actionMenuPosition, setActionMenuPosition] = useState({ left: 0, top: 0 });
   const [actionUserId, setActionUserId] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteName, setInviteName] = useState("");
   const [inviteRole, setInviteRole] = useState<AdminAccountRole>("super_admin");
   const [roleDialogAccount, setRoleDialogAccount] =
     useState<AdminAccountDirectoryItem | null>(null);
@@ -3449,19 +3449,25 @@ function AdminAccountsTab({
   async function submitInvite(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const email = inviteEmail.trim();
+    const fullName = inviteName.trim();
     if (!email) {
       setDialogError("이메일을 입력해 주세요.");
+      return;
+    }
+    if (!fullName || fullName.length > 100) {
+      setDialogError("이름을 1~100자로 입력해 주세요.");
       return;
     }
     setDialogError("");
     setIsDialogSubmitting(true);
     const succeeded = await onInvite({
-      fullName: adminInviteDisplayName(email),
+      fullName,
       email,
       role: inviteRole,
     });
     if (succeeded) {
       setInviteEmail("");
+      setInviteName("");
       setInviteRole("super_admin");
       onDialogChange(null);
       await loadAccounts();
@@ -3869,7 +3875,7 @@ function AdminAccountsTab({
             </header>
             <form className="admin-account-invite-form" onSubmit={submitInvite}>
               <div className="admin-account-dialog-body">
-                <label className="admin-account-invite-email">
+                <label className="admin-account-invite-field">
                   <span>
                     이메일 <b aria-hidden="true">*</b>
                   </span>
@@ -3882,6 +3888,22 @@ function AdminAccountsTab({
                     value={inviteEmail}
                     onChange={(event) => {
                       setInviteEmail(event.target.value);
+                      setDialogError("");
+                    }}
+                  />
+                </label>
+                <label className="admin-account-invite-field">
+                  <span>
+                    이름 <b aria-hidden="true">*</b>
+                  </span>
+                  <input
+                    required
+                    type="text"
+                    autoComplete="name"
+                    maxLength={100}
+                    value={inviteName}
+                    onChange={(event) => {
+                      setInviteName(event.target.value);
                       setDialogError("");
                     }}
                   />

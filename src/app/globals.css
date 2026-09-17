@@ -6011,7 +6011,7 @@ td span {
   line-height: 15px;
 }
 
-.admin-account-dialog .admin-account-dialog-body .admin-account-invite-email > span {
+.admin-account-dialog .admin-account-dialog-body .admin-account-invite-field > span {
   color: #171b2b;
   font-size: 14px;
   font-weight: 500;
@@ -6019,7 +6019,7 @@ td span {
   letter-spacing: -0.28px;
 }
 
-.admin-account-invite-email b {
+.admin-account-invite-field b {
   color: #ff7b03;
   font: inherit;
 }
