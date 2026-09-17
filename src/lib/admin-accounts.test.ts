@@ -28,13 +28,20 @@ test("admin account directory uses the Figma role and status labels", () => {
   assert.equal(adminAccountDirectoryStatusLabel("suspended"), "비활성");
 });
 
-test("Super Admin authority and the assigned duty are displayed independently", () => {
+test("account roles display Super Admin alone and preserve ordinary duties", () => {
+  assert.equal(
+    adminAccountDirectoryRoleSummary({
+      adminAccountType: "admin",
+      isSuperAdmin: true,
+    }),
+    "최고 관리자",
+  );
   assert.equal(
     adminAccountDirectoryRoleSummary({
       adminAccountType: "sales",
       isSuperAdmin: true,
     }),
-    "최고 관리자 · 영업 담당자",
+    "최고 관리자",
   );
   assert.equal(
     adminAccountDirectoryRoleSummary({
@@ -42,6 +49,13 @@ test("Super Admin authority and the assigned duty are displayed independently", 
       isSuperAdmin: false,
     }),
     "운영 관리자",
+  );
+  assert.equal(
+    adminAccountDirectoryRoleSummary({
+      adminAccountType: "sales",
+      isSuperAdmin: false,
+    }),
+    "영업 담당자",
   );
 });
 

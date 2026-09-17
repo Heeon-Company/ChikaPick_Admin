@@ -64,9 +64,9 @@ export function adminAccountDirectoryRoleLabel(
 export function adminAccountDirectoryRoleSummary(
   account: Pick<AdminAccountDirectoryItem, "adminAccountType" | "isSuperAdmin">,
 ) {
-  const duty =
-    account.adminAccountType === "sales" ? "영업 담당자" : "운영 관리자";
-  return account.isSuperAdmin ? `최고 관리자 · ${duty}` : duty;
+  return adminAccountDirectoryRoleLabel(
+    account.isSuperAdmin ? "super_admin" : account.adminAccountType,
+  );
 }
 
 export function canSwitchAdminAccountRole(

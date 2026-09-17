@@ -81,9 +81,11 @@ A locked account stays locked after its password is changed.
 
 For every active, unlocked Admin account, a Super Admin can use the account-row
 menu to switch the duty between `영업 담당자` and `운영 관리자`. The immutable
-Super Admin authority is displayed separately and can coexist with either duty,
+Super Admin authority is stored separately and can coexist with either duty,
 so a representative may remain a Super Admin while also appearing in sales
-assignment lists.
+assignment lists. Account and invitation rows display one role: `최고 관리자`
+when `isSuperAdmin` is true, otherwise `영업 담당자` or `운영 관리자` according
+to the assigned duty. This display rule does not change permissions or duties.
 
 The Admin sidebar includes a Partners-aligned `설정` tab. It shows the current
 Admin account summary and signs out only the current browser session before
