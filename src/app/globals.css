@@ -4453,6 +4453,44 @@ td span {
   background: #f5f8ff;
 }
 
+.admin-chika-talk-detail-meta dd.has-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-chika-talk-detail-meta dd.has-action > span {
+  min-width: 0;
+}
+
+.admin-chika-talk-sanction-link {
+  flex-shrink: 0;
+  border: 1px solid var(--chika-secondary-1);
+  border-radius: 12px;
+  background: var(--chika-secondary-0);
+  color: var(--chika-secondary-6);
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.admin-chika-talk-sanction-link:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.admin-chika-talk-sanction-back {
+  align-self: flex-start;
+  color: var(--chika-secondary-6);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.admin-chika-talk-sanction-back + .admin-chika-sanction {
+  margin-top: 0;
+}
+
 .admin-chika-talk-detail-post-body,
 .admin-chika-talk-reported-comment {
   gap: 10px;

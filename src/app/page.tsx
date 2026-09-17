@@ -1348,6 +1348,7 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
   const [isDetailActionPending, setIsDetailActionPending] = useState(false);
   const [detailActionError, setDetailActionError] = useState<string | null>(null);
   const [evidenceImageUrl, setEvidenceImageUrl] = useState<string | null>(null);
+  const [isSanctionOpen, setIsSanctionOpen] = useState(false);
   const reportRequestIdRef = useRef(0);
   const detailRequestIdRef = useRef(0);
   const actionRequestIdsRef = useRef(new Map<string, string>());
@@ -1394,6 +1395,7 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
       const requestId = detailRequestIdRef.current + 1;
       detailRequestIdRef.current = requestId;
       setSelectedReportId(reportId);
+      setIsSanctionOpen(false);
       setSelectedReport(null);
       setDetailError(null);
       setDetailActionError(null);
@@ -1422,10 +1424,17 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
   const closeDetail = useCallback(() => {
     detailRequestIdRef.current += 1;
     setSelectedReportId(null);
+    setIsSanctionOpen(false);
     setSelectedReport(null);
     setDetailError(null);
     setDetailActionError(null);
     setEvidenceImageUrl(null);
+  }, []);
+
+  const returnToReport = useCallback(() => {
+    detailRequestIdRef.current += 1;
+    setIsSanctionOpen(false);
+    setDetailActionError(null);
   }, []);
 
   const applyDetailAction = useCallback(
@@ -1476,6 +1485,7 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
         }
         detailRequestIdRef.current += 1;
         setSelectedReportId(null);
+        setIsSanctionOpen(false);
         setSelectedReport(null);
         setDetailError(null);
         setEvidenceImageUrl(null);
@@ -1496,9 +1506,13 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
     if (!selectedReportId) return;
     const previousOverflow = document.body.style.overflow;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
+      if (event.key !== "Escape" || event.defaultPrevented) return;
       if (evidenceImageUrl) {
         setEvidenceImageUrl(null);
+        return;
+      }
+      if (isSanctionOpen) {
+        returnToReport();
         return;
       }
       closeDetail();
@@ -1509,7 +1523,7 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", closeOnEscape);
     };
-  }, [closeDetail, evidenceImageUrl, selectedReportId]);
+  }, [closeDetail, evidenceImageUrl, isSanctionOpen, returnToReport, selectedReportId]);
 
   const filteredReports = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("ko-KR");
@@ -1666,6 +1680,12 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
           isLoading={isDetailLoading}
           actionError={detailActionError}
           isActionPending={isDetailActionPending}
+          isSanctionOpen={isSanctionOpen}
+          onOpenSanction={() => {
+            setDetailActionError(null);
+            setIsSanctionOpen(true);
+          }}
+          onReturnToReport={returnToReport}
           onClose={closeDetail}
           onRetry={() => void loadDetail(selectedReportId)}
           onAction={applyDetailAction}
@@ -1691,6 +1711,9 @@ function ChikaTalkReportDetail({
   isLoading,
   actionError,
   isActionPending,
+  isSanctionOpen,
+  onOpenSanction,
+  onReturnToReport,
   onClose,
   onRetry,
   onAction,
@@ -1701,6 +1724,9 @@ function ChikaTalkReportDetail({
   isLoading: boolean;
   actionError: string | null;
   isActionPending: boolean;
+  isSanctionOpen: boolean;
+  onOpenSanction: () => void;
+  onReturnToReport: () => void;
   onClose: () => void;
   onRetry: () => void;
   onAction: (
@@ -1709,6 +1735,13 @@ function ChikaTalkReportDetail({
   ) => Promise<void>;
   onOpenEvidenceImage: (imageUrl: string) => void;
 }) {
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    titleRef.current?.focus();
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [isSanctionOpen]);
+
   const canResolve = report?.report.status === "unresolved";
   const canRemove =
     report !== null &&
@@ -1722,7 +1755,7 @@ function ChikaTalkReportDetail({
       <button
         type="button"
         className="admin-chika-talk-detail-backdrop"
-        aria-label="신고 콘텐츠 상세 닫기"
+        aria-label={isSanctionOpen ? "계정 제재 닫기" : "신고 콘텐츠 상세 닫기"}
         tabIndex={-1}
         onClick={onClose}
       />
@@ -1733,8 +1766,10 @@ function ChikaTalkReportDetail({
         aria-labelledby="chika-talk-detail-title"
       >
         <header className="admin-chika-talk-detail-header">
-          <h2 id="chika-talk-detail-title">신고 콘텐츠 상세</h2>
-          <button type="button" aria-label="닫기" autoFocus onClick={onClose}>
+          <h2 id="chika-talk-detail-title" ref={titleRef} tabIndex={-1}>
+            {isSanctionOpen ? "계정 제재" : "신고 콘텐츠 상세"}
+          </h2>
+          <button type="button" aria-label="닫기" onClick={onClose}>
             <Image
               src="/secret-feedback/Type=Close.png"
               alt=""
@@ -1744,7 +1779,7 @@ function ChikaTalkReportDetail({
           </button>
         </header>
 
-        <div className="admin-chika-talk-detail-scroll">
+        <div className="admin-chika-talk-detail-scroll" ref={scrollRef}>
           {isLoading ? (
             <div className="admin-chika-talk-detail-state" role="status">
               신고 콘텐츠를 불러오는 중입니다.
@@ -1754,14 +1789,30 @@ function ChikaTalkReportDetail({
               <p>{error}</p>
               <button type="button" onClick={onRetry}>다시 시도</button>
             </div>
+          ) : report && isSanctionOpen ? (
+            <>
+              <button type="button" className="admin-chika-talk-sanction-back" onClick={onReturnToReport}>
+                ← 신고 콘텐츠 상세로 돌아가기
+              </button>
+              <ChikaTalkSanctionForm key={report.report.id} detail={report} pending={isActionPending} onAction={onAction} />
+            </>
           ) : report ? (
             <>
               <ChikaTalkReportedContent
                 detail={report}
                 onOpenEvidenceImage={onOpenEvidenceImage}
+                authorAction={
+                  <button
+                    type="button"
+                    className="admin-chika-talk-sanction-link"
+                    disabled={!report.report.targetAuthorUserId || isActionPending}
+                    onClick={onOpenSanction}
+                  >
+                    계정 제재하기
+                  </button>
+                }
               />
               <ChikaTalkReportHistory items={report.relatedReports} />
-              <ChikaTalkSanctionForm key={report.report.id} detail={report} pending={isActionPending} onAction={onAction} />
             </>
           ) : null}
         </div>
@@ -1773,7 +1824,7 @@ function ChikaTalkReportDetail({
                 {actionError}
               </p>
             ) : null}
-            <footer className="admin-chika-talk-detail-actions">
+            {!isSanctionOpen && <footer className="admin-chika-talk-detail-actions">
               <button
                 type="button"
                 disabled={!canResolve || isActionPending}
@@ -1788,7 +1839,7 @@ function ChikaTalkReportDetail({
               >
                 {isActionPending ? "처리 중..." : "콘텐츠 삭제"}
               </button>
-            </footer>
+            </footer>}
           </>
         ) : null}
       </aside>
@@ -1799,17 +1850,20 @@ function ChikaTalkReportDetail({
 function ChikaTalkReportedContent({
   detail,
   onOpenEvidenceImage,
+  authorAction,
 }: {
   detail: AdminChikaTalkReportDetailPayload;
   onOpenEvidenceImage: (imageUrl: string) => void;
+  authorAction: ReactNode;
 }) {
   if (detail.report.targetType === "comment") {
-    return <ChikaTalkReportedComment detail={detail} />;
+    return <ChikaTalkReportedComment detail={detail} authorAction={authorAction} />;
   }
   return (
     <ChikaTalkReportedPost
       detail={detail}
       onOpenEvidenceImage={onOpenEvidenceImage}
+      authorAction={authorAction}
     />
   );
 }
@@ -1817,9 +1871,11 @@ function ChikaTalkReportedContent({
 function ChikaTalkReportedPost({
   detail,
   onOpenEvidenceImage,
+  authorAction,
 }: {
   detail: AdminChikaTalkReportDetailPayload;
   onOpenEvidenceImage: (imageUrl: string) => void;
+  authorAction: ReactNode;
 }) {
   const { report } = detail;
   const snapshot = report.snapshot;
@@ -1845,6 +1901,7 @@ function ChikaTalkReportedPost({
         <ChikaTalkDetailMeta
           label="작성자"
           value={detail.author?.displayName ?? "탈퇴했거나 확인할 수 없는 사용자"}
+          action={authorAction}
         />
         <ChikaTalkDetailMeta
           label="작성일"
@@ -1921,8 +1978,10 @@ function ChikaTalkEvidenceImageViewer({
 
 function ChikaTalkReportedComment({
   detail,
+  authorAction,
 }: {
   detail: AdminChikaTalkReportDetailPayload;
+  authorAction: ReactNode;
 }) {
   const snapshot = detail.report.snapshot;
   const body = adminChikaTalkRecordString(snapshot, "body") ??
@@ -1954,6 +2013,7 @@ function ChikaTalkReportedComment({
         <ChikaTalkDetailMeta
           label="작성자"
           value={detail.author?.displayName ?? "탈퇴했거나 확인할 수 없는 사용자"}
+          action={authorAction}
         />
         <ChikaTalkDetailMeta
           label="작성일"
@@ -1969,11 +2029,11 @@ function ChikaTalkReportedComment({
   );
 }
 
-function ChikaTalkDetailMeta({ label, value }: { label: string; value: string }) {
+function ChikaTalkDetailMeta({ label, value, action }: { label: string; value: string; action?: ReactNode }) {
   return (
     <dl className="admin-chika-talk-detail-meta">
       <dt>{label}</dt>
-      <dd>{value}</dd>
+      <dd className={action ? "has-action" : undefined}><span>{value}</span>{action}</dd>
     </dl>
   );
 }
