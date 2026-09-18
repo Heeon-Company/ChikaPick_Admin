@@ -159,7 +159,6 @@ export function DentalpediaContentTab({
         accessToken={accessToken}
         initialType={editor.type}
         initialContentId={editor.id}
-        startNew
         onBack={() => onEditorChange(null)}
         onSaved={(message) => {
           setNotice(message);

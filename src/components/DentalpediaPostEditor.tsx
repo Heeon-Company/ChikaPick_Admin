@@ -31,7 +31,6 @@ import {
   type AdminDentalpediaPost,
   type AdminDentalpediaPostInput,
   type DentalpediaPostCategory,
-  type DentalpediaPostStatus,
   type DentalpediaPostType,
 } from "@/lib/dentalpedia-post";
 import type { DentalpediaRelatedContentOption } from "@/lib/dentalpedia-video";
@@ -48,7 +47,6 @@ type PostImageDraft = {
   previewUrl: string;
 };
 
-const postDraftStorageKey = "chikapick.admin.dentalpedia.currentPostId";
 const maxPostImages = 10;
 export function DentalpediaPostEditor({
   accessToken,
@@ -57,13 +55,11 @@ export function DentalpediaPostEditor({
   onManageCategories,
   onInformationTypeChange,
   initialContentId,
-  startNew = false,
   onBack,
   onSaved,
 }: {
   accessToken: string;
   initialContentId?: string;
-  startNew?: boolean;
   onBack?: () => void;
   onSaved?: (message: string) => void;
   categories: AdminDentalpediaCategory[];
@@ -154,7 +150,7 @@ export function DentalpediaPostEditor({
   }, [accessToken]);
 
   useEffect(() => {
-    const savedId = initialContentId ?? (startNew ? null : window.localStorage.getItem(postDraftStorageKey));
+    const savedId = initialContentId;
     if (!savedId || !accessToken) {
       const timer = window.setTimeout(() => setLoadingDraft(false), 0);
       return () => window.clearTimeout(timer);
@@ -162,20 +158,12 @@ export function DentalpediaPostEditor({
     let active = true;
     fetchAdminDentalpediaPost(accessToken, savedId)
       .then(({ post }) => {
-        if (!initialContentId && post.status !== "draft") {
-          window.localStorage.removeItem(postDraftStorageKey);
-          return;
-        }
         if (active) applyPost(post);
       })
       .catch((error) => {
         if (!active) return;
-        if (initialContentId) {
-          setLoadFailed(true);
-          setFeedback({ tone: "error", message: error instanceof Error ? error.message : "콘텐츠를 불러오지 못했습니다. 목록에서 다시 열어 주세요." });
-        } else {
-          window.localStorage.removeItem(postDraftStorageKey);
-        }
+        setLoadFailed(true);
+        setFeedback({ tone: "error", message: error instanceof Error ? error.message : "콘텐츠를 불러오지 못했습니다. 목록에서 다시 열어 주세요." });
       })
       .finally(() => {
         if (active) setLoadingDraft(false);
@@ -183,7 +171,7 @@ export function DentalpediaPostEditor({
     return () => {
       active = false;
     };
-  }, [initialContentId, startNew, accessToken]);
+  }, [initialContentId, accessToken]);
 
   const selectedRelatedOptions = useMemo(
     () =>
@@ -338,7 +326,6 @@ export function DentalpediaPostEditor({
   }
 
   function postInput(
-    status: DentalpediaPostStatus,
     imagePaths: string[],
   ): AdminDentalpediaPostInput {
     return {
@@ -354,37 +341,33 @@ export function DentalpediaPostEditor({
       isVisible,
       postType,
       publishAt:
-        status === "published"
-          ? publishMode === "scheduled"
-            ? localDateTimeToIso(publishAt)
-            : dentalpediaImmediatePublishAt(savedPublishAt)
-          : publishMode === "scheduled"
-            ? localDateTimeToIso(publishAt)
-            : null,
+        publishMode === "scheduled"
+          ? localDateTimeToIso(publishAt)
+          : dentalpediaImmediatePublishAt(savedPublishAt),
       relatedContentIds: relatedContentIds.filter(
         (id) => id !== `post:${postId}`,
       ),
       searchKeywords: commaSeparatedValues(searchKeywords, 20),
-      status,
+      status: "published",
       tags,
       title: title.trim(),
     };
   }
 
-  async function savePost(status: DentalpediaPostStatus) {
-    if (saving || loadingDraft) return;
-    if (status === "published") setPublishToast(null);
+  async function savePost() {
+    if (!accessToken || saving || loadingDraft || loadFailed) return;
+    setPublishToast(null);
     const pendingPaths = images.map(
       (image) => image.path ?? `pending/${image.key}`,
     );
     const preUploadError = validateDentalpediaPost(
-      postInput(status, pendingPaths),
-      status === "published",
+      postInput(pendingPaths),
+      true,
     );
     if (preUploadError) {
       const outcome = { tone: "error" as const, message: preUploadError };
       setFeedback(outcome);
-      if (status === "published") setPublishToast(outcome);
+      setPublishToast(outcome);
       return;
     }
 
@@ -401,31 +384,22 @@ export function DentalpediaPostEditor({
       const imagePaths = resolvedImages
         .map((image) => image.path)
         .filter((path): path is string => Boolean(path));
-      const input = postInput(status, imagePaths);
-      const validationError = validateDentalpediaPost(
-        input,
-        status === "published",
-      );
+      const input = postInput(imagePaths);
+      const validationError = validateDentalpediaPost(input, true);
       if (validationError) throw new Error(validationError);
 
       const result = postId
         ? await updateAdminDentalpediaPost(accessToken, postId, input)
         : await createAdminDentalpediaPost(accessToken, input);
       applyPost(result.post);
-      if (status === "draft") {
-        window.localStorage.setItem(postDraftStorageKey, result.post.id);
-      } else {
-        window.localStorage.removeItem(postDraftStorageKey);
-      }
       const outcome = {
         tone: "success",
-        message:
-          status === "published" && !isVisible
-            ? "게시물을 발행했지만 공개 상태가 꺼져 있어 앱에는 노출되지 않습니다."
-            : result.message,
+        message: !isVisible
+          ? "게시물을 발행했지만 공개 상태가 꺼져 있어 앱에는 노출되지 않습니다."
+          : result.message,
       } as const;
       setFeedback(outcome);
-      if (status === "published") setPublishToast(outcome);
+      setPublishToast(outcome);
       markSaved();
       onSaved?.(outcome.message);
     } catch (error) {
@@ -437,7 +411,7 @@ export function DentalpediaPostEditor({
             : "게시물을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
       } as const;
       setFeedback(outcome);
-      if (status === "published") setPublishToast(outcome);
+      setPublishToast(outcome);
     } finally {
       setSaving(false);
     }
@@ -446,7 +420,6 @@ export function DentalpediaPostEditor({
   function resetPost() {
     if (onBack) { onBack(); return; }
     setSavedPublishAt(null);
-    window.localStorage.removeItem(postDraftStorageKey);
     revokeObjectUrls(images);
     setPostId(null);
     setTitle("");
@@ -473,7 +446,7 @@ export function DentalpediaPostEditor({
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    void savePost("published");
+    void savePost();
   }
 
   if (loadFailed) {
@@ -867,13 +840,6 @@ export function DentalpediaPostEditor({
               취소
             </button>
             <div>
-              <button
-                disabled={loadingDraft || loadFailed || saving}
-                onClick={() => void savePost("draft")}
-                type="button"
-              >
-                {saving ? "저장 중..." : "임시저장"}
-              </button>
               <button disabled={loadingDraft || loadFailed || saving} type="submit">
                 {saving ? "처리 중..." : savedPublishAt ? "수정 완료" : "발행하기"}
               </button>

@@ -45,15 +45,12 @@ import {
   type DentalpediaRelatedContentOption,
   type DentalpediaVideoCategory,
   type DentalpediaVideoExposurePriority,
-  type DentalpediaVideoStatus,
 } from "@/lib/dentalpedia-video";
 import type { AdminDentalpediaCategory } from "@/lib/dentalpedia-category";
 
 type InformationCategory = "" | DentalpediaVideoCategory;
 type PreviewMode = "home" | "detail";
 type PublishMode = "immediate" | "scheduled";
-
-const videoDraftStorageKey = "chikapick.admin.dentalpedia.currentVideoId";
 
 const exposurePriorities: ReadonlyArray<{
   label: string;
@@ -66,7 +63,6 @@ const exposurePriorities: ReadonlyArray<{
 
 type ArticleEditorProps = {
   initialContentId?: string;
-  startNew?: boolean;
   onBack?: () => void;
   onSaved?: (message: string) => void;
   accessToken: string;
@@ -83,14 +79,12 @@ function ArticleEditor({
   onManageCategories,
   onInformationTypeChange,
   initialContentId,
-  startNew = false,
   onBack,
   onSaved,
 }: ArticleEditorProps) {
   return (
     <DentalpediaArticleEditor
       initialContentId={initialContentId}
-      startNew={startNew}
       onBack={onBack}
       onSaved={onSaved}
       accessToken={accessToken}
@@ -102,9 +96,8 @@ function ArticleEditor({
   );
 }
 
-export function InformationUploadTab({ accessToken, initialType = "video", initialContentId, startNew = false, onBack, onSaved }: { accessToken: string; initialType?: DentalpediaInformationType;
+export function InformationUploadTab({ accessToken, initialType = "video", initialContentId, onBack, onSaved }: { accessToken: string; initialType?: DentalpediaInformationType;
   initialContentId?: string;
-  startNew?: boolean;
   onBack?: () => void;
   onSaved?: (message: string) => void;
 }) {
@@ -211,7 +204,7 @@ export function InformationUploadTab({ accessToken, initialType = "video", initi
   }, [accessToken]);
 
   useEffect(() => {
-    const savedId = (initialType === "video" ? initialContentId : undefined) ?? (startNew ? null : window.localStorage.getItem(videoDraftStorageKey));
+    const savedId = initialType === "video" ? initialContentId : undefined;
     if (!savedId || !accessToken) {
       const timer = window.setTimeout(() => setLoadingDraft(false), 0);
       return () => window.clearTimeout(timer);
@@ -219,20 +212,12 @@ export function InformationUploadTab({ accessToken, initialType = "video", initi
     let active = true;
     fetchAdminDentalpediaVideo(accessToken, savedId)
       .then(({ video }) => {
-        if (!initialContentId && video.status !== "draft") {
-          window.localStorage.removeItem(videoDraftStorageKey);
-          return;
-        }
         if (active) applyVideo(video);
       })
       .catch((error) => {
         if (!active) return;
-        if (initialContentId) {
-          setLoadFailed(true);
-          setFeedback({ tone: "error", message: error instanceof Error ? error.message : "콘텐츠를 불러오지 못했습니다. 목록에서 다시 열어 주세요." });
-        } else {
-          window.localStorage.removeItem(videoDraftStorageKey);
-        }
+        setLoadFailed(true);
+        setFeedback({ tone: "error", message: error instanceof Error ? error.message : "콘텐츠를 불러오지 못했습니다. 목록에서 다시 열어 주세요." });
       })
       .finally(() => {
         if (active) setLoadingDraft(false);
@@ -240,7 +225,7 @@ export function InformationUploadTab({ accessToken, initialType = "video", initi
     return () => {
       active = false;
     };
-  }, [initialType, initialContentId, startNew, accessToken]);
+  }, [initialType, initialContentId, accessToken]);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -388,22 +373,17 @@ export function InformationUploadTab({ accessToken, initialType = "video", initi
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    void saveVideo("published");
+    void saveVideo();
   }
 
   function videoInput(
-    status: DentalpediaVideoStatus,
     imagePath: string | null,
     storedVideoPath: string | null,
   ): AdminDentalpediaVideoInput {
     const resolvedPublishAt =
-      status === "published"
-        ? publishMode === "scheduled"
-          ? localDateTimeToIso(publishAt)
-          : dentalpediaImmediatePublishAt(savedPublishAt)
-        : publishMode === "scheduled"
-          ? localDateTimeToIso(publishAt)
-          : null;
+      publishMode === "scheduled"
+        ? localDateTimeToIso(publishAt)
+        : dentalpediaImmediatePublishAt(savedPublishAt);
     return {
       category: category || null,
       description: description.trim(),
@@ -421,7 +401,7 @@ export function InformationUploadTab({ accessToken, initialType = "video", initi
         (id) => id !== `video:${videoId}`,
       ),
       searchKeywords: commaSeparatedValues(searchKeywords, 20),
-      status,
+      status: "published",
       tags,
       thumbnailImageAlt: title.trim() ? `${title.trim()} 썸네일` : "",
       thumbnailImagePath: imagePath,
@@ -435,21 +415,18 @@ export function InformationUploadTab({ accessToken, initialType = "video", initi
     };
   }
 
-  async function saveVideo(status: DentalpediaVideoStatus) {
-    if (saving || loadingDraft) return;
-    if (status === "published") setPublishToast(null);
+  async function saveVideo() {
+    if (!accessToken || saving || loadingDraft || loadFailed) return;
+    setPublishToast(null);
     const pendingImagePath =
       thumbnailImagePath ?? (thumbnailFile ? "pending-thumbnail" : null);
     const pendingVideoPath = videoFile ? "pending-video" : videoFilePath;
-    const beforeUpload = videoInput(status, pendingImagePath, pendingVideoPath);
-    const preUploadError = validateDentalpediaVideo(
-      beforeUpload,
-      status === "published",
-    );
+    const beforeUpload = videoInput(pendingImagePath, pendingVideoPath);
+    const preUploadError = validateDentalpediaVideo(beforeUpload, true);
     if (preUploadError) {
       const outcome = { tone: "error" as const, message: preUploadError };
       setFeedback(outcome);
-      if (status === "published") setPublishToast(outcome);
+      setPublishToast(outcome);
       return;
     }
 
@@ -474,31 +451,22 @@ export function InformationUploadTab({ accessToken, initialType = "video", initi
         storedVideoPath = upload.path;
       }
 
-      const input = videoInput(status, imagePath, storedVideoPath);
-      const validationError = validateDentalpediaVideo(
-        input,
-        status === "published",
-      );
+      const input = videoInput(imagePath, storedVideoPath);
+      const validationError = validateDentalpediaVideo(input, true);
       if (validationError) throw new Error(validationError);
 
       const result = videoId
         ? await updateAdminDentalpediaVideo(accessToken, videoId, input)
         : await createAdminDentalpediaVideo(accessToken, input);
       applyVideo(result.video);
-      if (status === "draft") {
-        window.localStorage.setItem(videoDraftStorageKey, result.video.id);
-      } else {
-        window.localStorage.removeItem(videoDraftStorageKey);
-      }
       const outcome = {
         tone: "success",
-        message:
-          status === "published" && !isVisible
-            ? "영상을 발행했지만 공개 상태가 꺼져 있어 앱에는 노출되지 않습니다."
-            : result.message,
+        message: !isVisible
+          ? "영상을 발행했지만 공개 상태가 꺼져 있어 앱에는 노출되지 않습니다."
+          : result.message,
       } as const;
       setFeedback(outcome);
-      if (status === "published") setPublishToast(outcome);
+      setPublishToast(outcome);
       markSaved();
       onSaved?.(outcome.message);
     } catch (error) {
@@ -510,7 +478,7 @@ export function InformationUploadTab({ accessToken, initialType = "video", initi
             : "영상을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
       } as const;
       setFeedback(outcome);
-      if (status === "published") setPublishToast(outcome);
+      setPublishToast(outcome);
     } finally {
       setSaving(false);
     }
@@ -519,7 +487,6 @@ export function InformationUploadTab({ accessToken, initialType = "video", initi
   function resetVideo() {
     if (onBack) { onBack(); return; }
     setSavedPublishAt(null);
-    window.localStorage.removeItem(videoDraftStorageKey);
     setVideoId(null);
     setTitle("");
     setCategory("");
@@ -1011,7 +978,6 @@ export function InformationUploadTab({ accessToken, initialType = "video", initi
               <footer className="admin-information-video-actions">
                 <button disabled={saving} onClick={resetVideo} type="button">취소</button>
                 <div>
-                  <button disabled={loadingDraft || loadFailed || saving} onClick={() => void saveVideo("draft")} type="button">{saving ? "저장 중..." : "임시저장"}</button>
                   <button disabled={loadingDraft || loadFailed || saving} type="submit">{saving ? "처리 중..." : savedPublishAt ? "수정 완료" : "발행하기"}</button>
                 </div>
               </footer>
@@ -1053,7 +1019,6 @@ export function InformationUploadTab({ accessToken, initialType = "video", initi
         ) : isPost ? (
           <DentalpediaPostEditor
             initialContentId={initialContentId}
-            startNew={startNew}
             onBack={onBack}
             onSaved={onSaved}
             accessToken={accessToken}
@@ -1065,7 +1030,6 @@ export function InformationUploadTab({ accessToken, initialType = "video", initi
         ) : (
           <ArticleEditor
             initialContentId={initialContentId}
-            startNew={startNew}
             onBack={onBack}
             onSaved={onSaved}
             accessToken={accessToken}
