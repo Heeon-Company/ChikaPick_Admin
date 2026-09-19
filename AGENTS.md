@@ -74,6 +74,8 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Project Essentials
 
+The existing dentist-license review UI now reviews exact submission IDs for Figma `VCdW8sFEyA8Ov3evzQ0vVM`, node `7930:62211` (September 19). Preserve the current cards, filters and decision dialogs. Every submitted file has a private signed link; rejection dialogs retain the ID originally inspected across directory refreshes. The API includes active/pending owner/doctor applicants and manual owners awaiting hospital approval, rejects stale reviews, and updates submission/profile/audit state atomically. Admin does not upload or automatically approve licenses. Apply API migration `20260919170000_partner_license_required_flow.sql` and deploy API before this Admin. See `docs/partner-license-verification.md`.
+
 Admin is excluded from search through root `robots: { index: false, follow: false }` metadata and a site-wide `X-Robots-Tag: noindex, nofollow` response header. `robots.txt` allows crawling so crawlers can observe noindex; never replace it with a blanket crawl block. Korean title/description and actual Client app icons remain available for browser and link previews. See `docs/search-metadata.md`; authentication/authorization remain required independently.
 
 Admin account invitations follow Figma `LOlL77BjIhCPTKXLECSuFr` / `5784:6076`: email, required name, then role. Send the trimmed 1–100-character name as `fullName`; never derive it from the email. The existing API persists it in the pending invitation and accepted Admin profile, so both directory states show the entered user name. Failed submissions retain the draft; successful submissions clear it. No new database migration is required.

@@ -1253,9 +1253,9 @@ function AdminConsole() {
             <LicenseReviewTab
               data={consoleData}
               isLoading={isLoadingConsole}
-              onDecision={(userId, approved, note) =>
+              onDecision={(userId, approved, note, submissionId) =>
                 runAction((token) =>
-                  updateLicenseVerification(token, userId, approved, note),
+                  updateLicenseVerification(token, userId, approved, note, submissionId),
                 )
               }
             />
@@ -10177,7 +10177,7 @@ function LicenseReviewTab({
 }: {
   data: AdminConsolePayload;
   isLoading: boolean;
-  onDecision: (userId: string, approved: boolean, note: string) => Promise<boolean>;
+  onDecision: (userId: string, approved: boolean, note: string, submissionId: string) => Promise<boolean>;
 }) {
   const [processingDecision, setProcessingDecision] = useState<{
     approved: boolean;
@@ -10186,6 +10186,7 @@ function LicenseReviewTab({
   const [rejectionTarget, setRejectionTarget] = useState<{
     displayName: string;
     userId: string;
+    submissionId: string;
   } | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [rejectionError, setRejectionError] = useState("");
@@ -10240,11 +10241,11 @@ function LicenseReviewTab({
     };
   }, [isApprovalCompleteOpen, rejectionTarget]);
 
-  async function approve(userId: string, trigger: HTMLButtonElement) {
+  async function approve(userId: string, submissionId: string, trigger: HTMLButtonElement) {
     lastTriggerRef.current = trigger;
     setProcessingDecision({ approved: true, userId });
     try {
-      const approved = await onDecision(userId, true, "");
+      const approved = await onDecision(userId, true, "", submissionId);
       if (approved) setIsApprovalCompleteOpen(true);
     } finally {
       setProcessingDecision(null);
@@ -10254,12 +10255,13 @@ function LicenseReviewTab({
   function openRejection(
     userId: string,
     displayName: string,
+    submissionId: string,
     trigger: HTMLButtonElement,
   ) {
     lastTriggerRef.current = trigger;
     setRejectionReason("");
     setRejectionError("");
-    setRejectionTarget({ displayName, userId });
+    setRejectionTarget({ displayName, userId, submissionId });
   }
 
   function closeRejection() {
@@ -10281,7 +10283,7 @@ function LicenseReviewTab({
     setRejectionError("");
     setProcessingDecision({ approved: false, userId: rejectionTarget.userId });
     try {
-      const rejected = await onDecision(rejectionTarget.userId, false, reason);
+      const rejected = await onDecision(rejectionTarget.userId, false, reason, rejectionTarget.submissionId);
       if (rejected) {
         setRejectionTarget(null);
         setRejectionReason("");
@@ -10389,20 +10391,13 @@ function LicenseReviewTab({
                 <div>
                   <dt>첨부 파일</dt>
                   <dd className="admin-license-file">
-                    {submission?.signedUrl ? (
-                      <a
-                        href={submission.signedUrl}
-                        rel="noreferrer"
-                        target="_blank"
-                        title={submission.fileName}
-                      >
-                        {submission.fileName}
-                      </a>
-                    ) : submission ? (
-                      <span title={submission.fileName}>{submission.fileName}</span>
-                    ) : (
-                      <span>미제출</span>
-                    )}
+                    {submission ? (submission.files ?? [submission]).map((file, index) => (
+                      <span key={index}>
+                        {index > 0 ? <br /> : null}
+                        {file.signedUrl ? <a href={file.signedUrl} rel="noreferrer" target="_blank" title={file.fileName}>{file.fileName}</a>
+                          : <span title={file.fileName}>{file.fileName}</span>}
+                      </span>
+                    )) : <span>미제출</span>}
                   </dd>
                 </div>
               </dl>
@@ -10412,7 +10407,7 @@ function LicenseReviewTab({
                     type="button"
                     disabled={isLoading || processingDecision !== null}
                     onClick={(event) =>
-                      openRejection(item.userId, displayName, event.currentTarget)
+                      openRejection(item.userId, displayName, submission!.id, event.currentTarget)
                     }
                   >
                     {isProcessing && !processingDecision.approved
@@ -10422,7 +10417,7 @@ function LicenseReviewTab({
                   <button
                     type="button"
                     disabled={isLoading || processingDecision !== null}
-                    onClick={(event) => void approve(item.userId, event.currentTarget)}
+                    onClick={(event) => void approve(item.userId, submission!.id, event.currentTarget)}
                   >
                     {isProcessing && processingDecision.approved
                       ? "처리 중"

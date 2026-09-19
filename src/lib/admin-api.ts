@@ -83,6 +83,7 @@ export interface LicenseVerificationRequest {
 }
 
 export interface LicenseVerificationSubmission {
+  files?: Array<{ fileName: string; contentType: string; sizeBytes: number; signedUrl: string | null }>;
   id: string;
   status: AdminReviewStatus;
   submittedAt: string;
@@ -331,11 +332,12 @@ export async function updateLicenseVerification(
   userId: string,
   licenseVerified: boolean,
   note: string,
+  submissionId: string,
 ) {
   return adminFetch<AdminActionResult>(
     `/api/v1/admin/license-verifications/${userId}`,
     accessToken,
-    { method: "PATCH", body: JSON.stringify({ licenseVerified, note }) },
+    { method: "PATCH", body: JSON.stringify({ licenseVerified, note, submissionId }) },
   );
 }
 
