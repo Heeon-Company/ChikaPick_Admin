@@ -20,7 +20,7 @@ export function SupportManagementTab({ accessToken }: { accessToken: string }) {
   const listScreen = { tab: "support-management", ...(tab === "faq" ? { view: "faq" as const } : {}) } as const;
   const draft = useMemo(() => data && screen.supportEditor
     ? supportDraftForSelection(data, screen.supportEditor) : null, [data, screen.supportEditor]);
-  const [feedbackUrl, setFeedbackUrl] = useState("");
+  const [feedbackEmail, setFeedbackEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -32,7 +32,7 @@ export function SupportManagementTab({ accessToken }: { accessToken: string }) {
     try {
       const payload = await fetchAdminSupportContent(accessToken);
       setData(payload);
-      setFeedbackUrl(payload.feedbackFormUrl ?? "");
+      setFeedbackEmail(payload.feedbackEmail ?? "");
     } catch {
       setError("고객지원 정보를 불러오지 못했습니다. 다시 시도해 주세요.");
     } finally {
@@ -74,7 +74,7 @@ export function SupportManagementTab({ accessToken }: { accessToken: string }) {
     setMessage("");
   }
 
-  const markSettingsSaved = useUnsavedChanges(feedbackUrl, {
+  const markSettingsSaved = useUnsavedChanges(feedbackEmail, {
     ready: !!data && !loading, busy: saving, enabled: !draft,
   });
 
@@ -294,42 +294,42 @@ export function SupportManagementTab({ accessToken }: { accessToken: string }) {
               event.preventDefault();
               void save({
                 kind: "settings",
-                record: { feedback_form_url: feedbackUrl.trim() || null },
+                record: { feedback_email: feedbackEmail.trim() || null },
               });
             }}
           >
             <h2>의견 보내기 연결</h2>
             <p>
-              Google Forms의 응답자용 공유 링크를 입력해 주세요. 비워 두면 앱에
+              사용자가 의견을 보낼 이메일 주소를 입력해 주세요. 비워 두면 앱에
               연결 준비 중 안내가 표시됩니다.
             </p>
             <label>
-              설문 링크
+              수신 이메일
               <input
-                type="url"
-                value={feedbackUrl}
-                maxLength={2048}
+                type="email"
+                value={feedbackEmail}
+                maxLength={254}
                 disabled={saving}
-                onChange={(event) => setFeedbackUrl(event.target.value)}
-                placeholder="https://forms.gle/..."
+                onChange={(event) => setFeedbackEmail(event.target.value)}
+                placeholder="support@example.com"
               />
             </label>
             <div className="support-actions">
-              {data.feedbackFormUrl && (
+              {data.feedbackEmail && (
                 <a
-                  href={data.feedbackFormUrl}
+                  href={`mailto:${data.feedbackEmail}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  저장된 설문 열기 ↗
+                  저장된 이메일로 작성 ↗
                 </a>
               )}
               <button
                 disabled={
-                  saving || feedbackUrl.trim() === (data.feedbackFormUrl ?? "")
+                  saving || feedbackEmail.trim() === (data.feedbackEmail ?? "")
                 }
               >
-                {saving ? "저장 중..." : "링크 저장"}
+                {saving ? "저장 중..." : "이메일 저장"}
               </button>
             </div>
           </form>

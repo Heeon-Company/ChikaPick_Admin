@@ -24,12 +24,13 @@ export type SupportContent = {
   categories: SupportCategory[];
   faqs: SupportFaq[];
   feedbackFormUrl: string | null;
+  feedbackEmail: string | null;
 };
 export type SupportMutation =
   | { kind: "announcement"; record: Omit<SupportAnnouncement, "published_at"> }
   | { kind: "category"; record: SupportCategory }
   | { kind: "faq"; record: SupportFaq }
-  | { kind: "settings"; record: { feedback_form_url: string | null } };
+  | { kind: "settings"; record: { feedback_email: string | null } };
 
 export type SupportEditorSelection = { kind: "announcement" | "category" | "faq"; id: string; isNew?: boolean };
 

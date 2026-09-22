@@ -7,6 +7,7 @@ const data: SupportContent = {
   categories: [{ id: "category", title: "이용", display_order: 1, is_active: true }],
   faqs: [{ id: "faq", question: "질문", answer: "답변", category_id: "category", display_order: 1, is_active: true }],
   feedbackFormUrl: null,
+  feedbackEmail: "support@example.com",
 };
 
 test("Forward resolves current support content from its ID, including newly saved records", () => {

@@ -16,11 +16,14 @@ stores or uses Supabase service-role credentials.
 ## Features
 
 - 고객지원 관리: 공지사항 / FAQ tabs, category ordering and visibility, plain-text
-  preview and publish/unpublish, plus a shared Google Forms respondent-link setting.
+  preview and publish/unpublish, plus an editable feedback recipient email.
   Uses protected `GET` / `PUT /api/v1/admin/support`; deploy the API migration
-  `20260913130000_support_content_management.sql` and API before this UI/Client.
+  `20260922120000_support_feedback_email.sql` (after the existing support migration)
+  and API before this UI/Client. The PM-approved initial recipient is
+  `heeon.ceo@gmail.com`; legacy form settings remain separate for older apps.
   New entries start private. Hidden categories also hide their questions in the app.
-  An unset feedback URL displays a Korean unavailable message in the Client.
+  An unset email displays a Korean unavailable message in the Client. The updated
+  Client opens a mail composer and offers address copy if the mail handler fails.
 
 - 관리자 Supabase 이메일/비밀번호 로그인
 - 1시간 유효한 관리자 초대, 재전송/취소, 초대 수락 및 비밀번호 재설정
