@@ -271,3 +271,5 @@ Required in `.env.local`:
 Remember to configure the matching Admin origin in `ChikaPick_API` `ALLOWED_ORIGINS`, including local ports such as `http://localhost:3002` and the deployed Admin domain.
 
 All three public variables are required at runtime. Admin has no localhost, deployed-API, or dummy-Supabase fallback. Keep `.env.example` tracked and secret-free.
+
+`next.config.ts` sends `X-Robots-Tag: noindex, nofollow` plus security headers on every route: `X-Frame-Options: DENY` and CSP `frame-ancestors 'none'` (the console is never embedded), `nosniff`, `strict-origin-when-cross-origin`, a restrictive `Permissions-Policy`, and HSTS on Vercel production. The CSP deliberately omits `script-src`/`connect-src`; tighten it only with browser verification.
