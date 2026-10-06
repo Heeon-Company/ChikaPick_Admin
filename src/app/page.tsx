@@ -9577,6 +9577,10 @@ function OverviewTab({
     (clinic) => clinic.isChikapickPartner,
   ).length;
 
+  const registeredPatientCount = data.metrics.find(
+    (metric) => metric.label === "일반 사용자 가입 수",
+  )?.value;
+
   const shortcutGroups: Array<{
     title: string;
     description: string;
@@ -9730,10 +9734,17 @@ function OverviewTab({
         <div className="admin-overview-section-heading">
           <div>
             <h2 id="overview-summary-title">처리 현황</h2>
-            <p>현재 확인이 필요한 요청과 운영 중인 파트너 치과 현황입니다.</p>
+            <p>일반 사용자 가입 수와 현재 확인이 필요한 요청, 파트너 치과 현황입니다.</p>
           </div>
         </div>
         <div className="admin-overview-summary-grid">
+          <OverviewSummaryCard
+            label="일반 사용자 가입 수"
+            value={isInitialLoading ? "—" : registeredPatientCount ?? "—"}
+            unit="명"
+            tone="blue"
+            onClick={() => onNavigatePrimary("chikapick-accounts")}
+          />
           <OverviewSummaryCard
             label="병원 가입 심사 대기"
             value={isInitialLoading ? "—" : pendingHospitalReviews}
@@ -9824,11 +9835,13 @@ function OverviewTab({
 
 function OverviewSummaryCard({
   label,
+  unit = "건",
   onClick,
   tone,
   value,
 }: {
   label: string;
+  unit?: string;
   onClick: () => void;
   tone: "blue" | "orange" | "green" | "red";
   value: number | string;
@@ -9840,7 +9853,7 @@ function OverviewSummaryCard({
       type="button"
       className={`admin-overview-summary admin-overview-summary--${tone}`}
       onClick={onClick}
-      aria-label={`${label} ${displayValue}건 보기`}
+      aria-label={`${label} ${displayValue}${unit} 보기`}
     >
       <span>{label}</span>
       <strong>{displayValue}</strong>

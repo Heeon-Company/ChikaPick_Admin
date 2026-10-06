@@ -108,3 +108,5 @@ browser to the login screen. The API rejects the action when that account is
 the last unlocked Super Admin, preventing an administrator lockout. Withdrawal
 does not delete the underlying Supabase identity or unrelated patient/partner
 roles.
+
+Dashboard registered Client user count: [scope, query and validation](docs/admin-dashboard-user-count.md). No DB migration; API before Admin.
