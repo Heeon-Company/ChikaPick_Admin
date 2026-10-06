@@ -204,6 +204,12 @@ import type {
 } from "./dentalpedia-category.ts";
 import type { AdminTermPreview } from "./admin-platform-operations.ts";
 
+export function updateAdminOwnName(accessToken: string, fullName: string, signal?: AbortSignal) {
+  return adminFetch<AdminActionResult & { fullName: string }>("/api/v1/admin/account/profile", accessToken, {
+    method: "PATCH", body: JSON.stringify({ fullName }), signal,
+  });
+}
+
 export async function fetchAdminConsole(accessToken: string) {
   return adminFetch<AdminConsolePayload>("/api/v1/admin/console", accessToken);
 }
@@ -1115,6 +1121,36 @@ export async function fetchAdminDentalSales(
   );
 }
 
+export async function fetchAdminDentalSalesExport(
+  accessToken: string,
+  filters: DentalSalesFilters,
+  signal: AbortSignal,
+) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value.trim()) params.set(key, value.trim());
+  }
+  const response = await fetch(
+    `${adminApiBaseUrl()}/api/v1/admin/dental-sales/export?${params.toString()}`,
+    { headers: { Authorization: `Bearer ${accessToken}` }, signal, cache: "no-store" },
+  );
+  if (!response.ok) {
+    throw adminResponseError(response.status, await response.json().catch(() => ({})));
+  }
+  if (response.headers.get("Content-Type")?.split(";")[0].trim() !==
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") {
+    throw new Error("엑셀 파일을 받지 못했습니다. 다시 시도해 주세요.");
+  }
+  const disposition = response.headers.get("Content-Disposition") ?? "";
+  const encodedName = /filename\*=UTF-8''([^;]+)/i.exec(disposition)?.[1];
+  let fileName = "치과영업목록.xlsx";
+  if (encodedName) {
+    try { fileName = decodeURIComponent(encodedName); } catch { /* Keep the fallback filename. */ }
+  }
+  fileName = fileName.replace(/[<>:"/\\|?*\p{Cc}]/gu, "_");
+  return { blob: await response.blob(), fileName };
+}
+
 export async function fetchAdminDentalSalesDistricts(
   accessToken: string,
   city: string,
@@ -1352,33 +1388,7 @@ async function adminFetch<T>(
   const payload = (await response.json().catch(() => ({}))) as unknown;
 
   if (!response.ok) {
-    const message =
-      typeof payload === "object" &&
-      payload !== null &&
-      "message" in payload &&
-      typeof payload.message === "string"
-        ? payload.message
-        : "관리자 API 요청에 실패했습니다.";
-    const code =
-      typeof payload === "object" &&
-      payload !== null &&
-      "error" in payload &&
-      typeof payload.error === "string"
-        ? payload.error
-        : null;
-    const requestId =
-      typeof payload === "object" &&
-      payload !== null &&
-      "requestId" in payload &&
-      typeof payload.requestId === "string"
-        ? payload.requestId
-        : null;
-    throw new AdminApiError(
-      requestId ? `${message} (요청 ID: ${requestId})` : message,
-      response.status,
-      code,
-      requestId,
-    );
+    throw adminResponseError(response.status, payload);
   }
 
   return payload as T;
@@ -1453,3 +1463,33 @@ import type {
   AdminReservationDirectoryPayload,
   AdminTermsManagementPayload,
 } from "./admin-platform-operations";
+
+function adminResponseError(status: number, payload: unknown) {
+  const message =
+    typeof payload === "object" &&
+    payload !== null &&
+    "message" in payload &&
+    typeof payload.message === "string"
+      ? payload.message
+      : "관리자 API 요청에 실패했습니다.";
+  const code =
+    typeof payload === "object" &&
+    payload !== null &&
+    "error" in payload &&
+    typeof payload.error === "string"
+      ? payload.error
+      : null;
+  const requestId =
+    typeof payload === "object" &&
+    payload !== null &&
+    "requestId" in payload &&
+    typeof payload.requestId === "string"
+      ? payload.requestId
+      : null;
+  return new AdminApiError(
+    requestId ? `${message} (요청 ID: ${requestId})` : message,
+    status,
+    code,
+    requestId,
+  );
+}

@@ -12,6 +12,8 @@ import { AdminSelect } from "@/components/AdminSelect";
 import { ChikaTalkSanctionForm, type ChikaTalkActionDetails } from "@/components/ChikaTalkSanctionForm";
 import { adminChikaTalkConfirmation } from "@/lib/chika-talk-moderation";
 import { previewAdminChikaTalkModerationAction } from "@/lib/admin-api";
+import { AdminNameEditor } from "@/components/AdminNameEditor";
+import { DentalSalesExportToolbar } from "@/components/DentalSalesExportToolbar";
 import { DentalpediaContentTab } from "@/components/DentalpediaContentTab";
 import type { DentalpediaContentSelection } from "@/lib/dentalpedia-content";
 import { ServiceExpansionRequestsTab } from "@/components/ServiceExpansionRequestsTab";
@@ -1295,6 +1297,12 @@ function AdminConsole() {
             <AdminAuditLogTab accessToken={session?.access_token ?? ""} />
           ) : activePrimaryTab === "settings" ? (
             <AdminSettingsTab
+              key={session?.access_token ?? ""}
+              accessToken={session?.access_token ?? ""}
+              onNameSaved={(name) => setConsoleData((previous) => ({
+                ...previous,
+                users: previous.users.map((user) => user.id === session?.user.id ? { ...user, fullName: name } : user),
+              }))}
               displayName={currentAdmin?.fullName ?? null}
               email={session?.user.email ?? currentAdmin?.email ?? null}
               isSigningOut={isSigningOut}
@@ -2077,12 +2085,16 @@ function ChikaTalkReportHistory({
 }
 
 function AdminSettingsTab({
+  accessToken,
+  onNameSaved,
   displayName,
   email,
   isSigningOut,
   onSignOut,
   roleLabel,
 }: {
+  accessToken: string;
+  onNameSaved: (name: string) => void;
   displayName: string | null;
   email: string | null;
   isSigningOut: boolean;
@@ -2098,12 +2110,10 @@ function AdminSettingsTab({
             <p>현재 로그인한 어드민 계정입니다.</p>
           </div>
           <dl className="admin-settings-list">
-            {displayName ? (
-              <div>
-                <dt>이름</dt>
-                <dd>{displayName}</dd>
-              </div>
-            ) : null}
+            <div>
+              <dt>이름</dt>
+              <dd><AdminNameEditor accessToken={accessToken} displayName={displayName} onSaved={onNameSaved} /></dd>
+            </div>
             <div>
               <dt>로그인 이메일</dt>
               <dd>{email || "-"}</dd>
@@ -6684,6 +6694,12 @@ function DentalSalesTab({
     ...emptyDentalSalesFilters,
   });
   const [currentPage, setCurrentPage] = useState(1);
+  const listRequestIdRef = useRef(0);
+  const [listContext, setListContext] = useState<{
+    token: string; filters: DentalSalesFilters; page: number;
+  } | null>(null);
+  const isCurrentList = listContext?.token === accessToken &&
+    listContext?.filters === appliedFilters && listContext?.page === currentPage;
   const [listData, setListData] = useState<DentalSalesListPayload | null>(null);
   const [districtOptions, setDistrictOptions] = useState<string[]>([]);
   const [isDistrictLoading, setIsDistrictLoading] = useState(false);
@@ -6718,16 +6734,21 @@ function DentalSalesTab({
 
   const loadList = useCallback(async () => {
     if (!accessToken) return;
+    const requestId = ++listRequestIdRef.current;
     setIsLoading(true);
     setErrorMessage("");
     try {
-      setListData(await fetchAdminDentalSales(accessToken, appliedFilters, currentPage));
+      const data = await fetchAdminDentalSales(accessToken, appliedFilters, currentPage);
+      if (requestId !== listRequestIdRef.current) return;
+      setListData(data);
+      setListContext({ token: accessToken, filters: appliedFilters, page: currentPage });
     } catch (error) {
+      if (requestId !== listRequestIdRef.current) return;
       setErrorMessage(
         error instanceof Error ? error.message : "치과 영업 목록을 불러오지 못했습니다.",
       );
     } finally {
-      setIsLoading(false);
+      if (requestId === listRequestIdRef.current) setIsLoading(false);
     }
   }, [accessToken, appliedFilters, currentPage]);
 
@@ -6761,7 +6782,10 @@ function DentalSalesTab({
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => void loadList(), 0);
-    return () => window.clearTimeout(timeoutId);
+    return () => {
+      window.clearTimeout(timeoutId);
+      listRequestIdRef.current += 1;
+    };
   }, [loadList]);
 
   useEffect(() => {
@@ -7175,6 +7199,13 @@ function DentalSalesTab({
           </button>
         </div>
       ) : null}
+
+      <DentalSalesExportToolbar
+        accessToken={accessToken}
+        filters={appliedFilters}
+        totalItems={isCurrentList ? listData?.pagination.totalItems ?? 0 : 0}
+        disabled={!isCurrentList || isLoading || !!errorMessage || !listData}
+      />
 
       <div className="admin-sales-table-scroll" aria-busy={isLoading}>
         <table className="admin-sales-table">

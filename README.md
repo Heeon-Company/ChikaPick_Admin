@@ -1,5 +1,7 @@
 # ChikaPick Admin
 
+Admin dental-sales XLSX export and own account name editing: see [feature contract](docs/admin-dental-sales-export-and-account-name.md). Apply migrations `20261006100000` and `20261006101000`, then deploy API before Admin.
+
 ## ChikaTalk moderation
 
 The report detail includes a user moderation form and recent user action history. Operators can warn, suspend writing/access immediately for 1–365 days, permanently restrict access, release active restrictions, or restore hidden content. Internal reasons and user-visible guidance are separate required fields. Changing the action clears both drafts; failed requests preserve drafts and retry with the same exact-payload request ID. Completed reports remain eligible for user moderation and restoration. Deleted content cannot be restored.
