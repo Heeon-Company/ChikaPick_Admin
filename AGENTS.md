@@ -110,6 +110,8 @@ Static assets referenced by this app must be tracked in git. Reused brand assets
 
 Partner clinic detail shows a super-admin-only `가입 취소` card for clinics that signed up by mistake. The dialog requires a reason and the exact clinic name, then calls `POST /api/v1/admin/partner-clinics/:clinicId/cancel-signup` and returns to the list. The API revokes memberships (nothing is deleted), hides the clinic, revokes its CP codes and frees its sales code; the cancel appears in the audit log as `partner_clinic.cancel_signup` with a `되돌리기` button that calls `POST /api/v1/admin/partner-clinic-signup-cancels/:eventId/restore`. The API refuses a restore after a new owner signed up or the sales code was claimed again. Apply API migration `20261007110000_admin_partner_clinic_signup_cancel.sql` and deploy the API before this Admin.
 
+Manual hospital approval opens a `병원 가입 요청 승인` dialog instead of a browser confirm. An optional `심평원 치과 검색` reuses `GET /api/v1/admin/dental-sales` (clinic name, 5 rows) and lets the admin pick the HIRA clinic whose sales code the owner was given; SIGNED or `OWNER_JOINED` rows are disabled. The chosen `salesProfileId` goes to the approve endpoint; when the response has `linkedSalesCode`, the result modal shows that code as the clinic's code instead of the CP code. The dental sales detail status `OWNER_JOINED` is labelled `원장 가입됨`. Apply API migration `20261007130000_link_manual_clinic_to_sales_profile.sql` and deploy the API before this Admin.
+
 ## Common Commands
 
 ```bash

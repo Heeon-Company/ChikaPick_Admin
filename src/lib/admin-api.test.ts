@@ -929,6 +929,40 @@ test("approveManualHospitalSubmission preserves the reusable invite response", a
   }
 });
 
+test("approveManualHospitalSubmission sends the chosen sales profile to link", async () => {
+  const bodies: unknown[] = [];
+  const originalFetch = globalThis.fetch;
+  process.env.NEXT_PUBLIC_CHIKAPICK_API_BASE_URL = "https://api.example.com";
+  globalThis.fetch = async (_input, init) => {
+    bodies.push(JSON.parse(init?.body as string));
+    return Response.json({
+      ok: true,
+      message: "병원 가입 요청을 승인했습니다.",
+      clinicId: "clinic-1",
+      linkedSalesCode: "GW7491",
+      invite: { code: "CP-TEST-1234", role: "staff", expiresAt: null },
+    });
+  };
+
+  try {
+    await approveManualHospitalSubmission("access-token", "submission-1", "");
+    const linked = await approveManualHospitalSubmission(
+      "access-token",
+      "submission-1",
+      "",
+      "sales-1",
+    );
+    assert.equal(linked.linkedSalesCode, "GW7491");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.deepEqual(bodies, [
+    { note: "", salesProfileId: null },
+    { note: "", salesProfileId: "sales-1" },
+  ]);
+});
+
 test("fetchAdminDentalSales sends server-side filters and pagination", async () => {
   const calls: Array<{ input: string | URL | Request; init?: RequestInit }> = [];
   const originalFetch = globalThis.fetch;

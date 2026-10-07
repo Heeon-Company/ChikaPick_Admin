@@ -7389,6 +7389,118 @@ td span {
   gap: 12px;
 }
 
+.admin-hospital-approval-dialog {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-hospital-review-dialog .admin-hospital-link-search {
+  flex-direction: row;
+  margin-top: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.admin-hospital-review-dialog .admin-hospital-link-search label {
+  flex: 1;
+  display: grid;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.admin-hospital-link-search input {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 10px;
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.admin-hospital-link-search button,
+.admin-hospital-approval-actions button {
+  height: 40px;
+  border: 1px solid #d4d6da;
+  border-radius: 8px;
+  background: var(--surface);
+  color: #011b5a;
+  cursor: pointer;
+  padding: 0 16px;
+  font-weight: 600;
+}
+
+.admin-hospital-link-results {
+  display: grid;
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 0;
+  padding: 12px;
+}
+
+.admin-hospital-link-results legend {
+  padding: 0 4px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.admin-hospital-review-dialog .admin-hospital-link-results label {
+  flex-direction: row;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.admin-hospital-link-results label.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.admin-hospital-review-dialog .admin-hospital-link-results label > span {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 400;
+  display: grid;
+  gap: 2px;
+}
+
+.admin-hospital-link-results small {
+  color: var(--text-secondary);
+}
+
+.admin-hospital-approval-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.admin-hospital-approval-actions button:last-child {
+  border-color: #001371;
+  background: #001371;
+  color: var(--surface);
+}
+
+.admin-partner-cancel-dialog-actions {
+  min-height: 0;
+  border-top: 0;
+  padding: 16px 0 0;
+}
+
+.admin-account-dialog-footer.admin-partner-cancel-dialog-actions button:last-child {
+  border-color: var(--danger);
+  background: var(--danger);
+}
+
+.admin-small-button.admin-audit-restore-button {
+  display: flex;
+  width: fit-content;
+  margin-top: 8px;
+}
+
 .admin-partner-cancel-signup p {
   margin: 0;
   color: var(--text-secondary);

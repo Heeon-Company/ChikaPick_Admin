@@ -206,6 +206,7 @@ import {
   type DentalSalesFilters,
   type DentalSalesHospitalInformation,
   type DentalSalesListPayload,
+  type DentalSalesRow,
   type DentalSalesVisitDetailStatus,
 } from "@/lib/dental-sales";
 import {
@@ -320,7 +321,7 @@ const primaryTabDescriptions: Record<PrimaryAdminTab, string> = {
   "support-management": "앱 공지사항, 자주 묻는 질문과 의견 보내기 연결을 관리합니다.",
   dashboard: "치카픽의 주요 운영 지표를 확인하고 각 관리 메뉴로 바로 이동할 수 있습니다.",
   "dental-sales":
-    "전국 치과를 지역별로 조회하고 초대 코드를 확인 할 수 있으며 영업 현황을 관리합니다.",
+    "전국 치과를 지역별로 조회하고 병원 코드를 확인할 수 있으며 영업 현황을 관리합니다.",
   "partner-clinics":
     "가입 완료한 파트너 치과의 운영 상태를 모니터링하고 필요한 지원을 빠르게 진행할 수 있습니다.",
   "hospital-review": "직접 입력한 병원 정보와 사업자등록증 제출 건을 검토합니다.",
@@ -1189,9 +1190,9 @@ function AdminConsole() {
           ) : activePrimaryTab === "hospital-review" ? (
             <ManualHospitalReviewTab
               accessToken={session?.access_token ?? ""}
-              onApprove={(id) =>
+              onApprove={(id, salesProfileId) =>
                 runResultAction((token) =>
-                  approveManualHospitalSubmission(token, id, ""),
+                  approveManualHospitalSubmission(token, id, "", salesProfileId),
                 )
               }
               onReject={(id, note) =>
@@ -5770,6 +5771,10 @@ function PartnerClinicsTab({
         detailError={detailError}
         isDetailLoading={isDetailLoading}
         onBack={() => onSelectClinic(null)}
+        onCancelled={() => {
+          onSelectClinic(null);
+          void loadClinics();
+        }}
         onRetry={() => void loadDetail()}
         onSaved={() => void loadDetail()}
       />
@@ -5934,6 +5939,7 @@ function PartnerClinicDetailPage({
   detailError,
   isDetailLoading,
   onBack,
+  onCancelled,
   onRetry,
   onSaved,
 }: {
@@ -5943,6 +5949,7 @@ function PartnerClinicDetailPage({
   detailError: string;
   isDetailLoading: boolean;
   onBack: () => void;
+  onCancelled: () => void;
   onRetry: () => void;
   onSaved: () => void;
 }) {
@@ -6086,7 +6093,7 @@ function PartnerClinicDetailPage({
         cancelForm.reason.trim(),
       );
       setIsCancelDialogOpen(false);
-      onBack();
+      onCancelled();
     } catch (error) {
       setCancelError(
         error instanceof Error ? error.message : "가입을 취소하지 못했습니다.",
@@ -6558,8 +6565,8 @@ function PartnerClinicDetailPage({
           <PartnerClinicSectionHeading title="가입 취소" />
           <p>
             잘못 가입한 치과를 정리합니다. 소속 계정이 모두 해제되고 앱에서 내려가며,
-            파트너 초대코드는 폐기되고 영업 코드는 다시 쓸 수 있게 됩니다. 데이터는
-            지우지 않으며 감사 로그에서 되돌릴 수 있습니다.
+            초대 코드는 다시 쓸 수 있게 됩니다. 데이터는 지우지 않으며 감사 로그에서
+            되돌릴 수 있습니다.
           </p>
           <button
             type="button"
@@ -6626,7 +6633,7 @@ function PartnerClinicDetailPage({
                 />
               </label>
               {cancelError ? <p role="alert">{cancelError}</p> : null}
-              <footer>
+              <footer className="admin-account-dialog-footer admin-partner-cancel-dialog-actions">
                 <button type="button" onClick={() => setIsCancelDialogOpen(false)}>
                   닫기
                 </button>
@@ -9726,7 +9733,7 @@ function AdminAuditLogTab({ accessToken }: { accessToken: string }) {
                     item.result === "success" ? (
                       <button
                         type="button"
-                        className="admin-small-button"
+                        className="admin-small-button admin-audit-restore-button"
                         disabled={restoringEventId !== null}
                         onClick={() =>
                           void restoreClinicSignup(
@@ -10091,7 +10098,10 @@ function ManualHospitalReviewTab({
   onReject,
 }: {
   accessToken: string;
-  onApprove: (id: string) => Promise<ManualHospitalApprovalResult | null>;
+  onApprove: (
+    id: string,
+    salesProfileId: string | null,
+  ) => Promise<ManualHospitalApprovalResult | null>;
   onReject: (id: string, note: string) => Promise<boolean>;
 }) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -10108,6 +10118,13 @@ function ManualHospitalReviewTab({
   const [approvalResult, setApprovalResult] =
     useState<ManualHospitalApprovalResult | null>(null);
   const [copyMessage, setCopyMessage] = useState("");
+  const [approvalTarget, setApprovalTarget] =
+    useState<ManualHospitalSubmission | null>(null);
+  const [linkQuery, setLinkQuery] = useState("");
+  const [linkResults, setLinkResults] = useState<DentalSalesRow[] | null>(null);
+  const [isLinkSearching, setIsLinkSearching] = useState(false);
+  const [linkError, setLinkError] = useState("");
+  const [selectedSalesProfileId, setSelectedSalesProfileId] = useState("");
 
   const loadSubmissions = useCallback(async () => {
     if (!accessToken) return;
@@ -10137,11 +10154,45 @@ function ManualHospitalReviewTab({
     pagination?.totalPages ?? 1,
   );
 
-  async function handleApprove(item: ManualHospitalSubmission) {
-    if (!window.confirm(`${item.hospitalName} 가입 요청을 승인하시겠습니까?`)) return;
-    setActionSubmissionId(item.id);
-    const result = await onApprove(item.id);
+  function openApproval(item: ManualHospitalSubmission) {
+    setApprovalTarget(item);
+    setLinkQuery(item.hospitalName);
+    setLinkResults(null);
+    setLinkError("");
+    setSelectedSalesProfileId("");
+  }
+
+  async function searchLinkCandidates(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!accessToken || !linkQuery.trim() || isLinkSearching) return;
+    setIsLinkSearching(true);
+    setLinkError("");
+    try {
+      const payload = await fetchAdminDentalSales(
+        accessToken,
+        { ...emptyDentalSalesFilters, clinicName: linkQuery.trim() },
+        1,
+        5,
+      );
+      setLinkResults(payload.items);
+    } catch (error) {
+      setLinkError(
+        error instanceof Error ? error.message : "심평원 치과를 검색하지 못했습니다.",
+      );
+    } finally {
+      setIsLinkSearching(false);
+    }
+  }
+
+  async function handleApprove() {
+    if (!approvalTarget) return;
+    setActionSubmissionId(approvalTarget.id);
+    const result = await onApprove(
+      approvalTarget.id,
+      selectedSalesProfileId || null,
+    );
     if (result) {
+      setApprovalTarget(null);
       setApprovalResult(result);
       setCopyMessage("");
       await loadSubmissions();
@@ -10152,7 +10203,9 @@ function ManualHospitalReviewTab({
   async function copyApprovalInvite() {
     if (!approvalResult) return;
     try {
-      await navigator.clipboard.writeText(approvalResult.invite.code);
+      await navigator.clipboard.writeText(
+        approvalResult.linkedSalesCode ?? approvalResult.invite.code,
+      );
       setCopyMessage("초대코드를 복사했습니다.");
     } catch {
       setCopyMessage("복사하지 못했습니다. 코드를 직접 선택해 복사해 주세요.");
@@ -10264,7 +10317,7 @@ function ManualHospitalReviewTab({
                               type="button"
                               disabled={isActing}
                               aria-label={`${item.hospitalName} 승인`}
-                              onClick={() => void handleApprove(item)}
+                              onClick={() => openApproval(item)}
                             >
                               승인
                             </button>
@@ -10389,6 +10442,98 @@ function ManualHospitalReviewTab({
         </div>
       ) : null}
 
+      {approvalTarget ? (
+        <div className="admin-hospital-review-dialog-layer">
+          <button
+            type="button"
+            className="admin-hospital-review-dialog-backdrop"
+            aria-label="가입 승인 닫기"
+            onClick={() => (actionSubmissionId ? undefined : setApprovalTarget(null))}
+          />
+          <section
+            className="admin-hospital-review-dialog admin-hospital-approval-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-hospital-approval-dialog-title"
+          >
+            <h2 id="admin-hospital-approval-dialog-title">병원 가입 요청 승인</h2>
+            <p>
+              {approvalTarget.hospitalName} 가입을 승인합니다. 영업 코드를 받은
+              치과라면 심평원 치과를 연결해 주세요. 연결하면 그 코드로 의료진과
+              직원이 가입할 수 있습니다.
+            </p>
+            <form className="admin-hospital-link-search" onSubmit={searchLinkCandidates}>
+              <label>
+                <span>심평원 치과 검색 (선택)</span>
+                <input
+                  value={linkQuery}
+                  maxLength={100}
+                  placeholder="치과명"
+                  onChange={(event) => setLinkQuery(event.target.value)}
+                />
+              </label>
+              <button type="submit" disabled={isLinkSearching || !linkQuery.trim()}>
+                {isLinkSearching ? "검색 중" : "검색"}
+              </button>
+            </form>
+            {linkError ? <p role="alert">{linkError}</p> : null}
+            {linkResults ? (
+              <fieldset className="admin-hospital-link-results">
+                <legend>연결할 치과</legend>
+                <label>
+                  <input
+                    type="radio"
+                    name="sales-profile"
+                    checked={!selectedSalesProfileId}
+                    onChange={() => setSelectedSalesProfileId("")}
+                  />
+                  <span>연결하지 않음</span>
+                </label>
+                {linkResults.map((row) => {
+                  const unavailable =
+                    row.status === "SIGNED" || row.detailStatus === "OWNER_JOINED";
+                  return (
+                    <label key={row.id} className={unavailable ? "is-disabled" : undefined}>
+                      <input
+                        type="radio"
+                        name="sales-profile"
+                        disabled={unavailable}
+                        checked={selectedSalesProfileId === row.id}
+                        onChange={() => setSelectedSalesProfileId(row.id)}
+                      />
+                      <span>
+                        <strong>{row.clinicName}</strong>
+                        <small>
+                          {row.city} {row.district} · {row.salesCode}
+                          {unavailable ? " · 이미 가입된 치과" : ""}
+                        </small>
+                      </span>
+                    </label>
+                  );
+                })}
+                {linkResults.length === 0 ? <p>검색된 치과가 없습니다.</p> : null}
+              </fieldset>
+            ) : null}
+            <div className="admin-hospital-approval-actions">
+              <button
+                type="button"
+                disabled={Boolean(actionSubmissionId)}
+                onClick={() => setApprovalTarget(null)}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                disabled={Boolean(actionSubmissionId)}
+                onClick={() => void handleApprove()}
+              >
+                {actionSubmissionId ? "처리 중" : "승인"}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
       {approvalResult ? (
         <div className="admin-hospital-review-dialog-layer">
           <div className="admin-hospital-review-dialog-backdrop" />
@@ -10399,16 +10544,21 @@ function ManualHospitalReviewTab({
             aria-labelledby="admin-hospital-invite-dialog-title"
           >
             <h2 id="admin-hospital-invite-dialog-title">
-              병원 초대코드가 발급되었습니다
+              {approvalResult.linkedSalesCode
+                ? "병원 코드가 연결되었습니다"
+                : "병원 초대코드가 발급되었습니다"}
             </h2>
             <p>
-              이 코드는 병원 의료진과 직원이 함께 사용할 수 있으며 새로
-              발급하기 전까지 계속 사용할 수 있습니다. 안전하게 전달해 주세요.
+              {approvalResult.linkedSalesCode
+                ? "심평원 치과와 연결했습니다. 대표자가 받은 영업 코드를 병원 의료진과 직원이 그대로 사용할 수 있습니다."
+                : "이 코드는 병원 의료진과 직원이 함께 사용할 수 있으며 새로 발급하기 전까지 계속 사용할 수 있습니다. 안전하게 전달해 주세요."}
             </p>
+            {approvalResult.message !== "병원 가입 요청을 승인했습니다." ? (
+              <p role="alert">{approvalResult.message}</p>
+            ) : null}
             <div className="admin-hospital-invite-code" aria-label="병원 초대코드">
-              {approvalResult.invite.code}
+              {approvalResult.linkedSalesCode ?? approvalResult.invite.code}
             </div>
-            <p>유효기간: 없음</p>
             {copyMessage ? <p role="status">{copyMessage}</p> : null}
             <div className="admin-hospital-invite-actions">
               <button type="button" onClick={() => void copyApprovalInvite()}>
@@ -10424,10 +10574,12 @@ function ManualHospitalReviewTab({
                 확인하고 닫기
               </button>
             </div>
-            <small>
-              코드를 잃어버린 경우 병원 대표자가 파트너스 직원 관리에서 새
-              코드를 발급할 수 있습니다.
-            </small>
+            {approvalResult.linkedSalesCode ? null : (
+              <small>
+                코드를 잃어버린 경우 병원 대표자가 파트너스 직원 관리에서 새
+                코드를 발급할 수 있습니다.
+              </small>
+            )}
           </section>
         </div>
       ) : null}

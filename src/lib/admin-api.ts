@@ -175,6 +175,8 @@ export interface AdminInviteCodeReveal {
 
 export interface ManualHospitalApprovalResult extends AdminActionResult {
   clinicId: string;
+  /** Set when the clinic was linked to its HIRA sales code on approval. */
+  linkedSalesCode?: string;
   invite: {
     code: string;
     role: "staff";
@@ -299,11 +301,12 @@ export async function approveManualHospitalSubmission(
   accessToken: string,
   submissionId: string,
   note: string,
+  salesProfileId: string | null = null,
 ) {
   return adminFetch<ManualHospitalApprovalResult>(
     `/api/v1/admin/manual-hospital-submissions/${submissionId}/approve`,
     accessToken,
-    { method: "POST", body: JSON.stringify({ note }) },
+    { method: "POST", body: JSON.stringify({ note, salesProfileId }) },
   );
 }
 

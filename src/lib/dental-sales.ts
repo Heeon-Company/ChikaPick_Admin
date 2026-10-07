@@ -7,7 +7,8 @@ export type DentalSalesVisitDetailStatus =
 export type DentalSalesDetailStatus =
   | DentalSalesVisitDetailStatus
   | "INFORMATION_MISSING"
-  | "ACTIVE";
+  | "ACTIVE"
+  | "OWNER_JOINED";
 
 export interface DentalSalesperson {
   id: string;
@@ -212,6 +213,7 @@ export const dentalSalesDetailOptions: Array<{
   { value: "ON_HOLD", label: "보류" },
   { value: "INFORMATION_MISSING", label: "정보 미입력" },
   { value: "ACTIVE", label: "사용중" },
+  { value: "OWNER_JOINED", label: "원장 가입됨" },
 ];
 
 export function dentalSalesStatusLabel(status: DentalSalesHospitalStatus) {
