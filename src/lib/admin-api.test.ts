@@ -7,6 +7,7 @@ import {
   assignAdminDentalSalesperson,
   assignAdminPartnerClinicOperator,
   bulkUpdateAdminMembershipPartners,
+  cancelAdminPartnerClinicSignup,
   createAdminDentalpediaCategory,
   createAdminMembershipPartner,
   createAdminExternalConnector,
@@ -63,6 +64,7 @@ import {
   updateAdminServiceAreaConfig,
   uploadAdminDentalSalesBusinessLicense,
   withdrawAdminAccount,
+  restoreAdminPartnerClinicSignup,
 } from "./admin-api.ts";
 import { emptyDentalSalesFilters } from "./dental-sales.ts";
 
@@ -1274,6 +1276,38 @@ test("sales documents and partner operations use persisted multipart and JSON co
       "60000000-0000-0000-0000-000000000002",
     ],
   });
+});
+
+test("clinic signup cancel clients post the reason and the cancel event", async () => {
+  const calls: Array<{ input: string | URL | Request; init?: RequestInit }> = [];
+  const originalFetch = globalThis.fetch;
+  process.env.NEXT_PUBLIC_CHIKAPICK_API_BASE_URL = "https://api.example.com";
+  globalThis.fetch = async (input, init) => {
+    calls.push({ input, init });
+    return new Response(JSON.stringify({ ok: true, message: "ok" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+
+  try {
+    await cancelAdminPartnerClinicSignup("access-token", "clinic/1", "잘못 가입");
+    await restoreAdminPartnerClinicSignup("access-token", "event/1");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(
+    calls[0]?.input,
+    "https://api.example.com/api/v1/admin/partner-clinics/clinic%2F1/cancel-signup",
+  );
+  assert.equal(calls[0]?.init?.method, "POST");
+  assert.deepEqual(JSON.parse(calls[0]?.init?.body as string), { reason: "잘못 가입" });
+  assert.equal(
+    calls[1]?.input,
+    "https://api.example.com/api/v1/admin/partner-clinic-signup-cancels/event%2F1/restore",
+  );
+  assert.equal(calls[1]?.init?.method, "POST");
 });
 
 test("operational directory clients send only applied server filters", async () => {

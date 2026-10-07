@@ -1302,6 +1302,29 @@ export async function assignAdminPartnerClinicOperator(
   );
 }
 
+export async function cancelAdminPartnerClinicSignup(
+  accessToken: string,
+  clinicId: string,
+  reason: string,
+) {
+  return adminFetch<AdminActionResult>(
+    `/api/v1/admin/partner-clinics/${encodeURIComponent(clinicId)}/cancel-signup`,
+    accessToken,
+    { method: "POST", body: JSON.stringify({ reason }) },
+  );
+}
+
+export async function restoreAdminPartnerClinicSignup(
+  accessToken: string,
+  cancelEventId: string,
+) {
+  return adminFetch<AdminActionResult>(
+    `/api/v1/admin/partner-clinic-signup-cancels/${encodeURIComponent(cancelEventId)}/restore`,
+    accessToken,
+    { method: "POST" },
+  );
+}
+
 export async function createAdminPartnerClinicOperationEvent(
   accessToken: string,
   clinicId: string,

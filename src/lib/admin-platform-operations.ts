@@ -289,6 +289,8 @@ export function adminAuditActionLabel(action: string) {
       "terms.version.publish": "약관 버전 게시",
       "clinic_membership.update": "소속 신청 처리",
       "partner_invite.revoke": "초대코드 폐기",
+      "partner_clinic.cancel_signup": "치과 가입 취소",
+      "partner_clinic.restore_signup": "치과 가입 취소 되돌리기",
       "admin.account.invite": "어드민 계정 초대",
       "admin.account.lock": "어드민 계정 잠금",
       "admin.account.unlock": "어드민 계정 잠금 해제",

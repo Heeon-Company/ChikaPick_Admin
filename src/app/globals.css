@@ -7383,6 +7383,19 @@ td span {
   min-height: 147px;
 }
 
+.admin-partner-cancel-signup {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+}
+
+.admin-partner-cancel-signup p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 .admin-partner-detail-section-heading {
   min-height: 21px;
   display: flex;

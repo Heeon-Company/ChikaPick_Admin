@@ -24,6 +24,7 @@ import {
   approveManualHospitalSubmission,
   assignAdminDentalSalesperson,
   assignAdminPartnerClinicOperator,
+  cancelAdminPartnerClinicSignup,
   bulkUpdateAdminMembershipPartners,
   createAdminMembershipPartner,
   createAdminPartnerClinicOperationEvent,
@@ -63,6 +64,7 @@ import {
   previewAdminTermVersion,
   rejectManualHospitalSubmission,
   resendAdminAccountInvitation,
+  restoreAdminPartnerClinicSignup,
   revealInviteCode,
   revokeAdminAccountInvitation,
   revokeInvite,
@@ -5956,6 +5958,10 @@ function PartnerClinicDetailPage({
     resolvedAt: "",
     resolvedByAdminUserId: "",
   });
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState("");
+  const [cancelForm, setCancelForm] = useState({ reason: "", confirmName: "" });
   const reviewButtonRef = useRef<HTMLButtonElement>(null);
   const reviewCloseButtonRef = useRef<HTMLButtonElement>(null);
   const operationButtonRef = useRef<HTMLButtonElement>(null);
@@ -6065,6 +6071,28 @@ function PartnerClinicDetailPage({
       );
     } finally {
       setIsOperationSaving(false);
+    }
+  }
+
+  async function cancelSignup(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!accessToken || isCancelling) return;
+    setIsCancelling(true);
+    setCancelError("");
+    try {
+      await cancelAdminPartnerClinicSignup(
+        accessToken,
+        clinicId,
+        cancelForm.reason.trim(),
+      );
+      setIsCancelDialogOpen(false);
+      onBack();
+    } catch (error) {
+      setCancelError(
+        error instanceof Error ? error.message : "가입을 취소하지 못했습니다.",
+      );
+    } finally {
+      setIsCancelling(false);
     }
   }
 
@@ -6524,6 +6552,99 @@ function PartnerClinicDetailPage({
           </div>
         )}
       </section>
+
+      {detail.canManageOperations ? (
+        <section className="admin-partner-detail-section-card admin-partner-cancel-signup">
+          <PartnerClinicSectionHeading title="가입 취소" />
+          <p>
+            잘못 가입한 치과를 정리합니다. 소속 계정이 모두 해제되고 앱에서 내려가며,
+            파트너 초대코드는 폐기되고 영업 코드는 다시 쓸 수 있게 됩니다. 데이터는
+            지우지 않으며 감사 로그에서 되돌릴 수 있습니다.
+          </p>
+          <button
+            type="button"
+            className="admin-small-button admin-small-button--danger"
+            onClick={() => {
+              setCancelForm({ reason: "", confirmName: "" });
+              setCancelError("");
+              setIsCancelDialogOpen(true);
+            }}
+          >
+            가입 취소
+          </button>
+        </section>
+      ) : null}
+
+      {isCancelDialogOpen ? (
+        <div className="admin-account-dialog-layer">
+          <button
+            type="button"
+            className="admin-account-dialog-backdrop"
+            aria-label="가입 취소 닫기"
+            onClick={() => setIsCancelDialogOpen(false)}
+          />
+          <div
+            className="admin-account-dialog admin-partner-operation-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-partner-cancel-dialog-title"
+            onKeyDown={keepModalFocus}
+          >
+            <header>
+              <h2 id="admin-partner-cancel-dialog-title">치과 가입 취소</h2>
+              <button
+                type="button"
+                aria-label="닫기"
+                onClick={() => setIsCancelDialogOpen(false)}
+              >
+                ×
+              </button>
+            </header>
+            <form onSubmit={cancelSignup}>
+              <label>
+                <span>취소 사유</span>
+                <textarea
+                  required
+                  maxLength={500}
+                  value={cancelForm.reason}
+                  onChange={(event) =>
+                    setCancelForm((form) => ({ ...form, reason: event.target.value }))
+                  }
+                />
+              </label>
+              <label>
+                <span>확인을 위해 치과명 &quot;{clinic.name}&quot;을 입력해 주세요</span>
+                <input
+                  autoComplete="off"
+                  value={cancelForm.confirmName}
+                  onChange={(event) =>
+                    setCancelForm((form) => ({
+                      ...form,
+                      confirmName: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              {cancelError ? <p role="alert">{cancelError}</p> : null}
+              <footer>
+                <button type="button" onClick={() => setIsCancelDialogOpen(false)}>
+                  닫기
+                </button>
+                <button
+                  type="submit"
+                  disabled={
+                    isCancelling ||
+                    !cancelForm.reason.trim() ||
+                    cancelForm.confirmName.trim() !== (clinic.name ?? "").trim()
+                  }
+                >
+                  {isCancelling ? "취소 처리 중" : "가입 취소"}
+                </button>
+              </footer>
+            </form>
+          </div>
+        </div>
+      ) : null}
 
       {isOperationDialogOpen ? (
         <div className="admin-account-dialog-layer">
@@ -9487,6 +9608,7 @@ function AdminAuditLogTab({ accessToken }: { accessToken: string }) {
   const [data, setData] = useState<AdminAuditLogPayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [restoringEventId, setRestoringEventId] = useState<string | null>(null);
 
   const loadAuditLog = useCallback(async () => {
     if (!accessToken) return;
@@ -9514,6 +9636,25 @@ function AdminAuditLogTab({ accessToken }: { accessToken: string }) {
     event.preventDefault();
     setCurrentPage(1);
     setFilters({ ...draftFilters, action: draftFilters.action.trim() });
+  }
+
+  async function restoreClinicSignup(cancelEventId: string, clinicName: string) {
+    if (!accessToken || restoringEventId) return;
+    if (!window.confirm(`${clinicName || "이 치과"}의 가입 취소를 되돌릴까요?`)) return;
+    setRestoringEventId(cancelEventId);
+    setError("");
+    try {
+      await restoreAdminPartnerClinicSignup(accessToken, cancelEventId);
+      await loadAuditLog();
+    } catch (restoreError) {
+      setError(
+        restoreError instanceof Error
+          ? restoreError.message
+          : "가입 취소를 되돌리지 못했습니다.",
+      );
+    } finally {
+      setRestoringEventId(null);
+    }
   }
 
   return (
@@ -9581,6 +9722,22 @@ function AdminAuditLogTab({ accessToken }: { accessToken: string }) {
                   <td>
                     <strong>{adminAuditActionLabel(item.action)}</strong>
                     <small className="admin-operational-code">{item.action}</small>
+                    {item.action === "partner_clinic.cancel_signup" &&
+                    item.result === "success" ? (
+                      <button
+                        type="button"
+                        className="admin-small-button"
+                        disabled={restoringEventId !== null}
+                        onClick={() =>
+                          void restoreClinicSignup(
+                            item.id,
+                            String(item.metadata.clinicName ?? ""),
+                          )
+                        }
+                      >
+                        {restoringEventId === item.id ? "되돌리는 중" : "되돌리기"}
+                      </button>
+                    ) : null}
                   </td>
                   <td>{adminDirectoryPersonLabel(item.actor)}</td>
                   <td>{adminDirectoryPersonLabel(item.target)}</td>

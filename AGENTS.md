@@ -108,6 +108,8 @@ User-facing text defaults to Korean. Keep visual styling close to `../ChikaPick_
 
 Static assets referenced by this app must be tracked in git. Reused brand assets currently live in `public/`.
 
+Partner clinic detail shows a super-admin-only `가입 취소` card for clinics that signed up by mistake. The dialog requires a reason and the exact clinic name, then calls `POST /api/v1/admin/partner-clinics/:clinicId/cancel-signup` and returns to the list. The API revokes memberships (nothing is deleted), hides the clinic, revokes its CP codes and frees its sales code; the cancel appears in the audit log as `partner_clinic.cancel_signup` with a `되돌리기` button that calls `POST /api/v1/admin/partner-clinic-signup-cancels/:eventId/restore`. The API refuses a restore after a new owner signed up or the sales code was claimed again. Apply API migration `20261007110000_admin_partner_clinic_signup_cancel.sql` and deploy the API before this Admin.
+
 ## Common Commands
 
 ```bash
@@ -182,6 +184,8 @@ Current Admin API calls:
 - `POST /api/v1/admin/terms/:documentId/preview`
 - `POST /api/v1/admin/terms/:documentId/versions`
 - `GET /api/v1/admin/audit-log`
+- `POST /api/v1/admin/partner-clinics/:clinicId/cancel-signup`
+- `POST /api/v1/admin/partner-clinic-signup-cancels/:eventId/restore`
 - `POST /api/v1/admin/auth/login`
 - `GET /api/v1/admin/accounts`
 - `POST /api/v1/admin/accounts/invite`
