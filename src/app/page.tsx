@@ -7414,7 +7414,7 @@ function DentalSalesTab({
               <th>치과명</th>
               <th>대표 전화번호</th>
               <th>담당 영업자</th>
-              <th>초대코드</th>
+              <th>병원 코드</th>
               <th>상태</th>
               <th className="admin-sales-centered">상세 상태</th>
               <th>영업 현황</th>
@@ -7435,7 +7435,7 @@ function DentalSalesTab({
                     <span>{row.salesCode}</span>
                     <button
                       type="button"
-                      aria-label={`${row.salesCode} 초대코드 복사`}
+                      aria-label={`${row.salesCode} 병원 코드 복사`}
                       onClick={() => void copyInviteCode(row.salesCode)}
                     >
                       <span className="admin-sales-copy-icon" aria-hidden="true" />
@@ -7525,14 +7525,14 @@ function DentalSalesTab({
       </nav>
       <span className="admin-visually-hidden" aria-live="polite">
         {copiedCode
-          ? `${copiedCode} 초대코드를 복사했습니다.`
+          ? `${copiedCode} 병원 코드를 복사했습니다.`
           : copyFailed
-            ? "초대코드를 복사하지 못했습니다."
+            ? "병원 코드를 복사하지 못했습니다."
             : ""}
       </span>
       {copiedCode || copyFailed ? (
         <div className={`admin-sales-toast${copyFailed ? " admin-sales-toast--error" : ""}`}>
-          {copiedCode ? "초대코드가 복사되었습니다." : "초대코드를 복사하지 못했습니다."}
+          {copiedCode ? "병원 코드가 복사되었습니다." : "병원 코드를 복사하지 못했습니다."}
         </div>
       ) : null}
 
@@ -7737,7 +7737,7 @@ function DentalSalesDetailPage({
         </div>
         <SummaryItem label="상세 상태" value={dentalSalesDetailLabel(profile.detailStatus)} />
         <SummaryItem label="담당 영업자" value={assignedSalesperson?.name ?? "미지정"} />
-        <SummaryItem label="초대코드" value={profile.salesCode} mono />
+        <SummaryItem label="병원 코드" value={profile.salesCode} mono />
         <SummaryItem label="최근 방문일" value={formatAdminDate(latestVisit?.visitedAt ?? null)} />
         <SummaryItem label="대표 계정 생성일" value={formatAdminDate(profile.claimedAt)} />
       </dl>
