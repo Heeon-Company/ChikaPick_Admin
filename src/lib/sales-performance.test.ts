@@ -27,7 +27,7 @@ test("sales performance defaults match the Super Admin monthly report", () => {
     month: "2026-07",
     salespersonId: "",
     externalConnectorId: "",
-    detailStatus: "ACTIVE",
+    detailStatus: "",
   });
 });
 

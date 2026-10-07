@@ -588,9 +588,24 @@ export async function updateAdminClinicPartnershipRequest(
   );
 }
 
+export async function fetchAdminChikapickAccounts(
+  accessToken: string,
+  page: number,
+  pageSize = 20,
+) {
+  const params = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+  });
+  return adminFetch<ChikapickAccountListPayload>(
+    `/api/v1/admin/chikapick-accounts?${params.toString()}`,
+    accessToken,
+  );
+}
+
 export async function lookupAdminChikapickAccount(
   accessToken: string,
-  body: { email: string; unmask?: boolean },
+  body: { accountId?: string; email?: string; unmask?: boolean },
 ) {
   return adminFetch<ChikapickAccountLookupPayload>(
     "/api/v1/admin/chikapick-accounts/lookup",
@@ -1317,6 +1332,26 @@ export async function cancelAdminPartnerClinicSignup(
   );
 }
 
+export interface AdminPartnerClinicSalesLinkResult {
+  ok: boolean;
+  message: string;
+  salesCode: string | null;
+  signed: boolean;
+  isAppVisible: boolean;
+}
+
+export async function linkAdminPartnerClinicSalesProfile(
+  accessToken: string,
+  clinicId: string,
+  salesProfileId: string,
+) {
+  return adminFetch<AdminPartnerClinicSalesLinkResult>(
+    `/api/v1/admin/partner-clinics/${encodeURIComponent(clinicId)}/sales-link`,
+    accessToken,
+    { method: "POST", body: JSON.stringify({ salesProfileId }) },
+  );
+}
+
 export async function restoreAdminPartnerClinicSignup(
   accessToken: string,
   cancelEventId: string,
@@ -1449,7 +1484,10 @@ import type {
   AdminServiceAreaConfigUpdatePayload,
   ServiceExpansionOverviewPayload,
 } from "./service-expansion-requests";
-import type { ChikapickAccountLookupPayload } from "./chikapick-accounts";
+import type {
+  ChikapickAccountListPayload,
+  ChikapickAccountLookupPayload,
+} from "./chikapick-accounts";
 import type {
   AdminPartnerAccountDetailPayload,
   AdminPartnerAccountLookupPayload,

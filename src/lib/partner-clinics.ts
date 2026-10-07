@@ -27,6 +27,8 @@ export interface AdminPartnerClinicDetailPayload {
   clinic: AdminPartnerClinicRow & {
     memberCount: number;
     isAppVisible: boolean;
+    /** The linked HIRA clinic's sales code (병원 코드), if any. */
+    salesCode?: string | null;
   };
   metrics: {
     // 전문의 소견 관련 코드

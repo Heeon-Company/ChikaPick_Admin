@@ -25,6 +25,7 @@ import {
   assignAdminDentalSalesperson,
   assignAdminPartnerClinicOperator,
   cancelAdminPartnerClinicSignup,
+  linkAdminPartnerClinicSalesProfile,
   bulkUpdateAdminMembershipPartners,
   createAdminMembershipPartner,
   createAdminPartnerClinicOperationEvent,
@@ -59,6 +60,7 @@ import {
   isAdminApiNotFound,
   lockAdminAccount,
   lookupAdminChikapickAccount,
+  fetchAdminChikapickAccounts,
   lookupAdminPartnerAccount,
   publishAdminTermVersion,
   previewAdminTermVersion,
@@ -81,6 +83,7 @@ import {
   type MutableAdminAccountRole,
   type AdminConsolePayload,
   type AdminManualHospitalSubmissionsPayload,
+  type AdminPartnerClinicSalesLinkResult,
   type ManualHospitalApprovalResult,
   type ManualHospitalSubmission,
 } from "@/lib/admin-api";
@@ -157,6 +160,7 @@ import {
   chikapickCountryLabel,
   chikapickLoginProviderLabel,
   formatChikapickAccountDate,
+  type ChikapickAccountListPayload,
   type ChikapickAccountLookupPayload,
 } from "@/lib/chikapick-accounts";
 import {
@@ -5172,18 +5176,48 @@ function ChikapickAccountsTab({
     setHandledSearchKey(searchRequest.key);
     setEmail(searchRequest.query);
   }
-  const [searchedEmail, setSearchedEmail] = useState("");
+  const [searchedTarget, setSearchedTarget] = useState<
+    { accountId: string } | { email: string } | null
+  >(null);
   const [result, setResult] = useState<ChikapickAccountLookupPayload | null>(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [listPage, setListPage] = useState(1);
+  const [listData, setListData] = useState<ChikapickAccountListPayload | null>(null);
+  const [listError, setListError] = useState("");
+  const [isListLoading, setIsListLoading] = useState(false);
+  const [openingAccountId, setOpeningAccountId] = useState<string | null>(null);
+  const resultRef = useRef<HTMLElement>(null);
+
+  const loadList = useCallback(async () => {
+    if (!accessToken) return;
+    setIsListLoading(true);
+    setListError("");
+    try {
+      setListData(await fetchAdminChikapickAccounts(accessToken, listPage));
+    } catch (loadError) {
+      setListError(
+        loadError instanceof Error
+          ? loadError.message
+          : "치카픽 계정 목록을 불러오지 못했습니다.",
+      );
+    } finally {
+      setIsListLoading(false);
+    }
+  }, [accessToken, listPage]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => void loadList(), 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [loadList]);
 
   const runLookup = async ({
     clearResultOnError,
-    lookupEmail,
+    target,
     unmask,
   }: {
     clearResultOnError: boolean;
-    lookupEmail: string;
+    target: { accountId: string } | { email: string };
     unmask: boolean;
   }) => {
     if (!accessToken || isLoading) return;
@@ -5191,11 +5225,17 @@ function ChikapickAccountsTab({
     setError("");
     try {
       const payload = await lookupAdminChikapickAccount(accessToken, {
-        email: lookupEmail.trim(),
+        ...target,
         unmask,
       });
       setResult(payload);
-      setSearchedEmail(lookupEmail.trim());
+      setSearchedTarget(target);
+      if ("accountId" in target) {
+        window.setTimeout(
+          () => resultRef.current?.scrollIntoView({ block: "nearest" }),
+          0,
+        );
+      }
     } catch (lookupError) {
       if (clearResultOnError) setResult(null);
       setError(
@@ -5212,10 +5252,25 @@ function ChikapickAccountsTab({
     event.preventDefault();
     void runLookup({
       clearResultOnError: true,
-      lookupEmail: email,
+      target: { email: email.trim() },
       unmask: false,
     });
   };
+
+  const openAccount = async (accountId: string) => {
+    setOpeningAccountId(accountId);
+    await runLookup({
+      clearResultOnError: true,
+      target: { accountId },
+      unmask: false,
+    });
+    setOpeningAccountId(null);
+  };
+
+  const listPagination = listData?.pagination;
+  const listPageNumbers = listPagination
+    ? dentalSalesPageNumbers(listPagination.page, listPagination.totalPages)
+    : [];
 
   return (
     <section className="admin-chikapick-account-lookup">
@@ -5243,18 +5298,24 @@ function ChikapickAccountsTab({
       ) : null}
 
       {result ? (
-        <section className="admin-chikapick-account-result" aria-live="polite">
+        <section
+          ref={resultRef}
+          className="admin-chikapick-account-result"
+          aria-live="polite"
+        >
           <header>
             <h2>검색 결과</h2>
             <button
               type="button"
-              disabled={isLoading}
+              disabled={isLoading || !searchedTarget}
               onClick={() =>
-                void runLookup({
-                  clearResultOnError: false,
-                  lookupEmail: searchedEmail,
-                  unmask: result.masked,
-                })
+                searchedTarget
+                  ? void runLookup({
+                      clearResultOnError: false,
+                      target: searchedTarget,
+                      unmask: result.masked,
+                    })
+                  : undefined
               }
             >
               {isLoading
@@ -5267,6 +5328,118 @@ function ChikapickAccountsTab({
           <ChikapickAccountResultCard account={result.account} />
         </section>
       ) : null}
+
+      <section className="admin-chikapick-account-list" aria-busy={isListLoading}>
+        <header>
+          <h2>최근 가입 계정</h2>
+          <span>
+            전체 {(listPagination?.totalItems ?? 0).toLocaleString("ko-KR")}명 · 최신
+            가입순
+          </span>
+        </header>
+        {listError ? (
+          <p className="admin-partner-accounts-error" role="alert">
+            {listError}
+            <button type="button" onClick={() => void loadList()}>
+              다시 시도
+            </button>
+          </p>
+        ) : null}
+        <div className="admin-partner-accounts-table-scroll">
+          <table className="admin-partner-accounts-table admin-chikapick-account-table">
+            <thead>
+              <tr>
+                <th>가입 일시</th>
+                <th>이메일</th>
+                <th>이름</th>
+                <th>로그인 수단</th>
+                <th>계정 상태</th>
+                <th>마지막 접속 시간</th>
+                <th>상세 보기</th>
+              </tr>
+            </thead>
+            <tbody>
+              {listData?.items.map((account) => (
+                <tr key={account.id}>
+                  <td>{formatChikapickAccountDate(account.createdAt)}</td>
+                  <td>{account.email || "-"}</td>
+                  <td>{account.fullName || "-"}</td>
+                  <td>{chikapickLoginProviderLabel(account.loginProvider)}</td>
+                  <td>
+                    <span
+                      className={`admin-chikapick-account-status admin-chikapick-account-status--${chikapickAccountStatusTone(account.status)}`}
+                    >
+                      {chikapickAccountStatusLabel(account.status)}
+                    </span>
+                  </td>
+                  <td>{formatChikapickAccountDate(account.lastSignInAt)}</td>
+                  <td>
+                    <button
+                      type="button"
+                      disabled={isLoading}
+                      onClick={() => void openAccount(account.id)}
+                    >
+                      {openingAccountId === account.id ? "조회 중" : "상세 보기"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {!isListLoading && !listError && (listData?.items.length ?? 0) === 0 ? (
+                <tr>
+                  <td className="admin-sales-empty" colSpan={7}>
+                    가입한 치카픽 계정이 없습니다.
+                  </td>
+                </tr>
+              ) : null}
+              {isListLoading && !listData ? (
+                <tr>
+                  <td className="admin-sales-empty" colSpan={7}>
+                    치카픽 계정을 불러오는 중입니다.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+        {listPagination ? (
+          <nav className="admin-sales-pagination" aria-label="치카픽 계정 목록 페이지">
+            <button
+              type="button"
+              aria-label="이전 페이지"
+              disabled={listPagination.page <= 1 || isListLoading}
+              onClick={() => setListPage((page) => Math.max(1, page - 1))}
+            >
+              ‹
+            </button>
+            {listPageNumbers.map((pageNumber) => (
+              <button
+                type="button"
+                key={pageNumber}
+                className={
+                  pageNumber === listPagination.page ? "admin-sales-page-active" : undefined
+                }
+                aria-current={pageNumber === listPagination.page ? "page" : undefined}
+                disabled={isListLoading}
+                onClick={() => setListPage(pageNumber)}
+              >
+                {pageNumber}
+              </button>
+            ))}
+            <button
+              type="button"
+              aria-label="다음 페이지"
+              disabled={
+                listPagination.page >= listPagination.totalPages || isListLoading
+              }
+              onClick={() =>
+                setListPage((page) => Math.min(listPagination.totalPages, page + 1))
+              }
+            >
+              ›
+            </button>
+          </nav>
+        ) : null}
+      </section>
     </section>
   );
 }
@@ -5468,6 +5641,7 @@ function SalesPerformanceTab({
           label="상세 상태"
           value={draftFilters.detailStatus}
           options={[
+            { value: "", label: "전체" },
             { value: "ACTIVE", label: "사용중" },
             { value: "INFORMATION_MISSING", label: "정보 미입력" },
           ]}
@@ -5969,6 +6143,15 @@ function PartnerClinicDetailPage({
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelError, setCancelError] = useState("");
   const [cancelForm, setCancelForm] = useState({ reason: "", confirmName: "" });
+  const [isSalesLinkOpen, setIsSalesLinkOpen] = useState(false);
+  const [salesLinkQuery, setSalesLinkQuery] = useState("");
+  const [salesLinkResults, setSalesLinkResults] = useState<DentalSalesRow[] | null>(null);
+  const [salesLinkSelectedId, setSalesLinkSelectedId] = useState("");
+  const [isSalesLinkSearching, setIsSalesLinkSearching] = useState(false);
+  const [isSalesLinking, setIsSalesLinking] = useState(false);
+  const [salesLinkError, setSalesLinkError] = useState("");
+  const [salesLinkResult, setSalesLinkResult] =
+    useState<AdminPartnerClinicSalesLinkResult | null>(null);
   const reviewButtonRef = useRef<HTMLButtonElement>(null);
   const reviewCloseButtonRef = useRef<HTMLButtonElement>(null);
   const operationButtonRef = useRef<HTMLButtonElement>(null);
@@ -6101,6 +6284,66 @@ function PartnerClinicDetailPage({
     } finally {
       setIsCancelling(false);
     }
+  }
+
+  function openSalesLink() {
+    setSalesLinkQuery(detail?.clinic.name ?? "");
+    setSalesLinkResults(null);
+    setSalesLinkSelectedId("");
+    setSalesLinkError("");
+    setIsSalesLinkOpen(true);
+  }
+
+  async function searchSalesLinkCandidates(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!accessToken || !salesLinkQuery.trim() || isSalesLinkSearching) return;
+    setIsSalesLinkSearching(true);
+    setSalesLinkError("");
+    try {
+      const payload = await fetchAdminDentalSales(
+        accessToken,
+        { ...emptyDentalSalesFilters, clinicName: salesLinkQuery.trim() },
+        1,
+        5,
+      );
+      setSalesLinkResults(payload.items);
+      setSalesLinkSelectedId("");
+    } catch (error) {
+      setSalesLinkError(
+        error instanceof Error ? error.message : "심평원 치과를 검색하지 못했습니다.",
+      );
+    } finally {
+      setIsSalesLinkSearching(false);
+    }
+  }
+
+  async function linkSalesProfile() {
+    if (!accessToken || !salesLinkSelectedId || isSalesLinking) return;
+    setIsSalesLinking(true);
+    setSalesLinkError("");
+    try {
+      const result = await linkAdminPartnerClinicSalesProfile(
+        accessToken,
+        clinicId,
+        salesLinkSelectedId,
+      );
+      setIsSalesLinkOpen(false);
+      setSalesLinkResult(result);
+    } catch (error) {
+      setSalesLinkError(
+        error instanceof Error ? error.message : "병원 코드를 연결하지 못했습니다.",
+      );
+    } finally {
+      setIsSalesLinking(false);
+    }
+  }
+
+  function closeSalesLinkResult() {
+    const result = salesLinkResult;
+    setSalesLinkResult(null);
+    // A newly SIGNED clinic leaves the partner list until its info is complete.
+    if (result && !result.isAppVisible) onCancelled();
+    else onSaved();
   }
 
   function keepModalFocus(event: React.KeyboardEvent<HTMLDivElement>) {
@@ -6562,6 +6805,29 @@ function PartnerClinicDetailPage({
 
       {detail.canManageOperations ? (
         <section className="admin-partner-detail-section-card admin-partner-cancel-signup">
+          <PartnerClinicSectionHeading title="병원 코드" />
+          {clinic.salesCode ? (
+            <p>
+              병원 코드 <strong>{clinic.salesCode}</strong>에 연결된 치과입니다. 의료진과
+              직원도 이 코드로 가입합니다.
+            </p>
+          ) : (
+            <>
+              <p>
+                직접 입력으로 가입해 병원 코드와 연결되지 않은 치과입니다. 영업 코드를
+                받은 치과라면 심평원 치과를 연결해 주세요. 연결하면 영업 성과에 가입
+                완료로 잡히고, 의료진과 직원도 그 코드로 가입할 수 있습니다.
+              </p>
+              <button type="button" className="admin-small-button" onClick={openSalesLink}>
+                병원 코드 연결
+              </button>
+            </>
+          )}
+        </section>
+      ) : null}
+
+      {detail.canManageOperations ? (
+        <section className="admin-partner-detail-section-card admin-partner-cancel-signup">
           <PartnerClinicSectionHeading title="가입 취소" />
           <p>
             잘못 가입한 치과를 정리합니다. 소속 계정이 모두 해제되고 앱에서 내려가며,
@@ -6580,6 +6846,113 @@ function PartnerClinicDetailPage({
             가입 취소
           </button>
         </section>
+      ) : null}
+
+      {isSalesLinkOpen ? (
+        <div className="admin-hospital-review-dialog-layer">
+          <button
+            type="button"
+            className="admin-hospital-review-dialog-backdrop"
+            aria-label="병원 코드 연결 닫기"
+            onClick={() => (isSalesLinking ? undefined : setIsSalesLinkOpen(false))}
+          />
+          <section
+            className="admin-hospital-review-dialog admin-hospital-approval-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-partner-sales-link-title"
+          >
+            <h2 id="admin-partner-sales-link-title">병원 코드 연결</h2>
+            <p>
+              {clinic.name}에 연결할 심평원 치과를 골라 주세요. 연결은 되돌릴 수
+              없으니 주소와 코드를 확인해 주세요.
+            </p>
+            <form className="admin-hospital-link-search" onSubmit={searchSalesLinkCandidates}>
+              <label>
+                <span>심평원 치과 검색</span>
+                <input
+                  value={salesLinkQuery}
+                  maxLength={100}
+                  placeholder="치과명"
+                  onChange={(event) => setSalesLinkQuery(event.target.value)}
+                />
+              </label>
+              <button
+                type="submit"
+                disabled={isSalesLinkSearching || !salesLinkQuery.trim()}
+              >
+                {isSalesLinkSearching ? "검색 중" : "검색"}
+              </button>
+            </form>
+            {salesLinkResults ? (
+              <fieldset className="admin-hospital-link-results">
+                <legend>연결할 치과</legend>
+                {salesLinkResults.map((row) => {
+                  const unavailable =
+                    row.status === "SIGNED" || row.detailStatus === "OWNER_JOINED";
+                  return (
+                    <label key={row.id} className={unavailable ? "is-disabled" : undefined}>
+                      <input
+                        type="radio"
+                        name="partner-sales-profile"
+                        disabled={unavailable}
+                        checked={salesLinkSelectedId === row.id}
+                        onChange={() => setSalesLinkSelectedId(row.id)}
+                      />
+                      <span>
+                        <strong>{row.clinicName}</strong>
+                        <small>
+                          {row.city} {row.district} · {row.salesCode}
+                          {unavailable ? " · 이미 가입된 치과" : ""}
+                        </small>
+                      </span>
+                    </label>
+                  );
+                })}
+                {salesLinkResults.length === 0 ? <p>검색된 치과가 없습니다.</p> : null}
+              </fieldset>
+            ) : null}
+            {salesLinkError ? <p role="alert">{salesLinkError}</p> : null}
+            <div className="admin-hospital-approval-actions">
+              <button
+                type="button"
+                disabled={isSalesLinking}
+                onClick={() => setIsSalesLinkOpen(false)}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                disabled={isSalesLinking || !salesLinkSelectedId}
+                onClick={() => void linkSalesProfile()}
+              >
+                {isSalesLinking ? "연결 중" : "연결"}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {salesLinkResult ? (
+        <div className="admin-hospital-review-dialog-layer">
+          <div className="admin-hospital-review-dialog-backdrop" />
+          <section
+            className="admin-hospital-review-dialog admin-hospital-approval-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-partner-sales-link-result-title"
+          >
+            <h2 id="admin-partner-sales-link-result-title">
+              병원 코드 {salesLinkResult.salesCode ?? ""} 연결 완료
+            </h2>
+            <p>{salesLinkResult.message}</p>
+            <div className="admin-hospital-approval-actions">
+              <button type="button" onClick={closeSalesLinkResult}>
+                확인
+              </button>
+            </div>
+          </section>
+        </div>
       ) : null}
 
       {isCancelDialogOpen ? (

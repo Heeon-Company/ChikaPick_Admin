@@ -4,7 +4,8 @@ export interface SalesPerformanceFilters {
   month: string;
   salespersonId: string;
   externalConnectorId: string;
-  detailStatus: SalesPerformanceDetailStatus;
+  /** Empty lists every signup of the month. */
+  detailStatus: SalesPerformanceDetailStatus | "";
 }
 
 export interface SalesPerformancePerson {
@@ -25,7 +26,7 @@ export interface SalesPerformanceRow {
 export interface SalesPerformancePayload {
   month: string;
   status: "SIGNED";
-  detailStatus: SalesPerformanceDetailStatus;
+  detailStatus: SalesPerformanceDetailStatus | null;
   metrics: {
     salespersonOnly: number;
     externalConnectorOnly: number;
@@ -60,7 +61,7 @@ export function defaultSalesPerformanceFilters(
     month: koreaYearMonth(now),
     salespersonId: "",
     externalConnectorId: "",
-    detailStatus: "ACTIVE",
+    detailStatus: "",
   };
 }
 

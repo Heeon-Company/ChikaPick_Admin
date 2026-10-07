@@ -18,6 +18,24 @@ export interface ChikapickAccountLookupPayload {
   masked: boolean;
 }
 
+export interface ChikapickAccountListPayload {
+  items: Array<{
+    id: string;
+    email: string | null;
+    loginProvider: string;
+    fullName: string | null;
+    status: string;
+    createdAt: string | null;
+    lastSignInAt: string | null;
+  }>;
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
+}
+
 const providerLabels: Record<string, string> = {
   apple: "Apple 로그인",
   email: "이메일 로그인",

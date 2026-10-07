@@ -110,6 +110,8 @@ Static assets referenced by this app must be tracked in git. Reused brand assets
 
 Partner clinic detail shows a super-admin-only `가입 취소` card for clinics that signed up by mistake. The dialog requires a reason and the exact clinic name, then calls `POST /api/v1/admin/partner-clinics/:clinicId/cancel-signup` and returns to the list. The API revokes memberships (nothing is deleted), hides the clinic, revokes its CP codes and frees its sales code; the cancel appears in the audit log as `partner_clinic.cancel_signup` with a `되돌리기` button that calls `POST /api/v1/admin/partner-clinic-signup-cancels/:eventId/restore`. The API refuses a restore after a new owner signed up or the sales code was claimed again. Apply API migration `20261007110000_admin_partner_clinic_signup_cancel.sql` and deploy the API before this Admin.
 
+The partner clinic detail shows a `병원 코드` card to Super Admins: the linked `clinic.salesCode`, or a `병원 코드 연결` dialog that reuses the same HIRA search and calls `POST /api/v1/admin/partner-clinics/:clinicId/sales-link`. Linking claims the code for the clinic owner, so the signup counts in 영업 성과 관리; when the clinic leaves the app until its info is complete, closing the result returns to the clinic list. 영업 성과 관리's 상세 상태 filter now defaults to `전체` (empty `detailStatus`, every signup of the month). 치카픽 계정 조회 lists patient accounts newest first under the email search (`GET /api/v1/admin/chikapick-accounts`, always masked); `상세 보기` opens the same detail card through `POST /api/v1/admin/chikapick-accounts/lookup` with `accountId`, keeping the audited unmask. Apply API migrations `20261007150000_link_manual_clinic_signs_sales_profile.sql` and `20261007160000_admin_chikapick_account_list.sql` and deploy the API before this Admin.
+
 Manual hospital approval opens a `병원 가입 요청 승인` dialog instead of a browser confirm. An optional `심평원 치과 검색` reuses `GET /api/v1/admin/dental-sales` (clinic name, 5 rows) and lets the admin pick the HIRA clinic whose sales code the owner was given; SIGNED or `OWNER_JOINED` rows are disabled. The chosen `salesProfileId` goes to the approve endpoint; when the response has `linkedSalesCode`, the result modal shows that code as the clinic's code instead of the CP code. The dental sales detail status `OWNER_JOINED` is labelled `원장 가입됨`. Apply API migration `20261007130000_link_manual_clinic_to_sales_profile.sql` and deploy the API before this Admin.
 
 ## Common Commands
@@ -208,6 +210,7 @@ Current Admin API calls:
 - `GET /api/v1/admin/service-expansion-requests`
 - `GET /api/v1/admin/service-expansion-requests/config`
 - `PUT /api/v1/admin/service-expansion-requests/config`
+- `GET /api/v1/admin/chikapick-accounts`
 - `POST /api/v1/admin/chikapick-accounts/lookup`
 - `POST /api/v1/admin/partner-accounts/search`
 - `POST /api/v1/admin/partner-accounts/lookup`

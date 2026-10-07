@@ -17876,3 +17876,34 @@ td span {
   .admin-global-search-field { width: calc(100vw - 132px); }
   .admin-global-search-dropdown { right: auto; left: 0; width: calc(100vw - 40px); }
 }
+
+.admin-chikapick-account-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.admin-chikapick-account-list > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-chikapick-account-list > header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.admin-chikapick-account-list > header span {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.admin-chikapick-account-table th:nth-child(1) { width: 16%; }
+.admin-chikapick-account-table th:nth-child(2) { width: 21%; }
+.admin-chikapick-account-table th:nth-child(3) { width: 10%; }
+.admin-chikapick-account-table th:nth-child(4) { width: 13%; }
+.admin-chikapick-account-table th:nth-child(5) { width: 10%; }
+.admin-chikapick-account-table th:nth-child(6) { width: 16%; }
+.admin-chikapick-account-table th:nth-child(7) { width: 14%; }
