@@ -8,7 +8,9 @@ import type { Session } from "@supabase/supabase-js";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import { AdminGlobalSearch } from "@/components/AdminGlobalSearch";
 import { AdminSelect } from "@/components/AdminSelect";
+import type { AdminGlobalSearchTarget, AdminSearchHandoff } from "@/lib/admin-global-search";
 import { ChikaTalkSanctionForm, type ChikaTalkActionDetails } from "@/components/ChikaTalkSanctionForm";
 import { adminChikaTalkConfirmation } from "@/lib/chika-talk-moderation";
 import { previewAdminChikaTalkModerationAction } from "@/lib/admin-api";
@@ -469,6 +471,25 @@ function AdminConsole() {
   const navigateToPrimaryTab = useCallback(
     (tab: PrimaryAdminTab) => navigate({ tab }), [navigate],
   );
+  const [searchHandoff, setSearchHandoff] = useState<
+    (AdminSearchHandoff & { tab: PrimaryAdminTab }) | null
+  >(null);
+  const searchHandoffKeyRef = useRef(0);
+  // Drop a handoff once its tab is left or navigation to it was cancelled.
+  if (searchHandoff && searchHandoff.tab !== activePrimaryTab) setSearchHandoff(null);
+  const handOffSearch = (tab: PrimaryAdminTab, query: string) => {
+    searchHandoffKeyRef.current += 1;
+    setSearchHandoff({ tab, query, key: searchHandoffKeyRef.current });
+    navigate({ tab });
+  };
+  const selectGlobalSearchResult = (target: AdminGlobalSearchTarget) => {
+    if (target.kind === "tab") navigate({ tab: target.tab });
+    else if (target.kind === "dental-sales") openAdminDetail({ tab: "dental-sales", id: target.id });
+    else if (target.kind === "partner-clinic") openAdminDetail({ tab: "partner-clinics", id: target.id });
+    else if (target.kind === "partner-account") handOffSearch("partner-accounts", target.query);
+    else if (target.kind === "membership") handOffSearch("memberships", target.query);
+    else handOffSearch("chikapick-accounts", target.email);
+  };
 
   const previousPrimaryTab = useRef(activePrimaryTab);
   useEffect(() => {
@@ -972,9 +993,11 @@ function AdminConsole() {
             </nav>
           ) : null}
           <div className="admin-topbar-tools">
-            <button type="button" aria-label="검색 (준비 중)" title="준비 중" disabled>
-              <Image src="/Type=Search.svg" alt="" width={24} height={24} />
-            </button>
+            <AdminGlobalSearch
+              accessToken={session?.access_token ?? ""}
+              tabs={visiblePrimaryTabs}
+              onSelect={selectGlobalSearchResult}
+            />
             <span className="admin-topbar-divider" aria-hidden="true" />
             <button type="button" aria-label="알림 (준비 중)" title="준비 중" disabled>
               <Image src="/Type=Notification.svg" alt="" width={24} height={24} />
@@ -1182,16 +1205,23 @@ function AdminConsole() {
           ) : activePrimaryTab === "service-expansion-requests" ? (
             <ServiceExpansionRequestsTab accessToken={session?.access_token ?? ""} />
           ) : activePrimaryTab === "chikapick-accounts" ? (
-            <ChikapickAccountsTab accessToken={session?.access_token ?? ""} />
+            <ChikapickAccountsTab
+              accessToken={session?.access_token ?? ""}
+              searchRequest={searchHandoff}
+            />
           ) : activePrimaryTab === "partner-accounts" ? (
             isPartnerAccountSearchView ? (
               <PartnerAccountSearchView accessToken={session?.access_token ?? ""} />
             ) : (
-              <PartnerAccountsTab accessToken={session?.access_token ?? ""} />
+              <PartnerAccountsTab
+                accessToken={session?.access_token ?? ""}
+                searchRequest={searchHandoff}
+              />
             )
           ) : activePrimaryTab === "memberships" ? (
             <MembershipManagementTab
               accessToken={session?.access_token ?? ""}
+              searchRequest={searchHandoff}
               isRegistrationView={isMembershipRegistrationView}
               onRegistrationViewChange={setIsMembershipRegistrationView}
             />
@@ -2140,18 +2170,28 @@ function AdminSettingsTab({
 
 function MembershipManagementTab({
   accessToken,
+  searchRequest,
   isRegistrationView,
   onRegistrationViewChange,
 }: {
   accessToken: string;
+  searchRequest: AdminSearchHandoff | null;
   isRegistrationView: boolean;
   onRegistrationViewChange: (isOpen: boolean) => void;
 }) {
-  const [filters, setFilters] = useState<AdminMembershipFilters>(
-    defaultAdminMembershipFilters,
-  );
-  const [searchInput, setSearchInput] = useState("");
+  const [filters, setFilters] = useState<AdminMembershipFilters>(() => ({
+    ...defaultAdminMembershipFilters,
+    query: searchRequest?.query ?? "",
+  }));
+  const [searchInput, setSearchInput] = useState(searchRequest?.query ?? "");
   const [currentPage, setCurrentPage] = useState(1);
+  const [handledSearchKey, setHandledSearchKey] = useState(searchRequest?.key);
+  if (searchRequest && searchRequest.key !== handledSearchKey) {
+    setHandledSearchKey(searchRequest.key);
+    setSearchInput(searchRequest.query);
+    setFilters((current) => ({ ...current, query: searchRequest.query }));
+    setCurrentPage(1);
+  }
   const [data, setData] = useState<AdminMembershipManagementPayload>({
     items: [],
     pagination: { page: 1, pageSize: 6, totalItems: 0, totalPages: 1 },
@@ -4860,10 +4900,23 @@ function PartnerAccountSearchResult({
   );
 }
 
-function PartnerAccountsTab({ accessToken }: { accessToken: string }) {
-  const [draftQuery, setDraftQuery] = useState("");
-  const [appliedQuery, setAppliedQuery] = useState("");
+function PartnerAccountsTab({
+  accessToken,
+  searchRequest,
+}: {
+  accessToken: string;
+  searchRequest: AdminSearchHandoff | null;
+}) {
+  const [draftQuery, setDraftQuery] = useState(searchRequest?.query ?? "");
+  const [appliedQuery, setAppliedQuery] = useState(searchRequest?.query ?? "");
   const [currentPage, setCurrentPage] = useState(1);
+  const [handledSearchKey, setHandledSearchKey] = useState(searchRequest?.key);
+  if (searchRequest && searchRequest.key !== handledSearchKey) {
+    setHandledSearchKey(searchRequest.key);
+    setDraftQuery(searchRequest.query);
+    setAppliedQuery(searchRequest.query);
+    setCurrentPage(1);
+  }
   const [data, setData] = useState<AdminPartnerAccountsPayload | null>(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -5103,8 +5156,19 @@ function PartnerAccountsTab({ accessToken }: { accessToken: string }) {
   );
 }
 
-function ChikapickAccountsTab({ accessToken }: { accessToken: string }) {
-  const [email, setEmail] = useState("");
+function ChikapickAccountsTab({
+  accessToken,
+  searchRequest,
+}: {
+  accessToken: string;
+  searchRequest: AdminSearchHandoff | null;
+}) {
+  const [email, setEmail] = useState(searchRequest?.query ?? "");
+  const [handledSearchKey, setHandledSearchKey] = useState(searchRequest?.key);
+  if (searchRequest && searchRequest.key !== handledSearchKey) {
+    setHandledSearchKey(searchRequest.key);
+    setEmail(searchRequest.query);
+  }
   const [searchedEmail, setSearchedEmail] = useState("");
   const [result, setResult] = useState<ChikapickAccountLookupPayload | null>(null);
   const [error, setError] = useState("");
