@@ -1331,7 +1331,10 @@ function AdminConsole() {
               }
             />
           ) : activePrimaryTab === "audit-log" ? (
-            <AdminAuditLogTab accessToken={session?.access_token ?? ""} />
+            <AdminAuditLogTab
+              accessToken={session?.access_token ?? ""}
+              isSuperAdmin={isSuperAdmin}
+            />
           ) : activePrimaryTab === "settings" ? (
             <AdminSettingsTab
               key={session?.access_token ?? ""}
@@ -6192,13 +6195,31 @@ function PartnerClinicDetailPage({
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape") return;
-      if (isHospitalReviewOpen) setIsHospitalReviewOpen(false);
+      if (isCancelling || isSalesLinking) return;
+      if (salesLinkResult) {
+        setSalesLinkResult(null);
+        if (salesLinkResult.isAppVisible) onSaved();
+        else onCancelled();
+      } else if (isSalesLinkOpen) setIsSalesLinkOpen(false);
+      else if (isCancelDialogOpen) setIsCancelDialogOpen(false);
+      else if (isHospitalReviewOpen) setIsHospitalReviewOpen(false);
       else if (isOperationDialogOpen) setIsOperationDialogOpen(false);
       else onBack();
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isHospitalReviewOpen, isOperationDialogOpen, onBack]);
+  }, [
+    isCancelDialogOpen,
+    isCancelling,
+    isHospitalReviewOpen,
+    isOperationDialogOpen,
+    isSalesLinkOpen,
+    isSalesLinking,
+    onBack,
+    onCancelled,
+    onSaved,
+    salesLinkResult,
+  ]);
 
   async function saveOperator(assignedOperatorUserId: string) {
     setIsOperatorSaving(true);
@@ -9979,7 +10000,13 @@ function TermsManagementTab({
   );
 }
 
-function AdminAuditLogTab({ accessToken }: { accessToken: string }) {
+function AdminAuditLogTab({
+  accessToken,
+  isSuperAdmin,
+}: {
+  accessToken: string;
+  isSuperAdmin: boolean;
+}) {
   const [draftFilters, setDraftFilters] =
     useState<AdminAuditLogFilters>(defaultAdminAuditLogFilters);
   const [filters, setFilters] =
@@ -10102,7 +10129,8 @@ function AdminAuditLogTab({ accessToken }: { accessToken: string }) {
                   <td>
                     <strong>{adminAuditActionLabel(item.action)}</strong>
                     <small className="admin-operational-code">{item.action}</small>
-                    {item.action === "partner_clinic.cancel_signup" &&
+                    {isSuperAdmin &&
+                    item.action === "partner_clinic.cancel_signup" &&
                     item.result === "success" ? (
                       <button
                         type="button"
@@ -10548,6 +10576,7 @@ function ManualHospitalReviewTab({
         5,
       );
       setLinkResults(payload.items);
+      setSelectedSalesProfileId("");
     } catch (error) {
       setLinkError(
         error instanceof Error ? error.message : "심평원 치과를 검색하지 못했습니다.",
