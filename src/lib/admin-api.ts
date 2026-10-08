@@ -1352,6 +1352,18 @@ export async function linkAdminPartnerClinicSalesProfile(
   );
 }
 
+export async function setAdminPartnerClinicAppVisibility(
+  accessToken: string,
+  clinicId: string,
+  visible: boolean,
+) {
+  return adminFetch<{ ok: boolean; isAppVisible: boolean; message: string }>(
+    `/api/v1/admin/partner-clinics/${encodeURIComponent(clinicId)}/app-visibility`,
+    accessToken,
+    { method: "POST", body: JSON.stringify({ visible }) },
+  );
+}
+
 export async function restoreAdminPartnerClinicSignup(
   accessToken: string,
   cancelEventId: string,

@@ -9798,6 +9798,41 @@ td span {
   font-size: 10px;
 }
 
+.admin-app-visibility-switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  border: 0;
+  border-radius: 11px;
+  background: #c7cbd2;
+  flex: 0 0 auto;
+  padding: 0;
+  cursor: pointer;
+}
+
+.admin-app-visibility-switch:disabled {
+  cursor: default;
+}
+
+.admin-app-visibility-switch i {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--surface);
+  transition: left 120ms ease;
+}
+
+.admin-app-visibility-switch.is-active {
+  background: var(--chika-secondary-6);
+}
+
+.admin-app-visibility-switch.is-active i {
+  left: 21px;
+}
+
 .admin-sales-app-visibility > span {
   position: relative;
   width: 40px;

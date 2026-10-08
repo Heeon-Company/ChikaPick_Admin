@@ -121,6 +121,8 @@ export interface DentalSalesDetailPayload {
     representativeName?: string | null;
     businessRegistrationNumber?: string | null;
     medicalInstitutionType?: string | null;
+    /** The signed-up clinic behind this sales profile, if any. */
+    clinicId?: string | null;
     isAppVisible?: boolean;
     businessLicense?: DentalSalesDocument | null;
     informationCompletion?: {

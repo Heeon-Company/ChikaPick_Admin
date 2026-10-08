@@ -10,6 +10,7 @@ import remarkGfm from "remark-gfm";
 
 import { AdminGlobalSearch } from "@/components/AdminGlobalSearch";
 import { AdminSelect } from "@/components/AdminSelect";
+import { AppVisibilitySwitch } from "@/components/AppVisibilitySwitch";
 import type { AdminGlobalSearchTarget, AdminSearchHandoff } from "@/lib/admin-global-search";
 import { ChikaTalkSanctionForm, type ChikaTalkActionDetails } from "@/components/ChikaTalkSanctionForm";
 import { adminChikaTalkConfirmation } from "@/lib/chika-talk-moderation";
@@ -26,6 +27,7 @@ import {
   assignAdminPartnerClinicOperator,
   cancelAdminPartnerClinicSignup,
   linkAdminPartnerClinicSalesProfile,
+  setAdminPartnerClinicAppVisibility,
   bulkUpdateAdminMembershipPartners,
   createAdminMembershipPartner,
   createAdminPartnerClinicOperationEvent,
@@ -6753,16 +6755,22 @@ function PartnerClinicDetailPage({
               <strong>앱 노출 승인</strong>
               <small>현재 사용자 앱의 치과 정보 노출 상태입니다</small>
             </span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={clinic.isAppVisible}
-              aria-label="앱 노출 승인 상태"
-              className={clinic.isAppVisible ? "is-active" : undefined}
-              disabled
-            >
-              <i />
-            </button>
+            <AppVisibilitySwitch
+              checked={clinic.isAppVisible}
+              onChange={
+                detail.canManageOperations
+                  ? async (visible) => {
+                      const result = await setAdminPartnerClinicAppVisibility(
+                        accessToken,
+                        clinicId,
+                        visible,
+                      );
+                      onSaved();
+                      return result.message;
+                    }
+                  : undefined
+              }
+            />
           </div>
         </section>
 
@@ -7661,6 +7669,19 @@ function DentalSalesTab({
         isVisitFormOpen={isVisitFormOpen}
         onAssignmentCancel={() => setIsAssignmentEditing(false)}
         onAssignmentEdit={() => setIsAssignmentEditing(true)}
+        onAppVisibilityChange={
+          detail?.canEditAssignment && detail.profile.clinicId
+            ? async (visible) => {
+                const result = await setAdminPartnerClinicAppVisibility(
+                  accessToken,
+                  detail.profile.clinicId as string,
+                  visible,
+                );
+                await loadDetail();
+                return result.message;
+              }
+            : undefined
+        }
         onAssignmentSave={(salespersonId, externalConnectorId) =>
           void saveAssignment(salespersonId, externalConnectorId)
         }
@@ -7969,6 +7990,7 @@ function DentalSalesDetailPage({
   isVisitFormOpen,
   onAssignmentCancel,
   onAssignmentEdit,
+  onAppVisibilityChange,
   onAssignmentSave,
   onBack,
   onBusinessFileSelect,
@@ -8000,6 +8022,8 @@ function DentalSalesDetailPage({
   isVisitFormOpen: boolean;
   onAssignmentCancel: () => void;
   onAssignmentEdit: () => void;
+  /** Present for super admins on a clinic that signed up. */
+  onAppVisibilityChange?: (visible: boolean) => Promise<string>;
   onAssignmentSave: (
     salespersonId: string,
     externalConnectorId: string,
@@ -8465,14 +8489,10 @@ function DentalSalesDetailPage({
                 <strong>앱 노출 승인</strong>
                 <p>승인 후 사용자 앱에 치과 정보가 노출됩니다</p>
               </div>
-              <span
-                className={isAppVisible ? "is-active" : undefined}
-                role="switch"
-                aria-checked={isAppVisible}
-                aria-disabled="true"
-              >
-                <i />
-              </span>
+              <AppVisibilitySwitch
+                checked={isAppVisible}
+                onChange={onAppVisibilityChange}
+              />
             </div>
           </DetailCard>
         </aside>
