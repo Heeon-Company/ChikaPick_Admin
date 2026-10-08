@@ -112,6 +112,8 @@ export interface DentalSalesHospitalInformation {
 
 export interface DentalSalesDetailPayload {
   canEditAssignment: boolean;
+  /** Operations and super admins; sales accounts only see the state. */
+  canChangeAppVisibility?: boolean;
   profile: DentalSalesRow & {
     address: string;
     assignedSalesperson: DentalSalesperson | null;

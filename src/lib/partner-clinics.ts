@@ -26,6 +26,8 @@ export interface AdminPartnerClinicsPayload {
 
 export interface AdminPartnerClinicDetailPayload {
   canManageOperations: boolean;
+  /** Operations and super admins; sales accounts only see the state. */
+  canChangeAppVisibility?: boolean;
   clinic: AdminPartnerClinicRow & {
     memberCount: number;
     isAppVisible: boolean;

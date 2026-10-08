@@ -6758,7 +6758,7 @@ function PartnerClinicDetailPage({
             <AppVisibilitySwitch
               checked={clinic.isAppVisible}
               onChange={
-                detail.canManageOperations
+                detail.canChangeAppVisibility
                   ? async (visible) => {
                       const result = await setAdminPartnerClinicAppVisibility(
                         accessToken,
@@ -7670,7 +7670,7 @@ function DentalSalesTab({
         onAssignmentCancel={() => setIsAssignmentEditing(false)}
         onAssignmentEdit={() => setIsAssignmentEditing(true)}
         onAppVisibilityChange={
-          detail?.canEditAssignment && detail.profile.clinicId
+          detail?.canChangeAppVisibility && detail.profile.clinicId
             ? async (visible) => {
                 const result = await setAdminPartnerClinicAppVisibility(
                   accessToken,
@@ -8022,7 +8022,7 @@ function DentalSalesDetailPage({
   isVisitFormOpen: boolean;
   onAssignmentCancel: () => void;
   onAssignmentEdit: () => void;
-  /** Present for super admins on a clinic that signed up. */
+  /** Present for operations and super admins on a clinic that signed up. */
   onAppVisibilityChange?: (visible: boolean) => Promise<string>;
   onAssignmentSave: (
     salespersonId: string,
