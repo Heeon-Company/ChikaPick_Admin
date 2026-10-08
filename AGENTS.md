@@ -114,6 +114,8 @@ The partner clinic detail shows a `병원 코드` card to Super Admins: the link
 
 On the partner clinic detail, Escape closes the topmost dialog (병원 코드 연결 result, 연결, 가입 취소, review, operation) before leaving the page, and does nothing while a cancel or link is in flight. The approval dialog clears the chosen HIRA clinic after every new search. The audit log `되돌리기` button shows only to Super Admins, matching the API.
 
+파트너 치과 관리 lists every clinic with an active member, including ones not yet in the patient app (for example a new signup whose info is incomplete); those rows show an `앱 미노출` badge from `isAppVisible`. Apply API migration `20261008100000_admin_partner_clinics_include_hidden.sql` and deploy the API first.
+
 Manual hospital approval opens a `병원 가입 요청 승인` dialog instead of a browser confirm. An optional `심평원 치과 검색` reuses `GET /api/v1/admin/dental-sales` (clinic name, 5 rows) and lets the admin pick the HIRA clinic whose sales code the owner was given; SIGNED or `OWNER_JOINED` rows are disabled. The chosen `salesProfileId` goes to the approve endpoint; when the response has `linkedSalesCode`, the result modal shows that code as the clinic's code instead of the CP code. The dental sales detail status `OWNER_JOINED` is labelled `원장 가입됨`. Apply API migration `20261007130000_link_manual_clinic_to_sales_profile.sql` and deploy the API before this Admin.
 
 ## Common Commands

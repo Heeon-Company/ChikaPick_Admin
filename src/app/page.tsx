@@ -6028,7 +6028,12 @@ function PartnerClinicsTab({
             {listData?.items.map((clinic) => (
               <tr key={clinic.id}>
                 <td>
-                  <strong>{clinic.name}</strong>
+                  <strong>
+                    {clinic.name}
+                    {clinic.isAppVisible === false ? (
+                      <em className="admin-partner-clinic-hidden-badge">앱 미노출</em>
+                    ) : null}
+                  </strong>
                   <span title={clinic.address ?? undefined}>
                     {clinic.address ?? "주소 없음"}
                   </span>

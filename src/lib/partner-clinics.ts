@@ -10,6 +10,8 @@ export interface AdminPartnerClinicRow {
   staffCount: number;
   lastActiveAt: string | null;
   createdAt: string;
+  /** False for a clinic not shown in the patient app (for example info still missing). */
+  isAppVisible?: boolean;
 }
 
 export interface AdminPartnerClinicsPayload {
