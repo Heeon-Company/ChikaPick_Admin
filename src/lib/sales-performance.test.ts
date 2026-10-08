@@ -6,6 +6,7 @@ import {
   defaultSalesPerformanceFilters,
   formatSalesPerformanceDate,
   salesPerformanceDetailLabel,
+  salesPerformanceMonthFilterOptions,
   salesPerformanceMonthOptions,
 } from "./sales-performance.ts";
 
@@ -19,16 +20,20 @@ test("sales performance access is limited to the current Super Admin", () => {
   assert.equal(canAccessSalesPerformance(users, "missing"), false);
 });
 
-test("sales performance defaults match the Super Admin monthly report", () => {
-  const filters = defaultSalesPerformanceFilters(
-    new Date("2026-06-30T15:00:00.000Z"),
-  );
+test("sales performance defaults to every month and status", () => {
+  const filters = defaultSalesPerformanceFilters();
   assert.deepEqual(filters, {
-    month: "2026-07",
+    month: "",
     salespersonId: "",
     externalConnectorId: "",
     detailStatus: "",
   });
+});
+
+test("sales performance month filter starts with 전체", () => {
+  const options = salesPerformanceMonthFilterOptions(new Date("2026-06-01T00:00:00.000Z"));
+  assert.deepEqual(options[0], { value: "", label: "전체" });
+  assert.deepEqual(options[1], { value: "2026-06", label: "2026/06" });
 });
 
 test("sales performance labels and dates match the Korean Figma table", () => {

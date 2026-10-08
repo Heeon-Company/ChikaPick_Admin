@@ -1,6 +1,7 @@
 export type SalesPerformanceDetailStatus = "INFORMATION_MISSING" | "ACTIVE";
 
 export interface SalesPerformanceFilters {
+  /** "YYYY-MM", or empty for every month (전체). */
   month: string;
   salespersonId: string;
   externalConnectorId: string;
@@ -24,7 +25,7 @@ export interface SalesPerformanceRow {
 }
 
 export interface SalesPerformancePayload {
-  month: string;
+  month: string | null;
   status: "SIGNED";
   detailStatus: SalesPerformanceDetailStatus | null;
   metrics: {
@@ -54,11 +55,9 @@ export function canAccessSalesPerformance(
   );
 }
 
-export function defaultSalesPerformanceFilters(
-  now = new Date(),
-): SalesPerformanceFilters {
+export function defaultSalesPerformanceFilters(): SalesPerformanceFilters {
   return {
-    month: koreaYearMonth(now),
+    month: "",
     salespersonId: "",
     externalConnectorId: "",
     detailStatus: "",
@@ -78,6 +77,10 @@ export function salesPerformanceMonthOptions(
     ).padStart(2, "0")}`;
     return { value, label: value.replace("-", "/") };
   });
+}
+
+export function salesPerformanceMonthFilterOptions(now = new Date()) {
+  return [{ value: "", label: "전체" }, ...salesPerformanceMonthOptions(now)];
 }
 
 export function salesPerformanceDetailLabel(

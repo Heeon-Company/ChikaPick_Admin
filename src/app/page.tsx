@@ -267,7 +267,7 @@ import {
   defaultSalesPerformanceFilters,
   formatSalesPerformanceDate,
   salesPerformanceDetailLabel,
-  salesPerformanceMonthOptions,
+  salesPerformanceMonthFilterOptions,
   type SalesPerformanceFilters,
   type SalesPerformancePayload,
 } from "@/lib/sales-performance";
@@ -5530,7 +5530,7 @@ function SalesPerformanceTab({
   const [data, setData] = useState<SalesPerformancePayload | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const monthOptions = useMemo(() => salesPerformanceMonthOptions(), []);
+  const monthOptions = useMemo(() => salesPerformanceMonthFilterOptions(), []);
 
   const loadPerformance = useCallback(async () => {
     if (!isSuperAdmin || !accessToken) return;

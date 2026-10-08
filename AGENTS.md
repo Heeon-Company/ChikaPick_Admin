@@ -116,6 +116,8 @@ On the partner clinic detail, Escape closes the topmost dialog (병원 코드 �
 
 파트너 치과 관리 lists every clinic with an active member, including ones not yet in the patient app (for example a new signup whose info is incomplete); those rows show an `앱 미노출` badge from `isAppVisible`. Apply API migration `20261008100000_admin_partner_clinics_include_hidden.sql` and deploy the API first.
 
+영업 성과 관리's 연/월 filter starts with `전체` (empty `month`, every month) and defaults to it (`salesPerformanceMonthFilterOptions`, `defaultSalesPerformanceFilters`). Apply API migration `20261008110000_sales_performance_all_months.sql` and deploy the API first.
+
 Manual hospital approval opens a `병원 가입 요청 승인` dialog instead of a browser confirm. An optional `심평원 치과 검색` reuses `GET /api/v1/admin/dental-sales` (clinic name, 5 rows) and lets the admin pick the HIRA clinic whose sales code the owner was given; SIGNED or `OWNER_JOINED` rows are disabled. The chosen `salesProfileId` goes to the approve endpoint; when the response has `linkedSalesCode`, the result modal shows that code as the clinic's code instead of the CP code. The dental sales detail status `OWNER_JOINED` is labelled `원장 가입됨`. Apply API migration `20261007130000_link_manual_clinic_to_sales_profile.sql` and deploy the API before this Admin.
 
 ## Common Commands
