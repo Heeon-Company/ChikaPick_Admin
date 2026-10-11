@@ -1,4 +1,5 @@
 import type { SupportContent, SupportMutation } from "./support-content";
+import type { PartnerSalesInquiryPayload } from "./partner-sales-inquiries";
 import { dentalpediaContentQuery, type DentalpediaContentFilters, type DentalpediaContentType, type AdminDentalpediaContentPayload } from "./dentalpedia-content.ts";
 
 export function fetchAdminSupportContent(accessToken: string) {
@@ -500,6 +501,21 @@ export async function fetchAdminExternalConnectors(
   });
   return adminFetch<ExternalConnectorDirectoryPayload>(
     `/api/v1/admin/external-connectors?${params.toString()}`,
+    accessToken,
+  );
+}
+
+export async function fetchAdminPartnerSalesInquiries(
+  accessToken: string,
+  page: number,
+  pageSize = 20,
+) {
+  const params = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+  });
+  return adminFetch<PartnerSalesInquiryPayload>(
+    `/api/v1/admin/partner-sales-inquiries?${params.toString()}`,
     accessToken,
   );
 }

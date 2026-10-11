@@ -12237,6 +12237,100 @@ td span {
   color: #fff;
 }
 
+.admin-partner-sales-inquiries-count {
+  margin-left: 8px;
+  color: var(--text-tertiary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.admin-service-expansion table.admin-partner-sales-inquiries-table {
+  min-width: 1080px;
+}
+
+.admin-partner-sales-inquiries-table th:nth-child(1) { width: 150px; }
+.admin-partner-sales-inquiries-table th:nth-child(2) { width: 180px; }
+.admin-partner-sales-inquiries-table th:nth-child(3) { width: 100px; }
+.admin-partner-sales-inquiries-table th:nth-child(4) { width: 140px; }
+.admin-partner-sales-inquiries-table th:nth-child(5) { width: 200px; }
+.admin-partner-sales-inquiries-table th:nth-child(7) { width: 100px; text-align: center; }
+.admin-partner-sales-inquiries-table td { height: 64px; }
+.admin-partner-sales-inquiries-table td:nth-child(7) {
+  overflow: visible;
+  text-align: center;
+  text-overflow: clip;
+}
+
+.admin-partner-sales-inquiries-table button {
+  min-width: 72px;
+  height: 32px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--chika-secondary-1);
+  color: var(--chika-secondary-6);
+  cursor: pointer;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.admin-partner-sales-inquiries-table button:hover,
+.admin-partner-sales-inquiries-table button:focus-visible {
+  background: var(--chika-secondary-4);
+  color: #fff;
+}
+
+.admin-partner-sales-inquiry-dialog {
+  overflow-y: auto;
+}
+
+.admin-partner-sales-inquiry-details {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.admin-partner-sales-inquiry-details div {
+  min-width: 0;
+}
+
+.admin-partner-sales-inquiry-details dt {
+  color: var(--text-tertiary);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.admin-partner-sales-inquiry-details dd {
+  margin: 4px 0 0;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+}
+
+.admin-partner-sales-inquiry-message h3 {
+  margin: 0 0 8px;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.admin-partner-sales-inquiry-message p {
+  margin: 0;
+  border-radius: 10px;
+  background: var(--chika-base-1);
+  color: var(--text-primary);
+  padding: 16px;
+  font-size: 14px;
+  line-height: 22px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .admin-service-expansion-error,
 .admin-service-expansion-loading {
   margin: 0;

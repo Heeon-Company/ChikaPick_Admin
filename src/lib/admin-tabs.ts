@@ -12,6 +12,7 @@ export const primaryTabs = [
   { id: "information-upload", label: "치카피디아", icon: "/Type=Dashboard.svg" },
   { id: "chika-talk", label: "치아톡 관리", icon: "/Type=Dashboard.svg" },
   { id: "service-expansion-requests", label: "서비스 확대 요청 관리", icon: "/Type=Dashboard.svg" },
+  { id: "partner-sales-inquiries", label: "파트너스 영업 문의", icon: "/Type=Opinion.svg" },
   { id: "chikapick-accounts", label: "치카픽 계정 조회", icon: "/Type=Family.svg" },
   { id: "partner-accounts", label: "파트너스 계정 조회", icon: "/Type=Family.svg" },
   { id: "partner-invites", label: "파트너 초대코드 관리", icon: "/Type=Settings.svg" },

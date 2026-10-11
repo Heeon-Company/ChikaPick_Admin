@@ -19,6 +19,7 @@ import { AdminNameEditor } from "@/components/AdminNameEditor";
 import { DentalSalesExportToolbar } from "@/components/DentalSalesExportToolbar";
 import { DentalpediaContentTab } from "@/components/DentalpediaContentTab";
 import type { DentalpediaContentSelection } from "@/lib/dentalpedia-content";
+import { PartnerSalesInquiriesTab } from "@/components/PartnerSalesInquiriesTab";
 import { ServiceExpansionRequestsTab } from "@/components/ServiceExpansionRequestsTab";
 import {
   applyAdminChikaTalkModerationAction,
@@ -311,6 +312,7 @@ const primaryTabContentLayouts: Record<PrimaryAdminTab, AdminContentLayout> = {
   "secret-feedback": "compact",
   "information-upload": "fluid",
   "service-expansion-requests": "fluid",
+  "partner-sales-inquiries": "fluid",
   "chikapick-accounts": "fluid",
   "partner-accounts": "fluid",
   "partner-invites": "fluid",
@@ -347,6 +349,8 @@ const primaryTabDescriptions: Record<PrimaryAdminTab, string> = {
     "콘텐츠를 등록하고 관리할 수 있는 어드민 페이지입니다.",
   "service-expansion-requests":
     "사용자들이 요청한 예약 가능 지역과 치과 제휴 요청을 확인하고 서비스 확대 우선순위를 관리합니다.",
+  "partner-sales-inquiries":
+    "파트너스 가입 화면에서 접수된 영업 문의를 확인합니다. 남겨진 연락처로 직접 연락해 주세요.",
   "chikapick-accounts":
     "치카픽 서비스에 가입한 환자 계정을 이메일로 조회하고 계정 상태를 확인합니다.",
   "partner-accounts":
@@ -1213,6 +1217,8 @@ function AdminConsole() {
             <DentalpediaContentTab accessToken={session?.access_token ?? ""} editor={dentalpediaEditor} onEditorChange={setDentalpediaEditor} />
           ) : activePrimaryTab === "service-expansion-requests" ? (
             <ServiceExpansionRequestsTab accessToken={session?.access_token ?? ""} />
+          ) : activePrimaryTab === "partner-sales-inquiries" ? (
+            <PartnerSalesInquiriesTab accessToken={session?.access_token ?? ""} />
           ) : activePrimaryTab === "chikapick-accounts" ? (
             <ChikapickAccountsTab
               accessToken={session?.access_token ?? ""}
@@ -10309,6 +10315,12 @@ function OverviewTab({
           label: "서비스 확대 요청 관리",
           description: "지역 서비스와 치과 제휴 요청 수요를 확인합니다.",
           icon: "/Type=Dashboard.svg",
+        },
+        {
+          tab: "partner-sales-inquiries",
+          label: "파트너스 영업 문의",
+          description: "파트너스 가입 화면에서 접수된 영업 문의를 확인합니다.",
+          icon: "/Type=Opinion.svg",
         },
         {
           tab: "chikapick-accounts",
