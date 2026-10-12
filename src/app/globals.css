@@ -12331,6 +12331,145 @@ td span {
   overflow-wrap: anywhere;
 }
 
+.admin-user-feedback-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.admin-service-expansion table.admin-user-feedback-table {
+  min-width: 960px;
+}
+
+.admin-user-feedback-table th:nth-child(1) { width: 150px; }
+.admin-user-feedback-table th:nth-child(2) { width: 200px; }
+.admin-user-feedback-table th:nth-child(4) { width: 110px; }
+.admin-user-feedback-table th:nth-child(5) { width: 100px; text-align: center; }
+.admin-user-feedback-table td { height: 64px; }
+
+.admin-user-feedback-table td small {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-quaternary);
+  font-size: 12px;
+}
+
+.admin-user-feedback-table td:nth-child(5) {
+  overflow: visible;
+  text-align: center;
+  text-overflow: clip;
+}
+
+.admin-user-feedback-table button {
+  min-width: 72px;
+  height: 32px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--chika-secondary-1);
+  color: var(--chika-secondary-6);
+  cursor: pointer;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.admin-user-feedback-table button:hover,
+.admin-user-feedback-table button:focus-visible {
+  background: var(--chika-secondary-4);
+  color: #fff;
+}
+
+.admin-user-feedback-status {
+  display: inline-block;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.admin-user-feedback-status.is-waiting {
+  background: var(--chika-primary-1);
+  color: var(--chika-primary-6);
+}
+
+.admin-user-feedback-status.is-answered {
+  background: var(--chika-secondary-1);
+  color: var(--chika-secondary-6);
+}
+
+.admin-user-feedback-answer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-user-feedback-answer span {
+  color: var(--text-tertiary);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.admin-user-feedback-answer textarea {
+  min-height: 140px;
+  resize: vertical;
+  border: 1px solid var(--chika-base-4);
+  border-radius: 10px;
+  padding: 14px 16px 30px;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.admin-user-feedback-answer textarea:focus {
+  border-color: var(--text-primary);
+  outline: 0;
+}
+
+.admin-user-feedback-answer small {
+  position: absolute;
+  right: 14px;
+  bottom: 10px;
+  color: var(--text-quaternary);
+  font-size: 12px;
+}
+
+.admin-user-feedback-note {
+  margin: -12px 0 0;
+  color: var(--text-quaternary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.admin-user-feedback-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.admin-user-feedback-submit {
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--chika-primary-5);
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.admin-user-feedback-submit:disabled {
+  background: var(--chika-base-3);
+  cursor: default;
+}
+
 .admin-service-expansion-error,
 .admin-service-expansion-loading {
   margin: 0;

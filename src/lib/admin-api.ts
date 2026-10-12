@@ -1,5 +1,10 @@
 import type { SupportContent, SupportMutation } from "./support-content";
 import type { PartnerSalesInquiryPayload } from "./partner-sales-inquiries";
+import type {
+  UserFeedbackItem,
+  UserFeedbackPayload,
+  UserFeedbackStatusFilter,
+} from "./user-feedback";
 import { dentalpediaContentQuery, type DentalpediaContentFilters, type DentalpediaContentType, type AdminDentalpediaContentPayload } from "./dentalpedia-content.ts";
 
 export function fetchAdminSupportContent(accessToken: string) {
@@ -524,6 +529,35 @@ export async function fetchAdminPartnerSalesInquiries(
   return adminFetch<PartnerSalesInquiryPayload>(
     `/api/v1/admin/partner-sales-inquiries?${params.toString()}`,
     accessToken,
+  );
+}
+
+export async function fetchAdminUserFeedback(
+  accessToken: string,
+  status: UserFeedbackStatusFilter,
+  page: number,
+  pageSize = 20,
+) {
+  const params = new URLSearchParams({
+    status,
+    page: String(page),
+    pageSize: String(pageSize),
+  });
+  return adminFetch<UserFeedbackPayload>(
+    `/api/v1/admin/user-feedback?${params.toString()}`,
+    accessToken,
+  );
+}
+
+export async function answerAdminUserFeedback(
+  accessToken: string,
+  feedbackId: string,
+  answer: string,
+) {
+  return adminFetch<{ feedback: UserFeedbackItem }>(
+    `/api/v1/admin/user-feedback/${encodeURIComponent(feedbackId)}`,
+    accessToken,
+    { method: "PATCH", body: JSON.stringify({ answer }) },
   );
 }
 

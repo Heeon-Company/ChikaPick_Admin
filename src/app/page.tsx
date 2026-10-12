@@ -21,6 +21,7 @@ import { DentalSalesExportToolbar } from "@/components/DentalSalesExportToolbar"
 import { DentalpediaContentTab } from "@/components/DentalpediaContentTab";
 import type { DentalpediaContentSelection } from "@/lib/dentalpedia-content";
 import { PartnerSalesInquiriesTab } from "@/components/PartnerSalesInquiriesTab";
+import { UserFeedbackTab } from "@/components/UserFeedbackTab";
 import { ServiceExpansionRequestsTab } from "@/components/ServiceExpansionRequestsTab";
 import {
   applyAdminChikaTalkModerationAction,
@@ -311,6 +312,7 @@ const primaryTabContentLayouts: Record<PrimaryAdminTab, AdminContentLayout> = {
   // 전문의 소견 관련 코드
   // consultations: "fluid",
   "secret-feedback": "compact",
+  "user-feedback": "fluid",
   "information-upload": "fluid",
   "service-expansion-requests": "fluid",
   "partner-sales-inquiries": "fluid",
@@ -346,6 +348,8 @@ const primaryTabDescriptions: Record<PrimaryAdminTab, string> = {
   // consultations:
   //   "전문의 소견 요청과 답변 상태를 전체 치과 기준으로 조회합니다.",
   "secret-feedback": "어드민 관리자에게만 전송되는 시크릿 피드백 입니다.",
+  "user-feedback":
+    "앱 마이페이지의 의견 보내기로 접수된 의견을 확인하고 답변합니다. 답변을 등록하면 사용자에게 푸시 알림이 갑니다.",
   "information-upload":
     "콘텐츠를 등록하고 관리할 수 있는 어드민 페이지입니다.",
   "service-expansion-requests":
@@ -1218,6 +1222,8 @@ function AdminConsole() {
             <DentalpediaContentTab accessToken={session?.access_token ?? ""} editor={dentalpediaEditor} onEditorChange={setDentalpediaEditor} />
           ) : activePrimaryTab === "service-expansion-requests" ? (
             <ServiceExpansionRequestsTab accessToken={session?.access_token ?? ""} />
+          ) : activePrimaryTab === "user-feedback" ? (
+            <UserFeedbackTab accessToken={session?.access_token ?? ""} />
           ) : activePrimaryTab === "partner-sales-inquiries" ? (
             <PartnerSalesInquiriesTab accessToken={session?.access_token ?? ""} />
           ) : activePrimaryTab === "chikapick-accounts" ? (
@@ -10322,6 +10328,12 @@ function OverviewTab({
           tab: "secret-feedback",
           label: "시크릿 피드백",
           description: "예약 후 제출된 익명 피드백을 확인합니다.",
+          icon: "/Type=Opinion.svg",
+        },
+        {
+          tab: "user-feedback",
+          label: "사용자 의견",
+          description: "앱에서 접수된 의견을 확인하고 답변합니다.",
           icon: "/Type=Opinion.svg",
         },
         {
