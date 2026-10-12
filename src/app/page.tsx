@@ -15,6 +15,7 @@ import type { AdminGlobalSearchTarget, AdminSearchHandoff } from "@/lib/admin-gl
 import { ChikaTalkSanctionForm, type ChikaTalkActionDetails } from "@/components/ChikaTalkSanctionForm";
 import { adminChikaTalkConfirmation } from "@/lib/chika-talk-moderation";
 import { previewAdminChikaTalkModerationAction } from "@/lib/admin-api";
+import { AdminContactPhoneEditor } from "@/components/AdminContactPhoneEditor";
 import { AdminNameEditor } from "@/components/AdminNameEditor";
 import { DentalSalesExportToolbar } from "@/components/DentalSalesExportToolbar";
 import { DentalpediaContentTab } from "@/components/DentalpediaContentTab";
@@ -1351,6 +1352,11 @@ function AdminConsole() {
                 ...previous,
                 users: previous.users.map((user) => user.id === session?.user.id ? { ...user, fullName: name } : user),
               }))}
+              onContactPhoneSaved={(contactPhone) => setConsoleData((previous) => ({
+                ...previous,
+                users: previous.users.map((user) => user.id === session?.user.id ? { ...user, contactPhone } : user),
+              }))}
+              contactPhone={currentAdmin?.contactPhone ?? null}
               displayName={currentAdmin?.fullName ?? null}
               email={session?.user.email ?? currentAdmin?.email ?? null}
               isSigningOut={isSigningOut}
@@ -2135,6 +2141,8 @@ function ChikaTalkReportHistory({
 function AdminSettingsTab({
   accessToken,
   onNameSaved,
+  onContactPhoneSaved,
+  contactPhone,
   displayName,
   email,
   isSigningOut,
@@ -2143,6 +2151,8 @@ function AdminSettingsTab({
 }: {
   accessToken: string;
   onNameSaved: (name: string) => void;
+  onContactPhoneSaved: (contactPhone: string | null) => void;
+  contactPhone: string | null;
   displayName: string | null;
   email: string | null;
   isSigningOut: boolean;
@@ -2161,6 +2171,10 @@ function AdminSettingsTab({
             <div>
               <dt>이름</dt>
               <dd><AdminNameEditor accessToken={accessToken} displayName={displayName} onSaved={onNameSaved} /></dd>
+            </div>
+            <div>
+              <dt>연락처</dt>
+              <dd><AdminContactPhoneEditor accessToken={accessToken} contactPhone={contactPhone} onSaved={onContactPhoneSaved} /></dd>
             </div>
             <div>
               <dt>로그인 이메일</dt>

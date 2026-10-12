@@ -114,6 +114,7 @@ export interface AdminUser {
   accountStatus: string | null;
   isSuperAdmin?: boolean;
   adminAccountType?: "admin" | "sales";
+  contactPhone?: string | null;
   adminSecurity?: {
     failedLoginCount: number;
     lockedAt: string | null;
@@ -210,6 +211,12 @@ import type { AdminTermPreview } from "./admin-platform-operations.ts";
 export function updateAdminOwnName(accessToken: string, fullName: string, signal?: AbortSignal) {
   return adminFetch<AdminActionResult & { fullName: string }>("/api/v1/admin/account/profile", accessToken, {
     method: "PATCH", body: JSON.stringify({ fullName }), signal,
+  });
+}
+
+export function updateAdminOwnContactPhone(accessToken: string, contactPhone: string, signal?: AbortSignal) {
+  return adminFetch<AdminActionResult & { contactPhone: string | null }>("/api/v1/admin/account/contact-phone", accessToken, {
+    method: "PATCH", body: JSON.stringify({ contactPhone }), signal,
   });
 }
 

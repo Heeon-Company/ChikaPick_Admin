@@ -18050,3 +18050,4 @@ td span {
 .admin-chikapick-account-table th:nth-child(5) { width: 10%; }
 .admin-chikapick-account-table th:nth-child(6) { width: 16%; }
 .admin-chikapick-account-table th:nth-child(7) { width: 14%; }
+.admin-name-editor p.admin-contact-phone-hint { color: #8a929c; margin-top: 6px; }
