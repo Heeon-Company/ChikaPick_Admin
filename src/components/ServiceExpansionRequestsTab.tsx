@@ -10,6 +10,7 @@ import {
   fetchAdminClinicPartnershipRequests,
   fetchAdminServiceExpansionRequests,
 } from "@/lib/admin-api";
+import { useAutoRefresh } from "@/lib/use-auto-refresh";
 import type {
   ClinicPartnershipRequestItem,
   ClinicPartnershipRequestPayload,
@@ -43,29 +44,36 @@ export function ServiceExpansionRequestsTab({ accessToken }: { accessToken: stri
   const [areaError, setAreaError] = useState("");
   const [clinicError, setClinicError] = useState("");
 
-  const loadOverview = useCallback(async () => {
+  const loadOverview = useCallback(async ({ silent = false } = {}) => {
     if (!accessToken) return;
-    setIsOverviewLoading(true);
-    setAreaError("");
+    if (!silent) {
+      setIsOverviewLoading(true);
+      setAreaError("");
+    }
     try {
       setOverview(
         await fetchAdminServiceExpansionRequests(accessToken, areaQuery, areaPage),
       );
+      if (silent) setAreaError("");
     } catch (error) {
+      // A background refresh keeps the rows already on screen.
+      if (silent) return;
       setAreaError(
         error instanceof Error
           ? error.message
           : "지역 서비스 요청을 불러오지 못했습니다.",
       );
     } finally {
-      setIsOverviewLoading(false);
+      if (!silent) setIsOverviewLoading(false);
     }
   }, [accessToken, areaPage, areaQuery]);
 
-  const loadClinics = useCallback(async () => {
+  const loadClinics = useCallback(async ({ silent = false } = {}) => {
     if (!accessToken) return;
-    setIsClinicLoading(true);
-    setClinicError("");
+    if (!silent) {
+      setIsClinicLoading(true);
+      setClinicError("");
+    }
     try {
       setClinicData(
         await fetchAdminClinicPartnershipRequests(
@@ -74,14 +82,17 @@ export function ServiceExpansionRequestsTab({ accessToken }: { accessToken: stri
           clinicPage,
         ),
       );
+      if (silent) setClinicError("");
     } catch (error) {
+      // A background refresh keeps the rows already on screen.
+      if (silent) return;
       setClinicError(
         error instanceof Error
           ? error.message
           : "치과 제휴 요청을 불러오지 못했습니다.",
       );
     } finally {
-      setIsClinicLoading(false);
+      if (!silent) setIsClinicLoading(false);
     }
   }, [accessToken, clinicPage, clinicQuery]);
 
@@ -89,12 +100,14 @@ export function ServiceExpansionRequestsTab({ accessToken }: { accessToken: stri
     const timeout = window.setTimeout(() => void loadOverview(), 0);
     return () => window.clearTimeout(timeout);
   }, [loadOverview]);
+  useAutoRefresh(() => void loadOverview({ silent: true }), activeView === "area");
 
   useEffect(() => {
     if (activeView !== "clinic") return;
     const timeout = window.setTimeout(() => void loadClinics(), 0);
     return () => window.clearTimeout(timeout);
   }, [activeView, loadClinics]);
+  useAutoRefresh(() => void loadClinics({ silent: true }), activeView === "clinic");
 
   useEffect(() => {
     if (!selectedClinic) return;

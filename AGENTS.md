@@ -277,7 +277,7 @@ Paginated desktop list surfaces share one responsive viewport-height token (`--a
 
 ## Environment Variables
 
-시크릿 피드백 uses server-owned clinic plus inclusive Korea-calendar start/end filters for rows and metrics. 치과의사 면허 인증 refreshes the compact console immediately on tab entry, every 60 seconds while visible, and on focus/visibility return so new pending submissions update 승인 요청 수 without a page reload.
+시크릿 피드백 uses server-owned clinic plus inclusive Korea-calendar start/end filters for rows and metrics. 치과의사 면허 인증 refreshes the compact console immediately on tab entry, every 60 seconds while visible, and on focus/visibility return so new pending submissions update 승인 요청 수 without a page reload. 운영 현황 shares that console refresh. Tabs fed by outside activity (파트너 치과 관리 list, 병원 가입 심사, 소속 신청 관리, 예약 운영 관리, 시크릿 피드백, 사용자 의견, 치아톡 관리, 서비스 확대 요청 관리, 파트너스 영업 문의) use `useAutoRefresh` from `src/lib/use-auto-refresh.ts`: a quiet reload every 60 seconds while visible and on focus/visibility return that keeps the rows on screen if it fails. Tabs that swap their list for a full-page detail (파트너 치과 관리, 치과 영업 관리) reload the list on return via `useRefreshOnDetailClose`.
 
 Required in `.env.local`:
 

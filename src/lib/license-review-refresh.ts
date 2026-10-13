@@ -12,7 +12,8 @@ export function shouldRefreshLicenseReview({
   visibilityState: DocumentVisibilityState;
 }) {
   return (
-    activeTab === "license-review" &&
+    // The dashboard's pending counts come from the same console payload.
+    (activeTab === "license-review" || activeTab === "dashboard") &&
     hasLoadedConsole &&
     hasSession &&
     visibilityState === "visible"

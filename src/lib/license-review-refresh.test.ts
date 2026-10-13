@@ -6,7 +6,7 @@ import {
   shouldRefreshLicenseReview,
 } from "./license-review-refresh.ts";
 
-test("license review refreshes only while its authenticated tab is visible", () => {
+test("the console refreshes only while license review or the dashboard is visible", () => {
   assert.equal(licenseReviewRefreshIntervalMs, 60_000);
   assert.equal(
     shouldRefreshLicenseReview({
@@ -20,6 +20,15 @@ test("license review refreshes only while its authenticated tab is visible", () 
   assert.equal(
     shouldRefreshLicenseReview({
       activeTab: "dashboard",
+      hasLoadedConsole: true,
+      hasSession: true,
+      visibilityState: "visible",
+    }),
+    true,
+  );
+  assert.equal(
+    shouldRefreshLicenseReview({
+      activeTab: "partner-clinics",
       hasLoadedConsole: true,
       hasSession: true,
       visibilityState: "visible",

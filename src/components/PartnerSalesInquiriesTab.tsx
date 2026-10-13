@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 
 import { fetchAdminPartnerSalesInquiries } from "@/lib/admin-api";
+import { useAutoRefresh } from "@/lib/use-auto-refresh";
 import {
   formatPartnerSalesInquiryPhone,
   type PartnerSalesInquiryItem,
@@ -21,20 +22,25 @@ export function PartnerSalesInquiriesTab({ accessToken }: { accessToken: string 
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<PartnerSalesInquiryItem | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async ({ silent = false } = {}) => {
     if (!accessToken) return;
-    setIsLoading(true);
-    setError("");
+    if (!silent) {
+      setIsLoading(true);
+      setError("");
+    }
     try {
       setData(await fetchAdminPartnerSalesInquiries(accessToken, page));
+      if (silent) setError("");
     } catch (loadError) {
+      // A background refresh keeps the rows already on screen.
+      if (silent) return;
       setError(
         loadError instanceof Error
           ? loadError.message
           : "영업 문의를 불러오지 못했습니다.",
       );
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, [accessToken, page]);
 
@@ -42,6 +48,7 @@ export function PartnerSalesInquiriesTab({ accessToken }: { accessToken: string 
     const timeout = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timeout);
   }, [load]);
+  useAutoRefresh(() => void load({ silent: true }));
 
   useEffect(() => {
     if (!selected) return;

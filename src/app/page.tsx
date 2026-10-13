@@ -291,6 +291,7 @@ import {
   licenseReviewRefreshIntervalMs,
   shouldRefreshLicenseReview,
 } from "@/lib/license-review-refresh";
+import { useAutoRefresh, useRefreshOnDetailClose } from "@/lib/use-auto-refresh";
 import { signInWithAdminPassword } from "@/lib/password-auth";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 
@@ -1421,12 +1422,14 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
   const detailRequestIdRef = useRef(0);
   const actionRequestIdsRef = useRef(new Map<string, string>());
 
-  const loadReports = useCallback(async () => {
+  const loadReports = useCallback(async ({ silent = false } = {}) => {
     if (!accessToken) return;
     const requestId = reportRequestIdRef.current + 1;
     reportRequestIdRef.current = requestId;
-    setIsLoading(true);
-    setLoadError(null);
+    if (!silent) {
+      setIsLoading(true);
+      setLoadError(null);
+    }
     try {
       const [reportPayload, metricsPayload] = await Promise.all([
         fetchAdminChikaTalkReports(accessToken, {
@@ -1440,13 +1443,14 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
       if (reportRequestIdRef.current !== requestId) return;
       setReports(reportPayload.items);
       setMetrics(metricsPayload.metrics);
+      if (silent) setLoadError(null);
     } catch (error) {
-      if (reportRequestIdRef.current !== requestId) return;
+      if (reportRequestIdRef.current !== requestId || silent) return;
       setLoadError(
         error instanceof Error ? error.message : "치아톡 신고를 불러오지 못했습니다.",
       );
     } finally {
-      if (reportRequestIdRef.current === requestId) setIsLoading(false);
+      if (reportRequestIdRef.current === requestId && !silent) setIsLoading(false);
     }
   }, [accessToken, reasonFilter, statusFilter]);
 
@@ -1456,6 +1460,7 @@ function ChikaTalkManagementTab({ accessToken }: { accessToken: string }) {
     }, 0);
     return () => window.clearTimeout(timeoutId);
   }, [loadReports]);
+  useAutoRefresh(() => void loadReports({ silent: true }));
 
   const loadDetail = useCallback(
     async (reportId: string) => {
@@ -4441,20 +4446,25 @@ function SecretFeedbackTab({ accessToken }: { accessToken: string }) {
     null,
   );
 
-  const loadFeedback = useCallback(async () => {
+  const loadFeedback = useCallback(async ({ silent = false } = {}) => {
     if (!accessToken) return;
-    setIsLoading(true);
-    setErrorMessage("");
+    if (!silent) {
+      setIsLoading(true);
+      setErrorMessage("");
+    }
     try {
       setData(await fetchAdminSecretFeedback(accessToken, filters, currentPage));
+      if (silent) setErrorMessage("");
     } catch (error) {
+      // A background refresh keeps the rows already on screen.
+      if (silent) return;
       setErrorMessage(
         error instanceof Error
           ? error.message
           : "시크릿 피드백을 불러오지 못했습니다.",
       );
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, [accessToken, currentPage, filters]);
 
@@ -4462,6 +4472,7 @@ function SecretFeedbackTab({ accessToken }: { accessToken: string }) {
     const timeoutId = window.setTimeout(() => void loadFeedback(), 0);
     return () => window.clearTimeout(timeoutId);
   }, [loadFeedback]);
+  useAutoRefresh(() => void loadFeedback({ silent: true }));
 
   useEffect(() => {
     if (!selectedFeedback) return;
@@ -5936,29 +5947,8 @@ function PartnerClinicsTab({
 
   // Clinics that sign up while the list is open must appear without a manual
   // reload: refresh on return from a detail, on focus, and every minute.
-  const wasDetailOpenRef = useRef(false);
-  useEffect(() => {
-    if (selectedClinicId) {
-      wasDetailOpenRef.current = true;
-      return;
-    }
-    const refresh = () => {
-      if (document.visibilityState === "visible") void loadClinics({ silent: true });
-    };
-    const returnRefreshId = wasDetailOpenRef.current
-      ? window.setTimeout(refresh, 0)
-      : undefined;
-    wasDetailOpenRef.current = false;
-    const intervalId = window.setInterval(refresh, 60_000);
-    document.addEventListener("visibilitychange", refresh);
-    window.addEventListener("focus", refresh);
-    return () => {
-      window.clearTimeout(returnRefreshId);
-      window.clearInterval(intervalId);
-      document.removeEventListener("visibilitychange", refresh);
-      window.removeEventListener("focus", refresh);
-    };
-  }, [loadClinics, selectedClinicId]);
+  useAutoRefresh(() => void loadClinics({ silent: true }), !selectedClinicId);
+  useRefreshOnDetailClose(selectedClinicId, () => void loadClinics({ silent: true }));
 
   const loadDetail = useCallback(async () => {
     if (!accessToken || !selectedClinicId) return;
@@ -7388,25 +7378,29 @@ function DentalSalesTab({
     note: "",
   }));
 
-  const loadList = useCallback(async () => {
+  const loadList = useCallback(async ({ silent = false } = {}) => {
     if (!accessToken) return;
     const requestId = ++listRequestIdRef.current;
-    setIsLoading(true);
-    setErrorMessage("");
+    if (!silent) {
+      setIsLoading(true);
+      setErrorMessage("");
+    }
     try {
       const data = await fetchAdminDentalSales(accessToken, appliedFilters, currentPage);
       if (requestId !== listRequestIdRef.current) return;
       setListData(data);
       setListContext({ token: accessToken, filters: appliedFilters, page: currentPage });
+      if (silent) setErrorMessage("");
     } catch (error) {
-      if (requestId !== listRequestIdRef.current) return;
+      if (requestId !== listRequestIdRef.current || silent) return;
       setErrorMessage(
         error instanceof Error ? error.message : "치과 영업 목록을 불러오지 못했습니다.",
       );
     } finally {
-      if (requestId === listRequestIdRef.current) setIsLoading(false);
+      if (requestId === listRequestIdRef.current && !silent) setIsLoading(false);
     }
   }, [accessToken, appliedFilters, currentPage]);
+  useRefreshOnDetailClose(selectedProfileId, () => void loadList({ silent: true }));
 
   const loadDetail = useCallback(async (page = visitPage) => {
     if (!accessToken || !selectedProfileId) return;
@@ -8950,22 +8944,27 @@ function AdminReservationsTab({ accessToken }: { accessToken: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const loadReservations = useCallback(async () => {
+  const loadReservations = useCallback(async ({ silent = false } = {}) => {
     if (!accessToken) return;
-    setIsLoading(true);
-    setError("");
+    if (!silent) {
+      setIsLoading(true);
+      setError("");
+    }
     try {
       setData(
         await fetchAdminReservationDirectory(accessToken, filters, currentPage),
       );
+      if (silent) setError("");
     } catch (loadError) {
+      // A background refresh keeps the rows already on screen.
+      if (silent) return;
       setError(
         loadError instanceof Error
           ? loadError.message
           : "예약 목록을 불러오지 못했습니다.",
       );
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, [accessToken, currentPage, filters]);
 
@@ -8973,6 +8972,7 @@ function AdminReservationsTab({ accessToken }: { accessToken: string }) {
     const timeout = window.setTimeout(() => void loadReservations(), 0);
     return () => window.clearTimeout(timeout);
   }, [loadReservations]);
+  useAutoRefresh(() => void loadReservations({ silent: true }));
 
   function applyFilters(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -9578,10 +9578,12 @@ function ClinicMembershipRequestsTab({
   const [busyRequestKey, setBusyRequestKey] = useState<string | null>(null);
   const [error, setError] = useState("");
 
-  const loadRequests = useCallback(async () => {
+  const loadRequests = useCallback(async ({ silent = false } = {}) => {
     if (!accessToken) return;
-    setIsLoading(true);
-    setError("");
+    if (!silent) {
+      setIsLoading(true);
+      setError("");
+    }
     try {
       setData(
         await fetchAdminClinicMembershipRequests(
@@ -9590,14 +9592,17 @@ function ClinicMembershipRequestsTab({
           currentPage,
         ),
       );
+      if (silent) setError("");
     } catch (loadError) {
+      // A background refresh keeps the rows already on screen.
+      if (silent) return;
       setError(
         loadError instanceof Error
           ? loadError.message
           : "소속 신청 목록을 불러오지 못했습니다.",
       );
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, [accessToken, currentPage, filters]);
 
@@ -9605,6 +9610,7 @@ function ClinicMembershipRequestsTab({
     const timeout = window.setTimeout(() => void loadRequests(), 0);
     return () => window.clearTimeout(timeout);
   }, [loadRequests]);
+  useAutoRefresh(() => void loadRequests({ silent: true }));
 
   function applyFilters(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -10621,20 +10627,25 @@ function ManualHospitalReviewTab({
   const [linkError, setLinkError] = useState("");
   const [selectedSalesProfileId, setSelectedSalesProfileId] = useState("");
 
-  const loadSubmissions = useCallback(async () => {
+  const loadSubmissions = useCallback(async ({ silent = false } = {}) => {
     if (!accessToken) return;
-    setIsLoading(true);
-    setErrorMessage("");
+    if (!silent) {
+      setIsLoading(true);
+      setErrorMessage("");
+    }
     try {
       setData(await fetchAdminManualHospitalSubmissions(accessToken, currentPage));
+      if (silent) setErrorMessage("");
     } catch (error) {
+      // A background refresh keeps the rows already on screen.
+      if (silent) return;
       setErrorMessage(
         error instanceof Error
           ? error.message
           : "병원 가입 심사 목록을 불러오지 못했습니다.",
       );
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, [accessToken, currentPage]);
 
@@ -10642,6 +10653,7 @@ function ManualHospitalReviewTab({
     const timeoutId = window.setTimeout(() => void loadSubmissions(), 0);
     return () => window.clearTimeout(timeoutId);
   }, [loadSubmissions]);
+  useAutoRefresh(() => void loadSubmissions({ silent: true }));
 
   const pagination = data?.pagination;
   const pageNumbers = dentalSalesPageNumbers(

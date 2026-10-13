@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 
 import { answerAdminUserFeedback, fetchAdminUserFeedback } from "@/lib/admin-api";
+import { useAutoRefresh } from "@/lib/use-auto-refresh";
 import {
   formatServiceExpansionDate,
   serviceExpansionPageNumbers,
@@ -28,18 +29,23 @@ export function UserFeedbackTab({ accessToken }: { accessToken: string }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
-  const load = useCallback(async () => {
+  const load = useCallback(async ({ silent = false } = {}) => {
     if (!accessToken) return;
-    setIsLoading(true);
-    setError("");
+    if (!silent) {
+      setIsLoading(true);
+      setError("");
+    }
     try {
       setData(await fetchAdminUserFeedback(accessToken, status, page));
+      if (silent) setError("");
     } catch (loadError) {
+      // A background refresh keeps the rows already on screen.
+      if (silent) return;
       setError(
         loadError instanceof Error ? loadError.message : "사용자 의견을 불러오지 못했습니다.",
       );
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, [accessToken, page, status]);
 
@@ -47,6 +53,7 @@ export function UserFeedbackTab({ accessToken }: { accessToken: string }) {
     const timeout = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timeout);
   }, [load]);
+  useAutoRefresh(() => void load({ silent: true }));
 
   const close = useCallback(() => {
     if (isSaving) return;
