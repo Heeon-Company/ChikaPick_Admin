@@ -88,16 +88,39 @@ export interface LicenseVerificationRequest {
   latestSubmission: LicenseVerificationSubmission | null;
 }
 
+// File links are not part of the directory; open one with
+// fetchAdminLicenseFileUrl so it is signed only when Admin views it.
 export interface LicenseVerificationSubmission {
-  files?: Array<{ fileName: string; contentType: string; sizeBytes: number; signedUrl: string | null }>;
+  files: Array<{ fileName: string; contentType: string; sizeBytes: number }>;
   id: string;
   status: AdminReviewStatus;
   submittedAt: string;
   reviewedAt: string | null;
-  fileName: string;
-  contentType: string;
-  sizeBytes: number;
-  signedUrl: string | null;
+}
+
+export type LicenseVerificationFilter =
+  | "all"
+  | "pending"
+  | "approved"
+  | "needs_submission";
+
+export interface LicenseVerificationSummary {
+  total: number;
+  approved: number;
+  pending: number;
+  unrequested: number;
+}
+
+export interface AdminLicenseVerificationsPayload {
+  items: LicenseVerificationRequest[];
+  summary: LicenseVerificationSummary;
+  filter: LicenseVerificationFilter;
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
 }
 
 export interface AdminClinic {
@@ -143,7 +166,7 @@ export interface AdminConsolePayload {
   metrics: AdminMetric[];
   manualHospitalSubmissions: ManualHospitalSubmission[];
   clinicJoinRequests: ClinicJoinRequest[];
-  licenseVerificationRequests: LicenseVerificationRequest[];
+  licenseVerificationSummary: LicenseVerificationSummary;
   clinics: AdminClinic[];
   users: AdminUser[];
   operations: AdminOperations;
@@ -346,6 +369,36 @@ export async function updateClinicMembership(
     `/api/v1/admin/clinic-memberships/${clinicId}/${userId}`,
     accessToken,
     { method: "PATCH", body: JSON.stringify({ status, role }) },
+  );
+}
+
+export async function fetchAdminLicenseVerifications(
+  accessToken: string,
+  filter: LicenseVerificationFilter,
+  page: number,
+  pageSize = 12,
+) {
+  const params = new URLSearchParams({
+    filter,
+    page: String(page),
+    pageSize: String(pageSize),
+  });
+  return adminFetch<AdminLicenseVerificationsPayload>(
+    `/api/v1/admin/license-verifications?${params.toString()}`,
+    accessToken,
+  );
+}
+
+export async function fetchAdminLicenseFileUrl(
+  accessToken: string,
+  userId: string,
+  submissionId: string,
+  index: number,
+) {
+  const params = new URLSearchParams({ submissionId, index: String(index) });
+  return adminFetch<{ url: string }>(
+    `/api/v1/admin/license-verifications/${encodeURIComponent(userId)}/files?${params.toString()}`,
+    accessToken,
   );
 }
 

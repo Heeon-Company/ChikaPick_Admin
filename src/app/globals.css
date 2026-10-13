@@ -6797,6 +6797,7 @@ td span {
 }
 
 .admin-license-file a,
+.admin-license-file button,
 .admin-license-file span {
   display: block;
   overflow: hidden;
@@ -6806,9 +6807,37 @@ td span {
   text-overflow: ellipsis;
 }
 
+.admin-license-file button {
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
 .admin-license-file a:hover,
-.admin-license-file a:focus-visible {
+.admin-license-file a:focus-visible,
+.admin-license-file button:hover,
+.admin-license-file button:focus-visible {
   text-decoration: underline;
+}
+
+.admin-license-error {
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(249, 0, 3, 0.18);
+  border-radius: 8px;
+  background: #fff5f5;
+  color: #d60003;
+  font-size: 14px;
+}
+
+.admin-license-review > .admin-sales-pagination {
+  min-height: 54px;
 }
 
 .admin-license-request-card footer {

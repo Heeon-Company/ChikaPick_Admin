@@ -52,6 +52,8 @@ import {
   fetchAdminDentalSalesDetail,
   fetchAdminExternalConnectors,
   fetchAdminInviteDirectory,
+  fetchAdminLicenseFileUrl,
+  fetchAdminLicenseVerifications,
   fetchAdminManualHospitalSubmissions,
   fetchAdminMembershipManagement,
   fetchAdminPartnerClinicDetail,
@@ -87,6 +89,7 @@ import {
   type AdminAccountRole,
   type MutableAdminAccountRole,
   type AdminConsolePayload,
+  type AdminLicenseVerificationsPayload,
   type AdminManualHospitalSubmissionsPayload,
   type AdminPartnerClinicSalesLinkResult,
   type ManualHospitalApprovalResult,
@@ -277,14 +280,11 @@ import {
   type SalesPerformancePayload,
 } from "@/lib/sales-performance";
 import {
-  filterLicenseVerificationRequests,
   licenseMembershipRoleLabel,
   licenseRequestTimeLabel,
   licenseVerificationStatus,
   licenseVerificationStatusLabel,
   normalizeLicenseRejectionReason,
-  pendingLicenseVerificationRequests,
-  summarizeLicenseVerifications,
   type LicenseVerificationFilter,
 } from "@/lib/license-verifications";
 import {
@@ -384,7 +384,7 @@ const emptyConsole: AdminConsolePayload = {
   ],
   manualHospitalSubmissions: [],
   clinicJoinRequests: [],
-  licenseVerificationRequests: [],
+  licenseVerificationSummary: { total: 0, approved: 0, pending: 0, unrequested: 0 },
   clinics: [],
   users: [],
   operations: {
@@ -1306,8 +1306,7 @@ function AdminConsole() {
             />
           ) : activePrimaryTab === "license-review" ? (
             <LicenseReviewTab
-              data={consoleData}
-              isLoading={isLoadingConsole}
+              accessToken={session?.access_token ?? ""}
               onDecision={(userId, approved, note, submissionId) =>
                 runAction((token) =>
                   updateLicenseVerification(token, userId, approved, note, submissionId),
@@ -10287,9 +10286,7 @@ function OverviewTab({
   const pendingMemberships = data.clinicJoinRequests.filter(
     (item) => item.status === "pending",
   ).length;
-  const pendingLicenseReviews = pendingLicenseVerificationRequests(
-    data.licenseVerificationRequests,
-  ).length;
+  const pendingLicenseReviews = data.licenseVerificationSummary?.pending ?? 0;
   const activePartnerClinics = data.clinics.filter(
     (clinic) => clinic.isChikapickPartner,
   ).length;
@@ -11096,12 +11093,10 @@ function ManualHospitalReviewTab({
 }
 
 function LicenseReviewTab({
-  data,
-  isLoading,
+  accessToken,
   onDecision,
 }: {
-  data: AdminConsolePayload;
-  isLoading: boolean;
+  accessToken: string;
   onDecision: (userId: string, approved: boolean, note: string, submissionId: string) => Promise<boolean>;
 }) {
   const [processingDecision, setProcessingDecision] = useState<{
@@ -11118,15 +11113,85 @@ function LicenseReviewTab({
   const [isApprovalCompleteOpen, setIsApprovalCompleteOpen] = useState(false);
   const [statusFilter, setStatusFilter] =
     useState<LicenseVerificationFilter>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [directory, setDirectory] =
+    useState<AdminLicenseVerificationsPayload | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [fileError, setFileError] = useState("");
   const sectionRef = useRef<HTMLElement>(null);
   const lastTriggerRef = useRef<HTMLButtonElement>(null);
   const approvalConfirmRef = useRef<HTMLButtonElement>(null);
   const rejectionTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const summary = summarizeLicenseVerifications(data.licenseVerificationRequests);
-  const visibleRequests = filterLicenseVerificationRequests(
-    data.licenseVerificationRequests,
-    statusFilter,
+
+  const loadDirectory = useCallback(async ({ silent = false } = {}) => {
+    if (!accessToken) return;
+    if (!silent) {
+      setIsLoading(true);
+      setErrorMessage("");
+    }
+    try {
+      const next = await fetchAdminLicenseVerifications(
+        accessToken,
+        statusFilter,
+        currentPage,
+      );
+      // A decision can empty the last page of a filtered list.
+      if (next.items.length === 0 && currentPage > next.pagination.totalPages) {
+        setCurrentPage(next.pagination.totalPages);
+      }
+      setDirectory(next);
+      if (silent) setErrorMessage("");
+    } catch (error) {
+      // A background refresh keeps the cards already on screen.
+      if (silent) return;
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "면허 인증 요청을 불러오지 못했습니다.",
+      );
+    } finally {
+      if (!silent) setIsLoading(false);
+    }
+  }, [accessToken, currentPage, statusFilter]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => void loadDirectory(), 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [loadDirectory]);
+  useAutoRefresh(() => void loadDirectory({ silent: true }));
+
+  const summary = directory?.summary ?? {
+    total: 0,
+    approved: 0,
+    pending: 0,
+    unrequested: 0,
+  };
+  const visibleRequests = directory?.items ?? [];
+  const pagination = directory?.pagination;
+  const pageNumbers = dentalSalesPageNumbers(
+    pagination?.page ?? currentPage,
+    pagination?.totalPages ?? 1,
   );
+
+  async function openLicenseFile(userId: string, submissionId: string, index: number) {
+    // Open the window during the click so popup blockers allow it, then point
+    // it at a link signed just now.
+    const preview = window.open("", "_blank");
+    if (!preview) {
+      setFileError("면허증을 보려면 팝업을 허용해 주세요.");
+      return;
+    }
+    preview.opener = null;
+    setFileError("");
+    try {
+      const { url } = await fetchAdminLicenseFileUrl(accessToken, userId, submissionId, index);
+      preview.location.replace(url);
+    } catch {
+      preview.close();
+      setFileError("면허증 파일을 열지 못했습니다. 다시 시도해 주세요.");
+    }
+  }
   const metrics = [
     { label: "소속 치과 의사 전체 가입자 수", value: summary.total },
     { label: "면허 인증 완료 수", value: summary.approved },
@@ -11171,7 +11236,10 @@ function LicenseReviewTab({
     setProcessingDecision({ approved: true, userId });
     try {
       const approved = await onDecision(userId, true, "", submissionId);
-      if (approved) setIsApprovalCompleteOpen(true);
+      if (approved) {
+        setIsApprovalCompleteOpen(true);
+        await loadDirectory({ silent: true });
+      }
     } finally {
       setProcessingDecision(null);
     }
@@ -11212,6 +11280,7 @@ function LicenseReviewTab({
       if (rejected) {
         setRejectionTarget(null);
         setRejectionReason("");
+        await loadDirectory({ silent: true });
       }
     } finally {
       setProcessingDecision(null);
@@ -11271,7 +11340,10 @@ function LicenseReviewTab({
           <button
             aria-pressed={statusFilter === filter.id}
             key={filter.id}
-            onClick={() => setStatusFilter(filter.id)}
+            onClick={() => {
+              setStatusFilter(filter.id);
+              setCurrentPage(1);
+            }}
             type="button"
           >
             {filter.label} <span>{filter.count}</span>
@@ -11316,12 +11388,15 @@ function LicenseReviewTab({
                 <div>
                   <dt>첨부 파일</dt>
                   <dd className="admin-license-file">
-                    {submission ? (submission.files ?? [submission]).map((file, index) => (
-                      <span key={index}>
-                        {index > 0 ? <br /> : null}
-                        {file.signedUrl ? <a href={file.signedUrl} rel="noreferrer" target="_blank" title={file.fileName}>{file.fileName}</a>
-                          : <span title={file.fileName}>{file.fileName}</span>}
-                      </span>
+                    {submission ? submission.files.map((file, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        title={file.fileName}
+                        onClick={() => void openLicenseFile(item.userId, submission.id, index)}
+                      >
+                        {file.fileName}
+                      </button>
                     )) : <span>미제출</span>}
                   </dd>
                 </div>
@@ -11358,10 +11433,54 @@ function LicenseReviewTab({
             선택한 상태에 해당하는 치과의사가 없습니다.
           </p>
         ) : null}
-        {isLoading && data.licenseVerificationRequests.length === 0 ? (
+        {isLoading && visibleRequests.length === 0 ? (
           <p className="admin-license-empty">면허 인증 요청을 불러오는 중입니다.</p>
         ) : null}
       </div>
+
+      {errorMessage ? (
+        <p className="admin-license-error" role="alert">{errorMessage}</p>
+      ) : null}
+      {fileError ? (
+        <p className="admin-license-error" role="alert">{fileError}</p>
+      ) : null}
+
+      {pagination && pagination.totalPages > 1 ? (
+        <nav className="admin-sales-pagination" aria-label="면허 인증 요청 목록 페이지">
+          <button
+            type="button"
+            aria-label="이전 페이지"
+            disabled={pagination.page <= 1 || isLoading}
+            onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+          >
+            ‹
+          </button>
+          {pageNumbers.map((pageNumber) => (
+            <button
+              type="button"
+              key={pageNumber}
+              className={
+                pageNumber === pagination.page ? "admin-sales-page-active" : undefined
+              }
+              aria-current={pageNumber === pagination.page ? "page" : undefined}
+              disabled={isLoading}
+              onClick={() => setCurrentPage(pageNumber)}
+            >
+              {pageNumber}
+            </button>
+          ))}
+          <button
+            type="button"
+            aria-label="다음 페이지"
+            disabled={pagination.page >= pagination.totalPages || isLoading}
+            onClick={() =>
+              setCurrentPage((page) => Math.min(pagination.totalPages, page + 1))
+            }
+          >
+            ›
+          </button>
+        </nav>
+      ) : null}
 
       {rejectionTarget ? (
         <div className="admin-license-decision-layer">

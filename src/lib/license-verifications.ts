@@ -1,23 +1,15 @@
-import type { LicenseVerificationRequest } from "./admin-api.ts";
+import type {
+  LicenseVerificationFilter,
+  LicenseVerificationRequest,
+} from "./admin-api.ts";
 
-export interface LicenseVerificationSummary {
-  total: number;
-  approved: number;
-  pending: number;
-  unrequested: number;
-}
+export type { LicenseVerificationFilter };
 
 export type LicenseVerificationStatus =
   | "approved"
   | "pending"
   | "rejected"
   | "not_submitted";
-
-export type LicenseVerificationFilter =
-  | "all"
-  | "pending"
-  | "approved"
-  | "needs_submission";
 
 export function licenseVerificationStatus(
   request: LicenseVerificationRequest,
@@ -28,20 +20,6 @@ export function licenseVerificationStatus(
   return "not_submitted";
 }
 
-export function filterLicenseVerificationRequests(
-  requests: LicenseVerificationRequest[],
-  filter: LicenseVerificationFilter,
-) {
-  if (filter === "all") return requests;
-  return requests.filter((request) => {
-    const status = licenseVerificationStatus(request);
-    if (filter === "needs_submission") {
-      return status === "rejected" || status === "not_submitted";
-    }
-    return status === filter;
-  });
-}
-
 export function licenseVerificationStatusLabel(
   status: LicenseVerificationStatus,
 ) {
@@ -49,30 +27,6 @@ export function licenseVerificationStatusLabel(
   if (status === "pending") return "승인 요청";
   if (status === "rejected") return "재요청 필요";
   return "미요청";
-}
-
-export function summarizeLicenseVerifications(
-  requests: LicenseVerificationRequest[],
-): LicenseVerificationSummary {
-  return requests.reduce<LicenseVerificationSummary>(
-    (summary, request) => {
-      summary.total += 1;
-      const status = licenseVerificationStatus(request);
-      if (status === "approved") summary.approved += 1;
-      else if (status === "pending") summary.pending += 1;
-      else summary.unrequested += 1;
-      return summary;
-    },
-    { total: 0, approved: 0, pending: 0, unrequested: 0 },
-  );
-}
-
-export function pendingLicenseVerificationRequests(
-  requests: LicenseVerificationRequest[],
-) {
-  return requests.filter(
-    (request) => licenseVerificationStatus(request) === "pending",
-  );
 }
 
 export function licenseRequestTimeLabel(value: string) {

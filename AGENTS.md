@@ -74,7 +74,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Project Essentials
 
-The existing dentist-license review UI now reviews exact submission IDs for Figma `VCdW8sFEyA8Ov3evzQ0vVM`, node `7930:62211` (September 19). Preserve the current cards, filters and decision dialogs. Every submitted file has a private signed link; rejection dialogs retain the ID originally inspected across directory refreshes. The API includes active/pending owner/doctor applicants and manual owners awaiting hospital approval, rejects stale reviews, and updates submission/profile/audit state atomically. Admin does not upload or automatically approve licenses. Apply API migration `20260919170000_partner_license_required_flow.sql` and deploy API before this Admin. See `docs/partner-license-verification.md`.
+The existing dentist-license review UI now reviews exact submission IDs for Figma `VCdW8sFEyA8Ov3evzQ0vVM`, node `7930:62211` (September 19). Preserve the current cards, filters and decision dialogs. The tab loads its own filtered pages from `GET /api/v1/admin/license-verifications` (12 cards per page, refreshed every minute while open) and signs a file link only when a file name is clicked (`/license-verifications/:userId/files`); the dashboard count comes from the console's `licenseVerificationSummary`. Apply API migration `20261013100000_admin_license_review_directory.sql` and deploy API before this Admin; rejection dialogs retain the ID originally inspected across directory refreshes. The API includes active/pending owner/doctor applicants and manual owners awaiting hospital approval, rejects stale reviews, and updates submission/profile/audit state atomically. Admin does not upload or automatically approve licenses. Apply API migration `20260919170000_partner_license_required_flow.sql` and deploy API before this Admin. See `docs/partner-license-verification.md`.
 
 Admin is excluded from search through root `robots: { index: false, follow: false }` metadata and a site-wide `X-Robots-Tag: noindex, nofollow` response header. `robots.txt` allows crawling so crawlers can observe noindex; never replace it with a blanket crawl block. Korean title/description and actual Client app icons remain available for browser and link previews. See `docs/search-metadata.md`; authentication/authorization remain required independently.
 
@@ -307,3 +307,13 @@ The top-bar search (icon or Ctrl/Cmd+K expands an inline top-bar field with a re
 설정 > 계정 has a `연락처` row (`src/components/AdminContactPhoneEditor.tsx`, same pattern as `AdminNameEditor`) where any admin saves their own work phone through `PATCH /api/v1/admin/account/contact-phone`. Input accepts hyphens and is sent as digits; display is hyphenated. The number is shown in the Partners header of clinics where this admin is the assigned salesperson. Requires API migration `20261012100000_admin_contact_phone.sql` and the matching API deploy.
 
 `사용자 의견` (`src/components/UserFeedbackTab.tsx`, below 시크릿 피드백) lists feedback that patients send from the app's My Page `의견 보내기` sheet, 20 per page, filtered by 전체/답변 대기/답변 완료 (default 답변 대기), with masked author name/email. The detail dialog shows the message, platform/app version and a 2000-character answer box; saving calls `PATCH /api/v1/admin/user-feedback/:id`, which shows the answer in the patient's `보낸 의견` screen and sends a push. Answers can be edited later. Reads `GET /api/v1/admin/user-feedback`. Apply API migration `20261012140000_user_feedback.sql` and deploy the API before this UI.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
