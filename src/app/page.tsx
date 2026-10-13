@@ -5902,10 +5902,12 @@ function PartnerClinicsTab({
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
 
-  const loadClinics = useCallback(async () => {
+  const loadClinics = useCallback(async ({ silent = false } = {}) => {
     if (!accessToken) return;
-    setIsLoading(true);
-    setErrorMessage("");
+    if (!silent) {
+      setIsLoading(true);
+      setErrorMessage("");
+    }
     try {
       const payload = await fetchAdminPartnerClinics(
         accessToken,
@@ -5913,14 +5915,17 @@ function PartnerClinicsTab({
         currentPage,
       );
       setListData(payload);
+      if (silent) setErrorMessage("");
     } catch (error) {
+      // A background refresh keeps the rows already on screen.
+      if (silent) return;
       setErrorMessage(
         error instanceof Error
           ? error.message
           : "파트너 치과 목록을 불러오지 못했습니다.",
       );
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, [accessToken, appliedQuery, currentPage]);
 
@@ -5928,6 +5933,32 @@ function PartnerClinicsTab({
     const timeoutId = window.setTimeout(() => void loadClinics(), 0);
     return () => window.clearTimeout(timeoutId);
   }, [loadClinics]);
+
+  // Clinics that sign up while the list is open must appear without a manual
+  // reload: refresh on return from a detail, on focus, and every minute.
+  const wasDetailOpenRef = useRef(false);
+  useEffect(() => {
+    if (selectedClinicId) {
+      wasDetailOpenRef.current = true;
+      return;
+    }
+    const refresh = () => {
+      if (document.visibilityState === "visible") void loadClinics({ silent: true });
+    };
+    const returnRefreshId = wasDetailOpenRef.current
+      ? window.setTimeout(refresh, 0)
+      : undefined;
+    wasDetailOpenRef.current = false;
+    const intervalId = window.setInterval(refresh, 60_000);
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.clearTimeout(returnRefreshId);
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [loadClinics, selectedClinicId]);
 
   const loadDetail = useCallback(async () => {
     if (!accessToken || !selectedClinicId) return;
