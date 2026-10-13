@@ -6804,7 +6804,7 @@ function PartnerClinicDetailPage({
             <span>
               <strong>앱 노출 승인</strong>
               <small>
-                현재 사용자 앱의 치과 정보 노출 상태입니다 (완료율{" "}
+                현재 사용자 앱의 치과 정보 노출 상태입니다 (기본정보 포함 완료율{" "}
                 {APP_VISIBILITY_MIN_PERCENTAGE}% 이상부터 승인 가능)
               </small>
             </span>
@@ -8560,8 +8560,8 @@ function DentalSalesDetailPage({
               <div>
                 <strong>앱 노출 승인</strong>
                 <p>
-                  완료율 {APP_VISIBILITY_MIN_PERCENTAGE}% 이상부터 승인할 수 있으며, 승인 후 사용자 앱에
-                  치과 정보가 노출됩니다
+                  기본정보 포함 완료율 {APP_VISIBILITY_MIN_PERCENTAGE}% 이상부터 승인할 수 있으며, 승인
+                  후 사용자 앱에 치과 정보가 노출됩니다
                 </p>
               </div>
               <AppVisibilitySwitch
