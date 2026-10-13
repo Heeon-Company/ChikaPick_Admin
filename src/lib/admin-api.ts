@@ -1387,6 +1387,80 @@ export async function uploadAdminDentalSalesBusinessLicense(
   );
 }
 
+export type SalesDentistLicenseStatus =
+  | "approved"
+  | "pending"
+  | "rejected"
+  | "not_submitted";
+
+export interface SalesDentistLicenseRow {
+  userId: string;
+  displayName: string | null;
+  email: string | null;
+  membershipRole: "owner" | "doctor";
+  membershipStatus: "active" | "pending";
+  licenseStatus: SalesDentistLicenseStatus;
+}
+
+export interface AdminSalesDentistLicensesPayload {
+  clinicLinked: boolean;
+  dentists: SalesDentistLicenseRow[];
+}
+
+export async function fetchAdminSalesDentistLicenses(
+  accessToken: string,
+  profileId: string,
+) {
+  return adminFetch<AdminSalesDentistLicensesPayload>(
+    `/api/v1/admin/dental-sales/${encodeURIComponent(profileId)}/dentist-licenses`,
+    accessToken,
+  );
+}
+
+// Each file goes straight to private storage through a signed target (files
+// can exceed the API's request-body limit); the API then checks the stored
+// files and approves the license.
+export async function uploadAdminSalesDentistLicense(
+  accessToken: string,
+  profileId: string,
+  userId: string,
+  files: File[],
+) {
+  const base = `/api/v1/admin/dental-sales/${encodeURIComponent(profileId)}/dentist-licenses/${encodeURIComponent(userId)}`;
+  const storage = createSupabaseBrowserClient().storage;
+  const uploads = [];
+  for (const file of files) {
+    const { upload } = await adminFetch<{
+      upload: { bucket: string; path: string; token: string; submission_id: string };
+    }>(`${base}/upload-url`, accessToken, {
+      method: "POST",
+      body: JSON.stringify({
+        file_name: file.name,
+        content_type: file.type,
+        size_bytes: file.size,
+      }),
+    });
+    const result = await storage
+      .from(upload.bucket)
+      .uploadToSignedUrl(upload.path, upload.token, file, {
+        contentType: file.type,
+        upsert: false,
+      });
+    if (result.error) {
+      throw new Error("면허증 파일을 올리지 못했습니다. 다시 시도해 주세요.");
+    }
+    uploads.push({
+      submission_id: upload.submission_id,
+      storage_path: upload.path,
+      original_name: file.name,
+    });
+  }
+  return adminFetch<AdminActionResult>(base, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ files: uploads }),
+  });
+}
+
 export async function fetchAdminPartnerClinics(
   accessToken: string,
   query: string,

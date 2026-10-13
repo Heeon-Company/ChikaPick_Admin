@@ -9742,6 +9742,94 @@ td span {
   color: var(--danger);
 }
 
+.admin-sales-dentist-licenses {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-sales-dentist-licenses ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-sales-dentist-licenses li {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--chika-base-1);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 10px 12px;
+}
+
+.admin-sales-dentist-license-person {
+  min-width: 0;
+  flex: 1 1 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-sales-dentist-license-person strong {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-sales-dentist-license-person span,
+.admin-sales-dentist-licenses-hint,
+.admin-sales-dentist-licenses-empty {
+  margin: 0;
+  color: var(--text-quaternary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.admin-sales-dentist-licenses-empty {
+  text-align: center;
+  padding: 12px 0;
+}
+
+.admin-sales-dentist-licenses li > label {
+  min-height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.admin-sales-dentist-licenses li > label:hover,
+.admin-sales-dentist-licenses li > label:focus-within {
+  border-color: var(--chika-secondary-4);
+  color: var(--chika-secondary-6);
+}
+
+.admin-sales-dentist-licenses li > label[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.admin-sales-dentist-licenses li > .admin-sales-business-file-error {
+  flex-basis: 100%;
+  margin: 0;
+  text-align: left;
+}
+
 .admin-sales-completion-list .admin-sales-completion-row {
   align-items: stretch;
   flex-direction: column;

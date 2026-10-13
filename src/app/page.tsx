@@ -53,6 +53,8 @@ import {
   fetchAdminExternalConnectors,
   fetchAdminInviteDirectory,
   fetchAdminLicenseFileUrl,
+  fetchAdminSalesDentistLicenses,
+  uploadAdminSalesDentistLicense,
   fetchAdminLicenseVerifications,
   fetchAdminManualHospitalSubmissions,
   fetchAdminMembershipManagement,
@@ -90,6 +92,7 @@ import {
   type MutableAdminAccountRole,
   type AdminConsolePayload,
   type AdminLicenseVerificationsPayload,
+  type AdminSalesDentistLicensesPayload,
   type AdminManualHospitalSubmissionsPayload,
   type AdminPartnerClinicSalesLinkResult,
   type ManualHospitalApprovalResult,
@@ -7737,6 +7740,16 @@ function DentalSalesTab({
         }
         onBack={closeDetail}
         onBusinessFileSelect={selectBusinessFile}
+        dentistLicenseCard={
+          selectedProfileId ? (
+            <DentalSalesDentistLicenseCard
+              key={selectedProfileId}
+              accessToken={accessToken}
+              profileId={selectedProfileId}
+              onSaved={setActionMessage}
+            />
+          ) : null
+        }
         onDetailRetry={() => void loadDetail()}
         onHospitalReviewClose={() => setIsHospitalReviewOpen(false)}
         onHospitalReviewOpen={() => setIsHospitalReviewOpen(true)}
@@ -8029,6 +8042,7 @@ function DentalSalesDetailPage({
   actionMessage,
   businessFileError,
   businessFileName,
+  dentistLicenseCard,
   detail,
   detailError,
   isAssignmentEditing,
@@ -8080,6 +8094,7 @@ function DentalSalesDetailPage({
   ) => void;
   onBack: () => void;
   onBusinessFileSelect: (file: File | undefined) => void;
+  dentistLicenseCard?: React.ReactNode;
   onDetailRetry: () => void;
   onHospitalReviewClose: () => void;
   onHospitalReviewOpen: () => void;
@@ -8494,6 +8509,8 @@ function DentalSalesDetailPage({
             </div>
           </DetailCard>
 
+          {dentistLicenseCard}
+
           <DetailCard
             className={isComplete ? "admin-sales-detail-card--information-complete" : undefined}
             description={
@@ -8784,6 +8801,149 @@ function SummaryItem({
       <dt>{label}</dt>
       <dd className={mono ? "admin-sales-mono" : undefined}>{value}</dd>
     </div>
+  );
+}
+
+const salesDentistLicenseStatusLabels = {
+  approved: "인증 완료",
+  pending: "승인 요청",
+  rejected: "재요청 필요",
+  not_submitted: "미요청",
+} as const;
+
+// Salespeople verify the linked clinic's dentists here; uploads are approved
+// right away (CEO decision, 2026-10-13). Dentists who sign up alone still use
+// the Partners license page and the 치과의사 면허 인증 review.
+function DentalSalesDentistLicenseCard({
+  accessToken,
+  onSaved,
+  profileId,
+}: {
+  accessToken: string;
+  onSaved: (message: string) => void;
+  profileId: string;
+}) {
+  const [data, setData] = useState<AdminSalesDentistLicensesPayload | null>(null);
+  const [loadError, setLoadError] = useState("");
+  const [uploadingUserId, setUploadingUserId] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<{ userId: string; message: string } | null>(null);
+
+  const load = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      setData(await fetchAdminSalesDentistLicenses(accessToken, profileId));
+      setLoadError("");
+    } catch (error) {
+      setLoadError(
+        error instanceof Error ? error.message : "치과의사 목록을 불러오지 못했습니다.",
+      );
+    }
+  }, [accessToken, profileId]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [load]);
+
+  async function upload(userId: string, files: File[]) {
+    setUploadError(null);
+    if (!files.length) return;
+    if (files.length > 10) {
+      setUploadError({ userId, message: "면허증 파일은 최대 10개까지 올릴 수 있습니다." });
+      return;
+    }
+    for (const file of files) {
+      const validationError = dentalSalesBusinessFileError(file);
+      if (validationError) {
+        setUploadError({ userId, message: validationError });
+        return;
+      }
+    }
+    setUploadingUserId(userId);
+    try {
+      const result = await uploadAdminSalesDentistLicense(accessToken, profileId, userId, files);
+      onSaved(result.message);
+      await load();
+    } catch (error) {
+      setUploadError({
+        userId,
+        message: error instanceof Error ? error.message : "면허증을 올리지 못했습니다.",
+      });
+    } finally {
+      setUploadingUserId(null);
+    }
+  }
+
+  return (
+    <DetailCard
+      title="치과의사 면허증 첨부"
+      description="올린 면허증은 검토 없이 바로 인증 완료됩니다."
+    >
+      <div className="admin-sales-dentist-licenses">
+        {loadError ? (
+          <p className="admin-sales-business-file-error" role="alert">{loadError}</p>
+        ) : !data ? (
+          <p className="admin-sales-dentist-licenses-empty">치과의사 목록을 불러오는 중입니다.</p>
+        ) : !data.clinicLinked ? (
+          <p className="admin-sales-dentist-licenses-empty">
+            파트너스에 가입한 병원과 연결되면 소속 치과의사의 면허증을 올릴 수 있습니다.
+          </p>
+        ) : !data.dentists.length ? (
+          <p className="admin-sales-dentist-licenses-empty">
+            파트너스에 가입한 원장님·치과의사가 아직 없습니다.
+          </p>
+        ) : (
+          <ul>
+            {data.dentists.map((dentist) => {
+              const inputId = `admin-sales-dentist-license-${dentist.userId}`;
+              const isUploading = uploadingUserId === dentist.userId;
+              return (
+                <li key={dentist.userId}>
+                  <div className="admin-sales-dentist-license-person">
+                    <strong>{dentist.displayName ?? dentist.email ?? "이름 없음"}</strong>
+                    <span>
+                      {dentist.membershipRole === "owner" ? "원장" : "치과의사"}
+                      {dentist.membershipStatus === "pending" ? " · 소속 승인 대기" : ""}
+                    </span>
+                  </div>
+                  <span
+                    className={`admin-license-status admin-license-status--${dentist.licenseStatus}`}
+                  >
+                    {salesDentistLicenseStatusLabels[dentist.licenseStatus]}
+                  </span>
+                  {dentist.licenseStatus === "approved" ? null : (
+                    <>
+                      <input
+                        id={inputId}
+                        className="admin-visually-hidden"
+                        type="file"
+                        multiple
+                        disabled={uploadingUserId !== null}
+                        accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                        onChange={(event) => {
+                          void upload(dentist.userId, Array.from(event.target.files ?? []));
+                          event.currentTarget.value = "";
+                        }}
+                      />
+                      <label htmlFor={inputId} aria-disabled={uploadingUserId !== null}>
+                        <Image src="/Type=Upload.svg" alt="" width={16} height={16} />
+                        {isUploading ? "인증 중" : "면허증 업로드"}
+                      </label>
+                    </>
+                  )}
+                  {uploadError?.userId === dentist.userId ? (
+                    <p className="admin-sales-business-file-error" role="alert">
+                      {uploadError.message}
+                    </p>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        <p className="admin-sales-dentist-licenses-hint">파일 형식: JPG, PNG, PDF (파일당 최대 10MB, 최대 10개)</p>
+      </div>
+    </DetailCard>
   );
 }
 
