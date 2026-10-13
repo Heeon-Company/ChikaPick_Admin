@@ -281,6 +281,10 @@ export function isDentalSalesVisitDetailStatus(
   return status !== null && ["INTEREST", "CODE_SHARED", "REJECTED", "ON_HOLD"].includes(status);
 }
 
+// Operators may approve 앱 노출 from this 정보 관리 완료율 (4 of 5 cards); the
+// API enforces the same threshold.
+export const APP_VISIBILITY_MIN_PERCENTAGE = 80;
+
 export function dentalSalesCompletionViewState({
   detailStatus,
   isAppVisible,
@@ -295,6 +299,9 @@ export function dentalSalesCompletionViewState({
   const isComplete = completionPercentage === 100;
 
   return {
+    canApproveAppVisibility:
+      completionPercentage !== null &&
+      completionPercentage >= APP_VISIBILITY_MIN_PERCENTAGE,
     completionPercentage,
     isAppVisible: isAppVisible ?? isComplete,
     isComplete,

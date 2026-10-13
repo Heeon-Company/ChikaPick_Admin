@@ -41,10 +41,25 @@ test("completion view switches to the completed card at exactly 100 percent", ()
       percentage: 99,
     }),
     {
+      canApproveAppVisibility: true,
       completionPercentage: 99,
       isAppVisible: false,
       isComplete: false,
     },
+  );
+  assert.equal(
+    dentalSalesCompletionViewState({
+      detailStatus: "INFORMATION_MISSING",
+      percentage: 80,
+    }).canApproveAppVisibility,
+    true,
+  );
+  assert.equal(
+    dentalSalesCompletionViewState({
+      detailStatus: "INFORMATION_MISSING",
+      percentage: 60,
+    }).canApproveAppVisibility,
+    false,
   );
   assert.deepEqual(
     dentalSalesCompletionViewState({
@@ -52,6 +67,7 @@ test("completion view switches to the completed card at exactly 100 percent", ()
       percentage: 100,
     }),
     {
+      canApproveAppVisibility: true,
       completionPercentage: 100,
       isAppVisible: true,
       isComplete: true,

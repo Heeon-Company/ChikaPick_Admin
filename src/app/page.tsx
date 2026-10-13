@@ -206,6 +206,7 @@ import {
   dentalSalesDetailLabel,
   dentalSalesBusinessFileError,
   dentalSalesDetailOptions,
+  APP_VISIBILITY_MIN_PERCENTAGE,
   dentalSalesCompletionViewState,
   dentalSalesHospitalInformationCards,
   dentalSalesHospitalInformationReviewState,
@@ -6802,7 +6803,10 @@ function PartnerClinicDetailPage({
           <div className="admin-partner-detail-visibility">
             <span>
               <strong>앱 노출 승인</strong>
-              <small>현재 사용자 앱의 치과 정보 노출 상태입니다</small>
+              <small>
+                현재 사용자 앱의 치과 정보 노출 상태입니다 (완료율{" "}
+                {APP_VISIBILITY_MIN_PERCENTAGE}% 이상부터 승인 가능)
+              </small>
             </span>
             <AppVisibilitySwitch
               checked={clinic.isAppVisible}
@@ -8195,7 +8199,8 @@ function DentalSalesDetailPage({
     isAppVisible: profile.isAppVisible,
     percentage: profile.informationCompletion?.percentage,
   });
-  const { completionPercentage, isAppVisible, isComplete } = completionView;
+  const { canApproveAppVisibility, completionPercentage, isAppVisible, isComplete } =
+    completionView;
   const businessLicenseName = businessFileName || profile.businessLicense?.fileName || "";
 
   return (
@@ -8540,11 +8545,11 @@ function DentalSalesDetailPage({
                 ref={hospitalReviewButtonRef}
                 className="admin-sales-review-button"
                 type="button"
-                disabled={!isComplete || !detail.hospitalInformation}
+                disabled={!canApproveAppVisibility || !detail.hospitalInformation}
                 title={
-                  isComplete && detail.hospitalInformation
+                  canApproveAppVisibility && detail.hospitalInformation
                     ? undefined
-                    : "필수 정보 입력 완료 후 검토할 수 있습니다."
+                    : `정보 관리 완료율 ${APP_VISIBILITY_MIN_PERCENTAGE}% 이상부터 검토할 수 있습니다.`
                 }
                 onClick={onHospitalReviewOpen}
               >
@@ -8554,7 +8559,10 @@ function DentalSalesDetailPage({
             <div className="admin-sales-app-visibility">
               <div>
                 <strong>앱 노출 승인</strong>
-                <p>승인 후 사용자 앱에 치과 정보가 노출됩니다</p>
+                <p>
+                  완료율 {APP_VISIBILITY_MIN_PERCENTAGE}% 이상부터 승인할 수 있으며, 승인 후 사용자 앱에
+                  치과 정보가 노출됩니다
+                </p>
               </div>
               <AppVisibilitySwitch
                 checked={isAppVisible}
