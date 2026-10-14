@@ -12,6 +12,8 @@ export interface AdminPartnerClinicRow {
   createdAt: string;
   /** False for a clinic not shown in the patient app (for example info still missing). */
   isAppVisible?: boolean;
+  /** 정보 관리 완료율 (0-100); list rows only. */
+  hospitalInfoCompletion?: number;
 }
 
 export interface AdminPartnerClinicsPayload {

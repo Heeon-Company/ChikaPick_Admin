@@ -7149,7 +7149,7 @@ td span {
 
 .admin-partner-clinics-table {
   width: 100%;
-  min-width: 1020px;
+  min-width: 1140px;
   table-layout: fixed;
   border-collapse: collapse;
   font-family: "Inter", "Pretendard", ui-sans-serif, system-ui, sans-serif;
@@ -7171,8 +7171,37 @@ td span {
   width: 70px;
 }
 
+.admin-partner-clinics-col-completion {
+  width: 120px;
+}
+
 .admin-partner-clinics-col-activity {
   width: 120px;
+}
+
+.admin-partner-clinics-table td > .admin-partner-clinics-completion {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: #161616;
+  font-size: 13px;
+}
+
+.admin-partner-clinics-completion > span {
+  position: relative;
+  width: 48px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--chika-base-2);
+}
+
+.admin-partner-clinics-completion > span > i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: var(--chika-secondary-6);
 }
 
 .admin-partner-clinics-col-date {

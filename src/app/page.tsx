@@ -6060,6 +6060,7 @@ function PartnerClinicsTab({
             <col className="admin-partner-clinics-col-owner" />
             <col className="admin-partner-clinics-col-count" />
             <col className="admin-partner-clinics-col-count" />
+            <col className="admin-partner-clinics-col-completion" />
             <col className="admin-partner-clinics-col-activity" />
             <col className="admin-partner-clinics-col-date" />
             <col className="admin-partner-clinics-col-action" />
@@ -6071,6 +6072,7 @@ function PartnerClinicsTab({
               <th>대표자명</th>
               <th>의사 수</th>
               <th>직원 수</th>
+              <th>정보 관리</th>
               <th>최근 활동 여부</th>
               <th>등록일</th>
               <th aria-label="상세보기" />
@@ -6094,6 +6096,18 @@ function PartnerClinicsTab({
                 <td>{clinic.representativeName ?? "-"}</td>
                 <td>{clinic.doctorCount}</td>
                 <td>{clinic.staffCount}</td>
+                <td>
+                  {typeof clinic.hospitalInfoCompletion === "number" ? (
+                    <span className="admin-partner-clinics-completion">
+                      <span aria-hidden="true">
+                        <i style={{ width: `${clinic.hospitalInfoCompletion}%` }} />
+                      </span>
+                      {clinic.hospitalInfoCompletion}%
+                    </span>
+                  ) : (
+                    "-"
+                  )}
+                </td>
                 <td>{partnerClinicActivityLabel(clinic.lastActiveAt)}</td>
                 <td>{partnerClinicRegistrationLabel(clinic.createdAt)}</td>
                 <td className="admin-partner-clinics-action-cell">
@@ -6109,7 +6123,7 @@ function PartnerClinicsTab({
             ))}
             {!isLoading && (listData?.items.length ?? 0) === 0 ? (
               <tr>
-                <td className="admin-sales-empty" colSpan={8}>
+                <td className="admin-sales-empty" colSpan={9}>
                   검색 조건에 맞는 파트너 치과가 없습니다.
                 </td>
               </tr>
