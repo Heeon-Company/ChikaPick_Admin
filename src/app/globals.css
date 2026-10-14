@@ -3,9 +3,9 @@
 .support-management { display: grid; gap: 20px; padding-bottom: 32px; }
 .support-management h2 { font-size: 18px; font-weight: 700; }
 .support-management p, .support-management small { color: #667085; }
-.support-management button { border: 1px solid #d0d5dd; background: white; border-radius: 8px; padding: 9px 14px; cursor: pointer; }
-.support-management button:disabled { opacity: .5; cursor: default; }
-.support-management .support-primary, .support-tabs button[aria-pressed="true"] { color: white; background: #1769e0; border-color: #1769e0; }
+.support-management button:not(:where(.admin-select-button, .admin-select-option)) { border: 1px solid #d0d5dd; background: white; border-radius: 8px; padding: 9px 14px; cursor: pointer; }
+.support-management button:not(:where(.admin-select-button, .admin-select-option)):disabled { opacity: .5; cursor: default; }
+.support-management .support-primary, .support-tabs button:not(:where(.admin-select-button, .admin-select-option))[aria-pressed="true"] { color: white; background: #1769e0; border-color: #1769e0; }
 .support-toolbar, .support-row, .support-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .support-tabs, .support-actions { display: flex; gap: 8px; }
 .support-actions { justify-content: flex-end; flex-wrap: wrap; }
@@ -13,7 +13,7 @@
 .support-row { padding: 14px 0; border-top: 1px solid #eaecf0; }
 .support-row > div { min-width: 0; overflow-wrap: anywhere; }
 .support-row small { display: block; margin-top: 4px; }
-.support-row button { flex-shrink: 0; }
+.support-row button:not(:where(.admin-select-button, .admin-select-option)) { flex-shrink: 0; }
 .support-card fieldset, .support-card label { display: grid; gap: 10px; min-width: 0; }
 .support-card fieldset { gap: 18px; }
 .support-card input:not([type="checkbox"]), .support-card textarea { width: 100%; border: 1px solid #d0d5dd; padding: 10px 12px; border-radius: 8px; background: white; }
@@ -35,12 +35,12 @@
 .admin-chika-sanction textarea { min-height:104px; resize:vertical; }
 .admin-chika-sanction p { font-size:13px; line-height:1.5; white-space:pre-wrap; overflow-wrap:anywhere; }
 .admin-chika-sanction-days { display:flex; gap:4px; flex-wrap:wrap; margin:8px 0; }
-.admin-chika-sanction-days button { padding:6px 10px; background:var(--chika-base-1); border:1px solid transparent; border-radius:6px; }
-.admin-chika-sanction-days button[aria-pressed=true] { background:var(--chika-secondary-1); border-color:var(--chika-secondary-6); color:var(--chika-secondary-6); }
-.admin-chika-sanction button[type=submit] { justify-self:end; padding:12px 24px; border-radius:16px; color:white; font-weight:700; min-height:52px; }
+.admin-chika-sanction-days button:not(:where(.admin-select-button, .admin-select-option)) { padding:6px 10px; background:var(--chika-base-1); border:1px solid transparent; border-radius:6px; }
+.admin-chika-sanction-days button:not(:where(.admin-select-button, .admin-select-option))[aria-pressed=true] { background:var(--chika-secondary-1); border-color:var(--chika-secondary-6); color:var(--chika-secondary-6); }
+.admin-chika-sanction button:not(:where(.admin-select-button, .admin-select-option))[type=submit] { justify-self:end; padding:12px 24px; border-radius:16px; color:white; font-weight:700; min-height:52px; }
 .admin-chika-sanction .is-sanction { background:var(--danger); }
 .admin-chika-sanction .is-release { background:var(--chika-secondary-6); }
-.admin-chika-sanction button:disabled { opacity:.5; cursor:not-allowed; }
+.admin-chika-sanction button:not(:where(.admin-select-button, .admin-select-option)):disabled { opacity:.5; cursor:not-allowed; }
 .admin-chika-sanction article { padding:12px 0; border-top:1px solid var(--border-subtle); }
 .admin-chika-sanction time { color:var(--text-tertiary); font-size:12px; }
 
@@ -116,7 +116,7 @@
   gap: 4px;
 }
 
-.admin-membership-category-filters button {
+.admin-membership-category-filters button:not(:where(.admin-select-button, .admin-select-option)) {
   height: 24px;
   border: 1px solid #d4d6da;
   border-radius: 999px;
@@ -130,7 +130,7 @@
   white-space: nowrap;
 }
 
-.admin-membership-category-filters button.is-active {
+.admin-membership-category-filters button:not(:where(.admin-select-button, .admin-select-option)).is-active {
   border-color: #001371;
   background: #001371;
   color: #fff;
@@ -139,8 +139,8 @@
   line-height: 18px;
 }
 
-.admin-membership-category-filters button:hover:not(.is-active),
-.admin-membership-category-filters button:focus-visible:not(.is-active) {
+.admin-membership-category-filters button:not(:where(.admin-select-button, .admin-select-option)):hover:not(.is-active),
+.admin-membership-category-filters button:not(:where(.admin-select-button, .admin-select-option)):focus-visible:not(.is-active) {
   border-color: #678bdd;
   color: #023dc7;
 }
@@ -283,12 +283,12 @@
 }
 
 .admin-membership-bulk-actions strong,
-.admin-membership-bulk-actions button {
+.admin-membership-bulk-actions button:not(:where(.admin-select-button, .admin-select-option)) {
   font-size: 12px;
   line-height: 16px;
 }
 
-.admin-membership-bulk-actions button {
+.admin-membership-bulk-actions button:not(:where(.admin-select-button, .admin-select-option)) {
   border: 0;
   border-radius: 5px;
   background: #e6ecf9;
@@ -297,7 +297,7 @@
   padding: 4px 8px;
 }
 
-.admin-membership-bulk-actions button:last-child {
+.admin-membership-bulk-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   background: #ffebeb;
   color: #c33;
 }
@@ -543,7 +543,7 @@
   margin-top: 30px;
 }
 
-.admin-membership-pagination button {
+.admin-membership-pagination button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 32px;
   height: 32px;
   border: 0;
@@ -554,19 +554,19 @@
   font-size: 14px;
 }
 
-.admin-membership-pagination button:first-child,
-.admin-membership-pagination button:last-child {
+.admin-membership-pagination button:not(:where(.admin-select-button, .admin-select-option)):first-child,
+.admin-membership-pagination button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   color: #9da1aa;
   font-size: 22px;
 }
 
-.admin-membership-pagination button.is-active {
+.admin-membership-pagination button:not(:where(.admin-select-button, .admin-select-option)).is-active {
   background: #e6ecf9;
   color: #023dc7;
   font-weight: 600;
 }
 
-.admin-membership-pagination button:disabled {
+.admin-membership-pagination button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: default;
   opacity: 0.38;
 }
@@ -718,7 +718,7 @@
   line-height: 14px;
 }
 
-.admin-membership-registration-heading nav button {
+.admin-membership-registration-heading nav button:not(:where(.admin-select-button, .admin-select-option)) {
   border: 0;
   background: transparent;
   color: inherit;
@@ -892,7 +892,7 @@
 }
 
 .admin-membership-current-file a,
-.admin-membership-current-file button {
+.admin-membership-current-file button:not(:where(.admin-select-button, .admin-select-option)) {
   border: 0;
   background: none;
   padding: 0;
@@ -903,7 +903,7 @@
   cursor: pointer;
 }
 
-.admin-membership-current-file button {
+.admin-membership-current-file button:not(:where(.admin-select-button, .admin-select-option)) {
   color: #d92d20;
 }
 
@@ -1060,7 +1060,7 @@
   line-height: 16px;
 }
 
-.admin-membership-tag button {
+.admin-membership-tag button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 14px;
   height: 14px;
   border: 0;
@@ -1099,7 +1099,7 @@
   gap: 12px;
 }
 
-.admin-membership-list-field > div > button {
+.admin-membership-list-field > div > button:not(:where(.admin-select-button, .admin-select-option)) {
   border: 0;
   background: transparent;
   color: #023dc7;
@@ -1160,7 +1160,7 @@
   padding: 4px;
 }
 
-.admin-membership-content-type button {
+.admin-membership-content-type button:not(:where(.admin-select-button, .admin-select-option)) {
   min-height: 32px;
   border: 0;
   border-radius: 6px;
@@ -1172,7 +1172,7 @@
   white-space: nowrap;
 }
 
-.admin-membership-content-type button[aria-selected="true"] {
+.admin-membership-content-type button:not(:where(.admin-select-button, .admin-select-option))[aria-selected="true"] {
   background: #fff;
   color: #023dc7;
   font-weight: 600;
@@ -1198,7 +1198,7 @@
 }
 
 .admin-membership-rich-toolbar b,
-.admin-membership-rich-toolbar button {
+.admin-membership-rich-toolbar button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 24px;
   height: 24px;
   border: 0;
@@ -1210,8 +1210,8 @@
   text-align: center;
 }
 
-.admin-membership-rich-toolbar button:hover,
-.admin-membership-rich-toolbar button:focus-visible {
+.admin-membership-rich-toolbar button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-membership-rich-toolbar button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: #e6ecf9;
   color: #023dc7;
 }
@@ -1242,7 +1242,7 @@
   font-size: 11px;
 }
 
-.admin-membership-inline-images button {
+.admin-membership-inline-images button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 18px;
   height: 18px;
   border: 0;
@@ -1289,7 +1289,7 @@
   padding-top: 16px;
 }
 
-.admin-membership-registration-actions button {
+.admin-membership-registration-actions button:not(:where(.admin-select-button, .admin-select-option)) {
   height: 45px;
   border-radius: 8px;
   cursor: pointer;
@@ -1298,20 +1298,20 @@
   font-weight: 600;
 }
 
-.admin-membership-registration-actions button:first-child {
+.admin-membership-registration-actions button:not(:where(.admin-select-button, .admin-select-option)):first-child {
   border: 1px solid #b8bbc2;
   background: #fff;
   color: #3b4358;
 }
 
-.admin-membership-registration-actions button:last-child {
+.admin-membership-registration-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   min-width: 113px;
   border: 1px solid #023dc7;
   background: #023dc7;
   color: #fff;
 }
 
-.admin-membership-registration-actions button:disabled {
+.admin-membership-registration-actions button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: wait;
   opacity: 0.55;
 }
@@ -1392,7 +1392,7 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .admin-membership-content-type button {
+  .admin-membership-content-type button:not(:where(.admin-select-button, .admin-select-option)) {
     white-space: normal;
   }
 }
@@ -1428,14 +1428,14 @@ body.admin-document--information-upload {
   overscroll-behavior: none;
 }
 
-button,
+button:not(:where(.admin-select-button, .admin-select-option)),
 input,
 textarea,
 select {
   font: inherit;
 }
 
-button:focus-visible,
+button:not(:where(.admin-select-button, .admin-select-option)):focus-visible,
 input:focus-visible,
 textarea:focus-visible {
   outline: 3px solid rgba(2, 61, 199, 0.22);
@@ -1535,7 +1535,7 @@ textarea:focus-visible {
   font: inherit;
 }
 
-.admin-setup-card button,
+.admin-setup-card button:not(:where(.admin-select-button, .admin-select-option)),
 .admin-setup-card a {
   min-height: 46px;
   display: grid;
@@ -1550,7 +1550,7 @@ textarea:focus-visible {
   cursor: pointer;
 }
 
-.admin-setup-card button:disabled {
+.admin-setup-card button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: wait;
   opacity: 0.62;
 }
@@ -1624,7 +1624,7 @@ textarea:focus-visible {
   gap: 10px;
 }
 
-.admin-session-gate button {
+.admin-session-gate button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 112px;
   min-height: 42px;
   border: 1px solid var(--border);
@@ -1635,7 +1635,7 @@ textarea:focus-visible {
   font-weight: 700;
 }
 
-.admin-session-gate button:first-child {
+.admin-session-gate button:not(:where(.admin-select-button, .admin-select-option)):first-child {
   border-color: var(--chika-primary-5);
   background: var(--chika-primary-5);
   color: white;
@@ -1891,9 +1891,9 @@ textarea:focus-visible {
 }
 
 .admin-login-submit,
-.admin-inline-form button,
-.admin-topbar-actions button,
-.admin-action-group button,
+.admin-inline-form button:not(:where(.admin-select-button, .admin-select-option)),
+.admin-topbar-actions button:not(:where(.admin-select-button, .admin-select-option)),
+.admin-action-group button:not(:where(.admin-select-button, .admin-select-option)),
 .admin-small-button {
   border: 0;
   border-radius: 10px;
@@ -1925,7 +1925,7 @@ textarea:focus-visible {
   letter-spacing: -0.32px;
 }
 
-.admin-inline-form button {
+.admin-inline-form button:not(:where(.admin-select-button, .admin-select-option)) {
   min-height: 38px;
 }
 
@@ -2062,7 +2062,7 @@ textarea:focus-visible {
   gap: 8px;
 }
 
-.admin-sidebar nav button {
+.admin-sidebar nav button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 100%;
   height: 40px;
   min-height: 40px;
@@ -2082,8 +2082,8 @@ textarea:focus-visible {
   text-align: left;
 }
 
-.admin-sidebar nav button:hover,
-.admin-sidebar nav button:focus-visible {
+.admin-sidebar nav button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-sidebar nav button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: rgba(59, 67, 88, 0.72);
   color: var(--surface);
 }
@@ -2148,7 +2148,7 @@ textarea:focus-visible {
   line-height: normal;
 }
 
-.admin-detail-breadcrumb button {
+.admin-detail-breadcrumb button:not(:where(.admin-select-button, .admin-select-option)) {
   border: 0;
   background: transparent;
   color: inherit;
@@ -2156,8 +2156,8 @@ textarea:focus-visible {
   padding: 4px 0;
 }
 
-.admin-detail-breadcrumb button:hover,
-.admin-detail-breadcrumb button:focus-visible {
+.admin-detail-breadcrumb button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-detail-breadcrumb button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   color: var(--chika-secondary-6);
 }
 
@@ -2172,7 +2172,7 @@ textarea:focus-visible {
   gap: 12px;
 }
 
-.admin-topbar-tools button {
+.admin-topbar-tools button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 24px;
   height: 24px;
   border: 0;
@@ -2185,12 +2185,12 @@ textarea:focus-visible {
   padding: 0;
 }
 
-.admin-topbar-tools button:hover,
-.admin-topbar-tools button:focus-visible {
+.admin-topbar-tools button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-topbar-tools button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: var(--chika-base-1);
 }
 
-.admin-topbar-tools button:disabled {
+.admin-topbar-tools button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   opacity: 1;
   cursor: default;
 }
@@ -2305,8 +2305,8 @@ textarea:focus-visible {
   gap: 8px;
 }
 
-.admin-topbar-actions button:last-child,
-.admin-action-group button:last-child {
+.admin-topbar-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child,
+.admin-action-group button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text-tertiary);
@@ -2456,7 +2456,7 @@ textarea:focus-visible {
   justify-content: flex-end;
 }
 
-.admin-settings-actions button {
+.admin-settings-actions button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 88px;
   height: 40px;
   border: 1px solid var(--border);
@@ -2473,13 +2473,13 @@ textarea:focus-visible {
   line-height: 20px;
 }
 
-.admin-settings-actions button:hover,
-.admin-settings-actions button:focus-visible {
+.admin-settings-actions button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-settings-actions button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   border-color: var(--chika-secondary-4);
   color: var(--chika-secondary-6);
 }
 
-.admin-settings-actions button:disabled {
+.admin-settings-actions button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: not-allowed;
   opacity: 0.58;
 }
@@ -2529,7 +2529,7 @@ textarea:focus-visible {
   line-height: 18px;
 }
 
-.admin-overview-section-heading--action > button {
+.admin-overview-section-heading--action > button:not(:where(.admin-select-button, .admin-select-option)) {
   min-height: 36px;
   flex: 0 0 auto;
   border: 1px solid #b8bbc2;
@@ -2724,7 +2724,7 @@ textarea:focus-visible {
 
 .admin-overview-summary:focus-visible,
 .admin-overview-shortcut:focus-visible,
-.admin-overview-section-heading--action > button:focus-visible {
+.admin-overview-section-heading--action > button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   outline: 2px solid var(--chika-secondary-6);
   outline-offset: 2px;
 }
@@ -2854,7 +2854,7 @@ td span {
   line-height: 20px;
 }
 
-.admin-action-group button,
+.admin-action-group button:not(:where(.admin-select-button, .admin-select-option)),
 .admin-small-button {
   min-height: 32px;
   padding: 0 12px;
@@ -2867,7 +2867,7 @@ td span {
   cursor: not-allowed;
 }
 
-.admin-action-group button:disabled {
+.admin-action-group button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   background: var(--chika-base-2);
   color: var(--text-quaternary);
   cursor: not-allowed;
@@ -3254,7 +3254,7 @@ td span {
   text-align: center;
 }
 
-.admin-partner-accounts-table td:last-child button {
+.admin-partner-accounts-table td:last-child button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 72px;
   height: 32px;
   border: 0;
@@ -3268,12 +3268,12 @@ td span {
   line-height: 18px;
 }
 
-.admin-partner-accounts-table td:last-child button:hover,
-.admin-partner-accounts-table td:last-child button:focus-visible {
+.admin-partner-accounts-table td:last-child button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-partner-accounts-table td:last-child button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: #d5e1f8;
 }
 
-.admin-partner-accounts-table td:last-child button:disabled {
+.admin-partner-accounts-table td:last-child button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: wait;
   opacity: 0.55;
 }
@@ -3298,7 +3298,7 @@ td span {
   line-height: 18px;
 }
 
-.admin-partner-accounts-error button {
+.admin-partner-accounts-error button:not(:where(.admin-select-button, .admin-select-option)) {
   border: 0;
   background: transparent;
   color: inherit;
@@ -3371,7 +3371,7 @@ td span {
   box-shadow: 0 0 0 2px rgba(2, 61, 199, 0.1);
 }
 
-.admin-partner-account-search-block > button {
+.admin-partner-account-search-block > button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 104px;
   height: 52px;
   border: 0;
@@ -3385,13 +3385,13 @@ td span {
   line-height: 24px;
 }
 
-.admin-partner-account-search-block > button:hover,
-.admin-partner-account-search-block > button:focus-visible {
+.admin-partner-account-search-block > button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-partner-account-search-block > button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: #002fa0;
 }
 
-.admin-partner-account-search-block > button:disabled,
-.admin-partner-account-search-result > header button:disabled {
+.admin-partner-account-search-block > button:not(:where(.admin-select-button, .admin-select-option)):disabled,
+.admin-partner-account-search-result > header button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: wait;
   opacity: 0.55;
 }
@@ -3435,7 +3435,7 @@ td span {
   letter-spacing: -0.32px;
 }
 
-.admin-partner-account-search-result > header button {
+.admin-partner-account-search-result > header button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 72px;
   height: 32px;
   border: 0;
@@ -3449,8 +3449,8 @@ td span {
   line-height: 18px;
 }
 
-.admin-partner-account-search-result > header button:hover,
-.admin-partner-account-search-result > header button:focus-visible {
+.admin-partner-account-search-result > header button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-partner-account-search-result > header button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: #d5e1f8;
 }
 
@@ -3565,7 +3565,7 @@ td span {
   line-height: 24px;
 }
 
-.admin-partner-account-detail > header button {
+.admin-partner-account-detail > header button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 28px;
   height: 28px;
   border: 0;
@@ -3688,7 +3688,7 @@ td span {
   box-shadow: 0 0 0 2px rgba(2, 61, 199, 0.1);
 }
 
-.admin-chikapick-account-search button {
+.admin-chikapick-account-search button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 104px;
   height: 52px;
   border: 0;
@@ -3701,13 +3701,13 @@ td span {
   line-height: 24px;
 }
 
-.admin-chikapick-account-search button:hover,
-.admin-chikapick-account-search button:focus-visible {
+.admin-chikapick-account-search button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-chikapick-account-search button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: #023dc7;
 }
 
-.admin-chikapick-account-search button:disabled,
-.admin-chikapick-account-result > header button:disabled {
+.admin-chikapick-account-search button:not(:where(.admin-select-button, .admin-select-option)):disabled,
+.admin-chikapick-account-result > header button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: wait;
   opacity: 0.55;
 }
@@ -3746,7 +3746,7 @@ td span {
   letter-spacing: -0.32px;
 }
 
-.admin-chikapick-account-result > header button {
+.admin-chikapick-account-result > header button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 72px;
   height: 32px;
   border: 0;
@@ -3760,8 +3760,8 @@ td span {
   line-height: 18px;
 }
 
-.admin-chikapick-account-result > header button:hover,
-.admin-chikapick-account-result > header button:focus-visible {
+.admin-chikapick-account-result > header button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-chikapick-account-result > header button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: #d5e1f8;
 }
 
@@ -3907,7 +3907,7 @@ td span {
     grid-column: 1 / -1;
   }
 
-  .admin-chikapick-account-search button {
+  .admin-chikapick-account-search button:not(:where(.admin-select-button, .admin-select-option)) {
     width: 92px;
   }
 
@@ -3925,7 +3925,7 @@ td span {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .admin-partner-account-search-block > button {
+  .admin-partner-account-search-block > button:not(:where(.admin-select-button, .admin-select-option)) {
     width: 100%;
   }
 
@@ -3949,7 +3949,7 @@ td span {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .admin-chikapick-account-search button {
+  .admin-chikapick-account-search button:not(:where(.admin-select-button, .admin-select-option)) {
     width: 100%;
   }
 
@@ -4026,7 +4026,7 @@ td span {
   gap: 8px;
 }
 
-.admin-chika-talk-status-filters button {
+.admin-chika-talk-status-filters button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 0;
   height: 36px;
   border: 0;
@@ -4042,13 +4042,13 @@ td span {
   white-space: nowrap;
 }
 
-.admin-chika-talk-status-filters button:hover,
-.admin-chika-talk-status-filters button:focus-visible {
+.admin-chika-talk-status-filters button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-chika-talk-status-filters button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: var(--chika-secondary-0);
   outline: 0;
 }
 
-.admin-chika-talk-status-filters button.is-active {
+.admin-chika-talk-status-filters button:not(:where(.admin-select-button, .admin-select-option)).is-active {
   background: #001371;
   color: #fff;
 }
@@ -4255,7 +4255,7 @@ td span {
   text-align: right;
 }
 
-.admin-chika-talk-action-cell button {
+.admin-chika-talk-action-cell button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 72px;
   height: 32px;
   border: 0;
@@ -4275,8 +4275,8 @@ td span {
   white-space: nowrap;
 }
 
-.admin-chika-talk-action-cell button:hover,
-.admin-chika-talk-action-cell button:focus-visible {
+.admin-chika-talk-action-cell button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-chika-talk-action-cell button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: #d5e1f8;
   outline: 0;
 }
@@ -4337,7 +4337,7 @@ td span {
   white-space: nowrap;
 }
 
-.admin-chika-talk-detail-header button {
+.admin-chika-talk-detail-header button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 32px;
   height: 32px;
   border: 1px solid #b8bbc2;
@@ -4350,8 +4350,8 @@ td span {
   padding: 7px;
 }
 
-.admin-chika-talk-detail-header button:hover,
-.admin-chika-talk-detail-header button:focus-visible {
+.admin-chika-talk-detail-header button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-chika-talk-detail-header button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: #f4f6f8;
 }
 
@@ -4385,7 +4385,7 @@ td span {
   margin: 0;
 }
 
-.admin-chika-talk-detail-state button {
+.admin-chika-talk-detail-state button:not(:where(.admin-select-button, .admin-select-option)) {
   height: 36px;
   border: 1px solid #b8bbc2;
   border-radius: 8px;
@@ -4763,7 +4763,7 @@ td span {
   text-align: center;
 }
 
-.admin-chika-talk-detail-actions button {
+.admin-chika-talk-detail-actions button:not(:where(.admin-select-button, .admin-select-option)) {
   height: 48px;
   min-width: 0;
   border: 1px solid #b8bbc2;
@@ -4783,18 +4783,18 @@ td span {
   white-space: nowrap;
 }
 
-.admin-chika-talk-detail-actions button:last-child {
+.admin-chika-talk-detail-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   border-color: #b91c1c;
   background: #b91c1c;
   color: #fff;
 }
 
-.admin-chika-talk-detail-actions button:hover,
-.admin-chika-talk-detail-actions button:focus-visible {
+.admin-chika-talk-detail-actions button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-chika-talk-detail-actions button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   filter: brightness(0.96);
 }
 
-.admin-chika-talk-detail-actions button:disabled {
+.admin-chika-talk-detail-actions button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   border-color: #d4d6da;
   background: #eceef1;
   color: #999da8;
@@ -4928,7 +4928,7 @@ td span {
   gap: 8px;
 }
 
-.admin-secret-feedback-filter-actions button {
+.admin-secret-feedback-filter-actions button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 72px;
   height: 44px;
   padding: 0 16px;
@@ -4939,7 +4939,7 @@ td span {
   font-weight: 700;
 }
 
-.admin-secret-feedback-filter-actions button:last-child {
+.admin-secret-feedback-filter-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   background: var(--chika-secondary-6);
   color: #fff;
 }
@@ -5075,7 +5075,7 @@ td span {
   text-align: center;
 }
 
-.admin-secret-feedback-table td:last-child button {
+.admin-secret-feedback-table td:last-child button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 100%;
   min-width: 72px;
   height: 21px;
@@ -5094,8 +5094,8 @@ td span {
   line-height: normal;
 }
 
-.admin-secret-feedback-table td:last-child button:hover,
-.admin-secret-feedback-table td:last-child button:focus-visible {
+.admin-secret-feedback-table td:last-child button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-secret-feedback-table td:last-child button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: #d5e1f8;
 }
 
@@ -5151,7 +5151,7 @@ td span {
   font-style: normal;
 }
 
-.admin-secret-feedback-detail-scroll > header button {
+.admin-secret-feedback-detail-scroll > header button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 32px;
   height: 32px;
   display: grid;
@@ -5164,8 +5164,8 @@ td span {
   padding: 4px;
 }
 
-.admin-secret-feedback-detail-scroll > header button:hover,
-.admin-secret-feedback-detail-scroll > header button:focus-visible {
+.admin-secret-feedback-detail-scroll > header button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-secret-feedback-detail-scroll > header button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: #f4f6f8;
 }
 
@@ -5426,7 +5426,7 @@ td span {
   text-align: center !important;
 }
 
-.admin-external-connectors-delete-cell button {
+.admin-external-connectors-delete-cell button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 44px;
   min-height: 26px;
   border: 1px solid #023dc7;
@@ -5442,12 +5442,12 @@ td span {
   letter-spacing: -0.32px;
 }
 
-.admin-external-connectors-delete-cell button:hover,
-.admin-external-connectors-delete-cell button:focus-visible {
+.admin-external-connectors-delete-cell button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-external-connectors-delete-cell button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: #e8efff;
 }
 
-.admin-external-connectors-delete-cell button:disabled {
+.admin-external-connectors-delete-cell button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: wait;
   opacity: 0.5;
 }
@@ -5474,7 +5474,7 @@ td span {
   gap: 8px;
 }
 
-.admin-account-role-filters button {
+.admin-account-role-filters button:not(:where(.admin-select-button, .admin-select-option)) {
   height: 36px;
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -5488,13 +5488,13 @@ td span {
   letter-spacing: -0.28px;
 }
 
-.admin-account-role-filters button:hover,
-.admin-account-role-filters button:focus-visible {
+.admin-account-role-filters button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-account-role-filters button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   border-color: #001371;
   color: #001371;
 }
 
-.admin-account-role-filters button.is-active {
+.admin-account-role-filters button:not(:where(.admin-select-button, .admin-select-option)).is-active {
   border-color: #001371;
   background: #001371;
   color: var(--surface);
@@ -5541,7 +5541,7 @@ td span {
   color: var(--text-quaternary);
 }
 
-.admin-account-directory-actions > button {
+.admin-account-directory-actions > button:not(:where(.admin-select-button, .admin-select-option)) {
   height: 36px;
   border: 0;
   border-radius: 8px;
@@ -5553,8 +5553,8 @@ td span {
   font-weight: 800;
 }
 
-.admin-account-directory-actions > button:hover,
-.admin-account-directory-actions > button:focus-visible {
+.admin-account-directory-actions > button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-account-directory-actions > button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: var(--chika-secondary-6);
 }
 
@@ -5680,7 +5680,7 @@ td span {
   display: inline-flex;
 }
 
-.admin-account-row-action > button {
+.admin-account-row-action > button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 28px;
   height: 28px;
   border: 0;
@@ -5696,9 +5696,9 @@ td span {
   line-height: 20px;
 }
 
-.admin-account-row-action > button:hover,
-.admin-account-row-action > button:focus-visible,
-.admin-account-row-action > button[aria-expanded="true"] {
+.admin-account-row-action > button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-account-row-action > button:not(:where(.admin-select-button, .admin-select-option)):focus-visible,
+.admin-account-row-action > button:not(:where(.admin-select-button, .admin-select-option))[aria-expanded="true"] {
   background: var(--chika-base-2);
   color: var(--text-primary);
 }
@@ -5718,7 +5718,7 @@ td span {
   padding: 8px;
 }
 
-.admin-account-row-action-menu button {
+.admin-account-row-action-menu button:not(:where(.admin-select-button, .admin-select-option)) {
   min-height: 35px;
   border: 0;
   border-radius: 4px;
@@ -5733,8 +5733,8 @@ td span {
   white-space: nowrap;
 }
 
-.admin-account-row-action-menu button:hover,
-.admin-account-row-action-menu button:focus-visible {
+.admin-account-row-action-menu button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-account-row-action-menu button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: #f4f6f8;
   color: var(--text-primary);
 }
@@ -5746,7 +5746,7 @@ td span {
   background: #d4d6da;
 }
 
-.admin-account-row-action-menu button:disabled {
+.admin-account-row-action-menu button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: wait;
   opacity: 0.5;
 }
@@ -5792,7 +5792,7 @@ td span {
   line-height: 28px;
 }
 
-.admin-account-dialog > header > button {
+.admin-account-dialog > header > button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 30px;
   height: 30px;
   border: 0;
@@ -5804,8 +5804,8 @@ td span {
   font-size: 24px;
 }
 
-.admin-account-dialog > header > button:hover,
-.admin-account-dialog > header > button:focus-visible {
+.admin-account-dialog > header > button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-account-dialog > header > button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: var(--chika-base-2);
 }
 
@@ -5864,7 +5864,7 @@ td span {
   margin-top: 4px;
 }
 
-.admin-account-dialog-actions button {
+.admin-account-dialog-actions button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 72px;
   height: 36px;
   border: 1px solid var(--border);
@@ -5877,13 +5877,13 @@ td span {
   font-weight: 600;
 }
 
-.admin-account-dialog-actions button:last-child {
+.admin-account-dialog-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   border-color: #001371;
   background: #001371;
   color: var(--surface);
 }
 
-.admin-account-dialog-actions button:disabled {
+.admin-account-dialog-actions button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: wait;
   opacity: 0.5;
 }
@@ -5974,7 +5974,7 @@ td span {
   margin-top: 0;
 }
 
-.admin-external-connector-dialog .admin-account-dialog-actions button {
+.admin-external-connector-dialog .admin-account-dialog-actions button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 0;
   height: 38px;
   border-color: #d9d9d9;
@@ -5986,7 +5986,7 @@ td span {
   line-height: 20px;
 }
 
-.admin-external-connector-dialog .admin-account-dialog-actions button:last-child {
+.admin-external-connector-dialog .admin-account-dialog-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   border-color: #011b5a;
   background: #011b5a;
   color: var(--surface);
@@ -6137,7 +6137,7 @@ td span {
   padding: 24px;
 }
 
-.admin-account-dialog-footer button {
+.admin-account-dialog-footer button:not(:where(.admin-select-button, .admin-select-option)) {
   height: 42px;
   border: 1px solid #d4d6da;
   border-radius: 8px;
@@ -6152,18 +6152,18 @@ td span {
   white-space: nowrap;
 }
 
-.admin-account-dialog-footer button:first-child {
+.admin-account-dialog-footer button:not(:where(.admin-select-button, .admin-select-option)):first-child {
   width: 60px;
 }
 
-.admin-account-dialog-footer button:last-child {
+.admin-account-dialog-footer button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   width: 121px;
   border-color: #001371;
   background: #001371;
   color: var(--surface);
 }
 
-.admin-account-dialog-footer button:disabled {
+.admin-account-dialog-footer button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: wait;
   opacity: 0.5;
 }
@@ -6287,7 +6287,7 @@ td span {
   gap: 8px;
 }
 
-.admin-hospital-review-actions button {
+.admin-hospital-review-actions button:not(:where(.admin-select-button, .admin-select-option)) {
   height: 24px;
   border: 1px solid var(--chika-secondary-6);
   border-radius: 4px;
@@ -6300,23 +6300,23 @@ td span {
   line-height: normal;
 }
 
-.admin-hospital-review-actions button:last-child {
+.admin-hospital-review-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   border-color: #ff7b03;
   background: var(--surface);
   color: #ff7b03;
 }
 
-.admin-hospital-review-actions button:hover,
-.admin-hospital-review-actions button:focus-visible {
+.admin-hospital-review-actions button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-hospital-review-actions button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: #002fa0;
 }
 
-.admin-hospital-review-actions button:last-child:hover,
-.admin-hospital-review-actions button:last-child:focus-visible {
+.admin-hospital-review-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child:hover,
+.admin-hospital-review-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child:focus-visible {
   background: #fff3e5;
 }
 
-.admin-hospital-review-actions button:disabled {
+.admin-hospital-review-actions button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: wait;
   opacity: 0.5;
 }
@@ -6418,7 +6418,7 @@ td span {
   gap: 8px;
 }
 
-.admin-hospital-invite-actions button {
+.admin-hospital-invite-actions button:not(:where(.admin-select-button, .admin-select-option)) {
   min-height: 40px;
   border: 1px solid var(--chika-primary-5);
   border-radius: 8px;
@@ -6429,7 +6429,7 @@ td span {
   cursor: pointer;
 }
 
-.admin-hospital-invite-actions button:last-child {
+.admin-hospital-invite-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   background: var(--chika-primary-5);
   color: #fff;
 }
@@ -6470,7 +6470,7 @@ td span {
   line-height: 1.5;
 }
 
-.admin-partner-invite-dialog .admin-hospital-invite-actions button:disabled {
+.admin-partner-invite-dialog .admin-hospital-invite-actions button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: default;
   opacity: 0.45;
 }
@@ -6527,7 +6527,7 @@ td span {
   gap: 8px;
 }
 
-.admin-hospital-review-dialog form > div button {
+.admin-hospital-review-dialog form > div button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 72px;
   height: 34px;
   border: 1px solid var(--border);
@@ -6540,13 +6540,13 @@ td span {
   font-weight: 600;
 }
 
-.admin-hospital-review-dialog form > div button:last-child {
+.admin-hospital-review-dialog form > div button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   border-color: #ff7b03;
   background: #ff7b03;
   color: var(--surface);
 }
 
-.admin-hospital-review-dialog form > div button:disabled {
+.admin-hospital-review-dialog form > div button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: wait;
   opacity: 0.5;
 }
@@ -6665,7 +6665,7 @@ td span {
   gap: 8px;
 }
 
-.admin-license-filters button {
+.admin-license-filters button:not(:where(.admin-select-button, .admin-select-option)) {
   min-height: 40px;
   border: 1px solid #d4d6da;
   border-radius: 100px;
@@ -6677,13 +6677,13 @@ td span {
   font-weight: 600;
 }
 
-.admin-license-filters button[aria-pressed="true"] {
+.admin-license-filters button:not(:where(.admin-select-button, .admin-select-option))[aria-pressed="true"] {
   border-color: #3366e5;
   background: #eef3ff;
   color: #023dc7;
 }
 
-.admin-license-filters button span {
+.admin-license-filters button:not(:where(.admin-select-button, .admin-select-option)) span {
   margin-left: 4px;
   font-weight: 800;
 }
@@ -6816,7 +6816,7 @@ td span {
 }
 
 .admin-license-file a,
-.admin-license-file button,
+.admin-license-file button:not(:where(.admin-select-button, .admin-select-option)),
 .admin-license-file span {
   display: block;
   overflow: hidden;
@@ -6826,7 +6826,7 @@ td span {
   text-overflow: ellipsis;
 }
 
-.admin-license-file button {
+.admin-license-file button:not(:where(.admin-select-button, .admin-select-option)) {
   max-width: 100%;
   padding: 0;
   border: 0;
@@ -6840,8 +6840,8 @@ td span {
 
 .admin-license-file a:hover,
 .admin-license-file a:focus-visible,
-.admin-license-file button:hover,
-.admin-license-file button:focus-visible {
+.admin-license-file button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-license-file button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   text-decoration: underline;
 }
 
@@ -6866,7 +6866,7 @@ td span {
   gap: 8px;
 }
 
-.admin-license-request-card footer button {
+.admin-license-request-card footer button:not(:where(.admin-select-button, .admin-select-option)) {
   height: 36px;
   border: 1px solid #d4d6da;
   border-radius: 12px;
@@ -6880,18 +6880,18 @@ td span {
   letter-spacing: -0.28px;
 }
 
-.admin-license-request-card footer button:last-child {
+.admin-license-request-card footer button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   border-color: #e6ecf9;
   background: #e6ecf9;
   color: #023dc7;
 }
 
-.admin-license-request-card footer button:hover:not(:disabled),
-.admin-license-request-card footer button:focus-visible:not(:disabled) {
+.admin-license-request-card footer button:not(:where(.admin-select-button, .admin-select-option)):hover:not(:disabled),
+.admin-license-request-card footer button:not(:where(.admin-select-button, .admin-select-option)):focus-visible:not(:disabled) {
   border-color: #3366e5;
 }
 
-.admin-license-request-card footer button:disabled {
+.admin-license-request-card footer button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: wait;
   opacity: 0.55;
 }
@@ -6977,7 +6977,7 @@ td span {
   text-align: center;
 }
 
-.admin-license-decision-modal--approved > button {
+.admin-license-decision-modal--approved > button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 100%;
   height: 44px;
   margin-top: 34px;
@@ -7051,7 +7051,7 @@ td span {
   gap: 12px;
 }
 
-.admin-license-decision-modal--reject footer button {
+.admin-license-decision-modal--reject footer button:not(:where(.admin-select-button, .admin-select-option)) {
   height: 44px;
   border: 1px solid #d4d6da;
   border-radius: 14px;
@@ -7065,18 +7065,18 @@ td span {
   letter-spacing: -0.32px;
 }
 
-.admin-license-decision-modal--reject footer button:last-child {
+.admin-license-decision-modal--reject footer button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   border-color: #f90003;
   background: #f90003;
   color: #fff;
 }
 
-.admin-license-decision-modal button:hover:not(:disabled),
-.admin-license-decision-modal button:focus-visible:not(:disabled) {
+.admin-license-decision-modal button:not(:where(.admin-select-button, .admin-select-option)):hover:not(:disabled),
+.admin-license-decision-modal button:not(:where(.admin-select-button, .admin-select-option)):focus-visible:not(:disabled) {
   filter: brightness(0.95);
 }
 
-.admin-license-decision-modal button:disabled {
+.admin-license-decision-modal button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: wait;
   opacity: 0.65;
 }
@@ -7137,7 +7137,7 @@ td span {
   display: none;
 }
 
-.admin-partner-clinics-filter > button {
+.admin-partner-clinics-filter > button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 54px;
   height: 32px;
   border: 1px solid var(--chika-secondary-4);
@@ -7153,8 +7153,8 @@ td span {
   line-height: normal;
 }
 
-.admin-partner-clinics-filter > button:hover,
-.admin-partner-clinics-filter > button:focus-visible {
+.admin-partner-clinics-filter > button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-partner-clinics-filter > button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: var(--chika-secondary-6);
 }
 
@@ -7509,8 +7509,8 @@ td span {
   font: inherit;
 }
 
-.admin-hospital-link-search button,
-.admin-hospital-approval-actions button {
+.admin-hospital-link-search button:not(:where(.admin-select-button, .admin-select-option)),
+.admin-hospital-approval-actions button:not(:where(.admin-select-button, .admin-select-option)) {
   height: 40px;
   border: 1px solid #d4d6da;
   border-radius: 8px;
@@ -7569,7 +7569,7 @@ td span {
   gap: 8px;
 }
 
-.admin-hospital-approval-actions button:last-child {
+.admin-hospital-approval-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   border-color: #001371;
   background: #001371;
   color: var(--surface);
@@ -7581,7 +7581,7 @@ td span {
   padding: 16px 0 0;
 }
 
-.admin-account-dialog-footer.admin-partner-cancel-dialog-actions button:last-child {
+.admin-account-dialog-footer.admin-partner-cancel-dialog-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   border-color: var(--danger);
   background: var(--danger);
 }
@@ -7912,7 +7912,7 @@ td span {
   background: var(--chika-secondary-6);
 }
 
-.admin-partner-detail-completion > button {
+.admin-partner-detail-completion > button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 100%;
   height: 36px;
   margin-top: 18px;
@@ -7925,8 +7925,8 @@ td span {
   font-weight: 600;
 }
 
-.admin-partner-detail-completion > button:hover,
-.admin-partner-detail-completion > button:focus-visible {
+.admin-partner-detail-completion > button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-partner-detail-completion > button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   border-color: var(--chika-secondary-4);
   color: var(--chika-secondary-6);
 }
@@ -7962,7 +7962,7 @@ td span {
   line-height: 12px;
 }
 
-.admin-partner-detail-visibility > button {
+.admin-partner-detail-visibility > button:not(:where(.admin-select-button, .admin-select-option)) {
   position: relative;
   width: 40px;
   height: 22px;
@@ -7973,7 +7973,7 @@ td span {
   padding: 0;
 }
 
-.admin-partner-detail-visibility > button i {
+.admin-partner-detail-visibility > button:not(:where(.admin-select-button, .admin-select-option)) i {
   position: absolute;
   top: 3px;
   left: 3px;
@@ -7984,11 +7984,11 @@ td span {
   transition: left 120ms ease;
 }
 
-.admin-partner-detail-visibility > button.is-active {
+.admin-partner-detail-visibility > button:not(:where(.admin-select-button, .admin-select-option)).is-active {
   background: var(--chika-secondary-6);
 }
 
-.admin-partner-detail-visibility > button.is-active i {
+.admin-partner-detail-visibility > button:not(:where(.admin-select-button, .admin-select-option)).is-active i {
   left: 21px;
 }
 
@@ -8088,7 +8088,7 @@ td span {
   flex: 1;
 }
 
-.admin-partner-operation-heading > button {
+.admin-partner-operation-heading > button:not(:where(.admin-select-button, .admin-select-option)) {
   min-height: 28px;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -8459,7 +8459,7 @@ td span {
   display: inline;
 }
 
-.admin-sales-invite-code button {
+.admin-sales-invite-code button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 16px;
   height: 16px;
   border: 0;
@@ -8472,8 +8472,8 @@ td span {
   padding: 0;
 }
 
-.admin-sales-invite-code button:hover,
-.admin-sales-invite-code button:focus-visible {
+.admin-sales-invite-code button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-sales-invite-code button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: var(--chika-base-1);
 }
 
@@ -8575,7 +8575,7 @@ td span {
   gap: 8px;
 }
 
-.admin-sales-pagination button {
+.admin-sales-pagination button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 32px;
   height: 32px;
   border: 0;
@@ -8592,8 +8592,8 @@ td span {
   line-height: 22px;
 }
 
-.admin-sales-pagination button:hover,
-.admin-sales-pagination button:focus-visible {
+.admin-sales-pagination button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-sales-pagination button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: var(--chika-secondary-0);
 }
 
@@ -8604,7 +8604,7 @@ td span {
   box-shadow: 0 1px 0 var(--chika-secondary-1);
 }
 
-.admin-sales-pagination button:disabled {
+.admin-sales-pagination button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: not-allowed;
   opacity: 0.35;
 }
@@ -8629,8 +8629,8 @@ td span {
   color: #b91c1c;
 }
 
-.admin-sales-feedback button,
-.admin-sales-detail-state button {
+.admin-sales-feedback button:not(:where(.admin-select-button, .admin-select-option)),
+.admin-sales-detail-state button:not(:where(.admin-select-button, .admin-select-option)) {
   border: 1px solid currentColor;
   border-radius: 5px;
   background: transparent;
@@ -9022,7 +9022,7 @@ td span {
   gap: 12px;
 }
 
-.admin-sales-visit-modal-actions button {
+.admin-sales-visit-modal-actions button:not(:where(.admin-select-button, .admin-select-option)) {
   height: 36px;
   border: 1px solid #d4d6da;
   border-radius: 6px;
@@ -9034,29 +9034,29 @@ td span {
   font-weight: 600;
 }
 
-.admin-sales-visit-modal-actions button:last-child {
+.admin-sales-visit-modal-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   width: 118px;
   border-color: var(--chika-secondary-6);
   background: var(--chika-secondary-6);
   color: var(--surface);
 }
 
-.admin-sales-visit-modal-actions button:first-child {
+.admin-sales-visit-modal-actions button:not(:where(.admin-select-button, .admin-select-option)):first-child {
   width: 60px;
   padding: 0;
 }
 
-.admin-sales-visit-modal-actions button:hover,
-.admin-sales-visit-modal-actions button:focus-visible {
+.admin-sales-visit-modal-actions button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-sales-visit-modal-actions button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   border-color: var(--chika-secondary-6);
 }
 
-.admin-sales-visit-modal-actions button:last-child:hover,
-.admin-sales-visit-modal-actions button:last-child:focus-visible {
+.admin-sales-visit-modal-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child:hover,
+.admin-sales-visit-modal-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child:focus-visible {
   background: #002fa0;
 }
 
-.admin-sales-visit-modal-actions button:disabled {
+.admin-sales-visit-modal-actions button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }
@@ -9115,7 +9115,7 @@ td span {
   letter-spacing: -0.48px;
 }
 
-.admin-sales-hospital-review-header > button {
+.admin-sales-hospital-review-header > button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 36px;
   height: 36px;
   border: 0;
@@ -9129,13 +9129,13 @@ td span {
   padding: 0;
 }
 
-.admin-sales-hospital-review-header > button:hover,
-.admin-sales-hospital-review-header > button:focus-visible {
+.admin-sales-hospital-review-header > button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-sales-hospital-review-header > button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: var(--chika-base-2);
   color: var(--text-primary);
 }
 
-.admin-sales-hospital-review-header > button span {
+.admin-sales-hospital-review-header > button:not(:where(.admin-select-button, .admin-select-option)) span {
   font-size: 28px;
   font-weight: 300;
   line-height: 1;
@@ -9315,7 +9315,7 @@ td span {
   margin-top: auto;
 }
 
-.admin-sales-hospital-review-card > footer button {
+.admin-sales-hospital-review-card > footer button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 88px;
   height: 36px;
   border: 1px solid var(--border);
@@ -9333,7 +9333,7 @@ td span {
   opacity: 1;
 }
 
-.admin-sales-hospital-review-card > footer button:last-child {
+.admin-sales-hospital-review-card > footer button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   border-color: transparent;
   background: var(--chika-secondary-1);
   color: var(--chika-secondary-6);
@@ -9693,7 +9693,7 @@ td span {
   gap: 12px;
 }
 
-.admin-sales-assignee-actions button {
+.admin-sales-assignee-actions button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 80px;
   height: 32px;
   border: 1px solid var(--border);
@@ -9707,23 +9707,23 @@ td span {
   line-height: 18px;
 }
 
-.admin-sales-assignee-actions button:last-child {
+.admin-sales-assignee-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   border-color: var(--chika-secondary-6);
   background: var(--chika-secondary-6);
   color: var(--surface);
 }
 
-.admin-sales-assignee-actions button:hover,
-.admin-sales-assignee-actions button:focus-visible {
+.admin-sales-assignee-actions button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-sales-assignee-actions button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   border-color: var(--chika-secondary-6);
 }
 
-.admin-sales-assignee-actions button:last-child:hover,
-.admin-sales-assignee-actions button:last-child:focus-visible {
+.admin-sales-assignee-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child:hover,
+.admin-sales-assignee-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child:focus-visible {
   background: #002fa0;
 }
 
-.admin-sales-assignee-actions button:disabled {
+.admin-sales-assignee-actions button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }
@@ -10068,7 +10068,7 @@ td span {
     flex-direction: row;
   }
 
-  .admin-sidebar nav button {
+  .admin-sidebar nav button:not(:where(.admin-select-button, .admin-select-option)) {
     width: auto;
     min-width: 172px;
   }
@@ -10194,7 +10194,7 @@ td span {
     padding-bottom: 2px;
   }
 
-  .admin-account-role-filters button {
+  .admin-account-role-filters button:not(:where(.admin-select-button, .admin-select-option)) {
     flex: 0 0 auto;
   }
 
@@ -10204,7 +10204,7 @@ td span {
   }
 
   .admin-account-directory-actions form,
-  .admin-account-directory-actions > button {
+  .admin-account-directory-actions > button:not(:where(.admin-select-button, .admin-select-option)) {
     width: 100%;
   }
 
@@ -10321,7 +10321,7 @@ td span {
   }
 
   .admin-topbar--detail .admin-topbar-divider,
-  .admin-topbar--detail .admin-topbar-tools > button:first-of-type {
+  .admin-topbar--detail .admin-topbar-tools > button:not(:where(.admin-select-button, .admin-select-option)):first-of-type {
     display: none;
   }
 
@@ -10339,7 +10339,7 @@ td span {
     width: 100%;
   }
 
-  .admin-topbar-actions button {
+  .admin-topbar-actions button:not(:where(.admin-select-button, .admin-select-option)) {
     flex: 1;
   }
 
@@ -10366,7 +10366,7 @@ td span {
     padding: 20px;
   }
 
-  .admin-sales-visit-modal-actions button {
+  .admin-sales-visit-modal-actions button:not(:where(.admin-select-button, .admin-select-option)) {
     flex: 1;
   }
 
@@ -10767,7 +10767,7 @@ td span {
   line-height: 30px;
 }
 
-.admin-partnership-request-dialog > header > button {
+.admin-partnership-request-dialog > header > button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 40px;
   height: 40px;
   border: 0;
@@ -10779,8 +10779,8 @@ td span {
   line-height: 40px;
 }
 
-.admin-partnership-request-dialog > header > button:hover,
-.admin-partnership-request-dialog > header > button:focus-visible {
+.admin-partnership-request-dialog > header > button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-partnership-request-dialog > header > button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: var(--chika-base-1);
 }
 
@@ -10882,7 +10882,7 @@ td span {
   overflow-wrap: anywhere;
 }
 
-.admin-partnership-request-technical-info button {
+.admin-partnership-request-technical-info button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 48px;
   min-height: 32px;
   flex: 0 0 auto;
@@ -11017,7 +11017,7 @@ td span {
   padding: 16px 24px;
 }
 
-.admin-partnership-request-dialog > footer button {
+.admin-partnership-request-dialog > footer button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 100px;
   min-height: 44px;
   border: 1px solid var(--border);
@@ -11030,14 +11030,14 @@ td span {
   font-weight: 800;
 }
 
-.admin-partnership-request-dialog > footer button:last-child {
+.admin-partnership-request-dialog > footer button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   min-width: 132px;
   border-color: var(--chika-secondary-6);
   background: var(--chika-secondary-6);
   color: #fff;
 }
 
-.admin-partnership-request-dialog button:disabled,
+.admin-partnership-request-dialog button:not(:where(.admin-select-button, .admin-select-option)):disabled,
 .admin-partnership-request-dialog textarea:disabled {
   cursor: wait;
   opacity: 0.58;
@@ -11054,7 +11054,7 @@ td span {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .admin-secret-feedback-filter-actions button {
+  .admin-secret-feedback-filter-actions button:not(:where(.admin-select-button, .admin-select-option)) {
     flex: 1;
   }
 
@@ -11116,7 +11116,7 @@ td span {
     text-align: left;
   }
 
-  .admin-secret-feedback-table td:last-child button {
+  .admin-secret-feedback-table td:last-child button:not(:where(.admin-select-button, .admin-select-option)) {
     width: 100%;
     min-height: 40px;
     font-size: 13px;
@@ -11170,11 +11170,11 @@ td span {
     flex-direction: column;
   }
 
-  .admin-partnership-request-technical-info button {
+  .admin-partnership-request-technical-info button:not(:where(.admin-select-button, .admin-select-option)) {
     align-self: flex-start;
   }
 
-  .admin-partnership-request-dialog > footer button {
+  .admin-partnership-request-dialog > footer button:not(:where(.admin-select-button, .admin-select-option)) {
     flex: 1;
   }
 }
@@ -11224,9 +11224,9 @@ td span {
   font-size: 14px;
 }
 
-.admin-operational-filters button,
+.admin-operational-filters button:not(:where(.admin-select-button, .admin-select-option)),
 .admin-term-publish-trigger,
-.admin-term-publish-form .admin-dialog-actions button:last-child {
+.admin-term-publish-form .admin-dialog-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   min-height: 40px;
   border: 0;
   border-radius: 8px;
@@ -11239,7 +11239,7 @@ td span {
   white-space: nowrap;
 }
 
-.admin-operational-filters button:hover,
+.admin-operational-filters button:not(:where(.admin-select-button, .admin-select-option)):hover,
 .admin-term-publish-trigger:hover,
 .admin-term-publish-trigger:focus-visible {
   background: var(--chika-secondary-5);
@@ -11352,7 +11352,7 @@ td span {
   font-size: 13px;
 }
 
-.admin-membership-invite-form button {
+.admin-membership-invite-form button:not(:where(.admin-select-button, .admin-select-option)) {
   min-height: 40px;
   border: 0;
   border-radius: 8px;
@@ -11365,12 +11365,12 @@ td span {
   white-space: nowrap;
 }
 
-.admin-membership-invite-form button:hover:not(:disabled),
-.admin-membership-invite-form button:focus-visible {
+.admin-membership-invite-form button:not(:where(.admin-select-button, .admin-select-option)):hover:not(:disabled),
+.admin-membership-invite-form button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: var(--chika-secondary-5);
 }
 
-.admin-membership-invite-form button:disabled {
+.admin-membership-invite-form button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: wait;
   opacity: 0.6;
 }
@@ -11642,7 +11642,7 @@ td span {
   font-size: 13px;
 }
 
-.admin-dialog-heading > button {
+.admin-dialog-heading > button:not(:where(.admin-select-button, .admin-select-option)) {
   border: 0;
   background: transparent;
   color: var(--text-tertiary);
@@ -11691,7 +11691,7 @@ td span {
   gap: 8px;
 }
 
-.admin-term-publish-form .admin-dialog-actions button {
+.admin-term-publish-form .admin-dialog-actions button:not(:where(.admin-select-button, .admin-select-option)) {
   min-height: 40px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -11703,13 +11703,13 @@ td span {
   font-weight: 700;
 }
 
-.admin-term-publish-form .admin-dialog-actions button:last-child {
+.admin-term-publish-form .admin-dialog-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   border: 0;
   color: #fff;
 }
 
-.admin-term-publish-form button:disabled,
-.admin-operational-filters button:disabled {
+.admin-term-publish-form button:not(:where(.admin-select-button, .admin-select-option)):disabled,
+.admin-operational-filters button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
@@ -11746,7 +11746,7 @@ td span {
   text-align: center;
 }
 
-.admin-term-preview-header button {
+.admin-term-preview-header button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 40px;
   height: 40px;
   border: 0;
@@ -12207,7 +12207,7 @@ td span {
   gap: 8px;
 }
 
-.admin-service-expansion-tabs button {
+.admin-service-expansion-tabs button:not(:where(.admin-select-button, .admin-select-option)) {
   height: 40px;
   border: 1px solid var(--chika-base-4);
   border-radius: 8px;
@@ -12223,14 +12223,14 @@ td span {
   line-height: 20px;
 }
 
-.admin-service-expansion-tabs button.is-active {
+.admin-service-expansion-tabs button:not(:where(.admin-select-button, .admin-select-option)).is-active {
   background: var(--surface);
   color: var(--text-primary);
   font-weight: 600;
 }
 
-.admin-service-expansion-tabs button:hover,
-.admin-service-expansion-tabs button:focus-visible {
+.admin-service-expansion-tabs button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-service-expansion-tabs button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   border-color: var(--chika-secondary-5);
 }
 
@@ -12467,7 +12467,7 @@ td span {
   text-overflow: clip;
 }
 
-.admin-service-expansion-clinic-table button {
+.admin-service-expansion-clinic-table button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 72px;
   height: 32px;
   border: 0;
@@ -12484,8 +12484,8 @@ td span {
   line-height: 18px;
 }
 
-.admin-service-expansion-clinic-table button:hover,
-.admin-service-expansion-clinic-table button:focus-visible {
+.admin-service-expansion-clinic-table button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-service-expansion-clinic-table button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: var(--chika-secondary-4);
   color: #fff;
 }
@@ -12514,7 +12514,7 @@ td span {
   text-overflow: clip;
 }
 
-.admin-partner-sales-inquiries-table button {
+.admin-partner-sales-inquiries-table button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 72px;
   height: 32px;
   border: 0;
@@ -12528,8 +12528,8 @@ td span {
   line-height: 18px;
 }
 
-.admin-partner-sales-inquiries-table button:hover,
-.admin-partner-sales-inquiries-table button:focus-visible {
+.admin-partner-sales-inquiries-table button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-partner-sales-inquiries-table button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: var(--chika-secondary-4);
   color: #fff;
 }
@@ -12615,7 +12615,7 @@ td span {
   text-overflow: clip;
 }
 
-.admin-user-feedback-table button {
+.admin-user-feedback-table button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 72px;
   height: 32px;
   border: 0;
@@ -12629,8 +12629,8 @@ td span {
   line-height: 18px;
 }
 
-.admin-user-feedback-table button:hover,
-.admin-user-feedback-table button:focus-visible {
+.admin-user-feedback-table button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-user-feedback-table button:not(:where(.admin-select-button, .admin-select-option)):focus-visible {
   background: var(--chika-secondary-4);
   color: #fff;
 }
@@ -12817,7 +12817,7 @@ td span {
   font-weight: 600;
 }
 
-.admin-service-expansion-dialog header > button {
+.admin-service-expansion-dialog header > button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 20px;
   height: 20px;
   flex: 0 0 auto;
@@ -12933,7 +12933,7 @@ td span {
     flex-direction: column;
   }
 
-  .admin-service-expansion-tabs button {
+  .admin-service-expansion-tabs button:not(:where(.admin-select-button, .admin-select-option)) {
     justify-content: space-between;
   }
 
@@ -13079,7 +13079,7 @@ td span {
   gap: 14px;
 }
 
-.admin-service-copy-field-heading > button {
+.admin-service-copy-field-heading > button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 84px;
   height: 32px;
   border: 1px solid var(--chika-secondary-6);
@@ -13122,7 +13122,7 @@ td span {
   line-height: 18px;
 }
 
-.admin-service-copy-provinces article > header button {
+.admin-service-copy-provinces article > header button:not(:where(.admin-select-button, .admin-select-option)) {
   border: 0;
   background: transparent;
   color: #b91c1c;
@@ -13132,7 +13132,7 @@ td span {
   font-weight: 600;
 }
 
-.admin-service-copy-provinces article > header button:disabled {
+.admin-service-copy-provinces article > header button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   color: var(--text-quaternary);
   cursor: not-allowed;
 }
@@ -13184,7 +13184,7 @@ td span {
   padding: 20px 24px;
 }
 
-.admin-service-copy-editor > footer button {
+.admin-service-copy-editor > footer button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 88px;
   height: 40px;
   border-radius: 8px;
@@ -13194,19 +13194,19 @@ td span {
   font-weight: 700;
 }
 
-.admin-service-copy-editor > footer button:first-child {
+.admin-service-copy-editor > footer button:not(:where(.admin-select-button, .admin-select-option)):first-child {
   border: 1px solid var(--chika-base-4);
   background: var(--surface);
   color: var(--text-secondary);
 }
 
-.admin-service-copy-editor > footer button:last-child {
+.admin-service-copy-editor > footer button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   border: 1px solid var(--chika-secondary-6);
   background: var(--chika-secondary-6);
   color: #fff;
 }
 
-.admin-service-copy-editor > footer button:disabled {
+.admin-service-copy-editor > footer button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: not-allowed;
   opacity: 0.45;
 }
@@ -13304,7 +13304,7 @@ td span {
   display: none;
 }
 
-.admin-service-copy-app-tabs button {
+.admin-service-copy-app-tabs button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 112px;
   height: 43px;
   border: 0;
@@ -13319,13 +13319,13 @@ td span {
   white-space: nowrap;
 }
 
-.admin-service-copy-app-tabs button.is-active {
+.admin-service-copy-app-tabs button:not(:where(.admin-select-button, .admin-select-option)).is-active {
   border-bottom-color: var(--chika-primary-5);
   color: var(--chika-primary-5);
   font-weight: 600;
 }
 
-.admin-service-copy-app-tabs.is-single button {
+.admin-service-copy-app-tabs.is-single button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 100%;
   min-width: 100%;
 }
@@ -13392,7 +13392,7 @@ td span {
   overflow-wrap: anywhere;
 }
 
-.admin-service-copy-app-request button {
+.admin-service-copy-app-request button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 100%;
   height: 48px;
   border: 0;
@@ -13427,7 +13427,7 @@ td span {
   color: #b91c1c;
 }
 
-.admin-service-copy-state--error button {
+.admin-service-copy-state--error button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 100px;
   height: 40px;
   border: 0;
@@ -13510,7 +13510,7 @@ td span {
   gap: 8px;
 }
 
-.admin-information-upload-tabs button {
+.admin-information-upload-tabs button:not(:where(.admin-select-button, .admin-select-option)) {
   min-height: 40px;
   border: 1px solid #e5e7eb;
   border-radius: 999px;
@@ -13526,17 +13526,17 @@ td span {
   white-space: nowrap;
 }
 
-.admin-information-upload-tabs button.is-active {
+.admin-information-upload-tabs button:not(:where(.admin-select-button, .admin-select-option)).is-active {
   border-color: var(--text-primary);
   background: var(--text-primary);
   color: #fff;
 }
 
-.admin-information-upload-tabs button:focus-visible,
-.admin-information-upload-actions button:focus-visible,
-.admin-information-upload-visibility > button:focus-visible,
+.admin-information-upload-tabs button:not(:where(.admin-select-button, .admin-select-option)):focus-visible,
+.admin-information-upload-actions button:not(:where(.admin-select-button, .admin-select-option)):focus-visible,
+.admin-information-upload-visibility > button:not(:where(.admin-select-button, .admin-select-option)):focus-visible,
 .admin-information-video-thumbnail-controls label:focus-within,
-.admin-information-video-thumbnail-controls button:focus-visible,
+.admin-information-video-thumbnail-controls button:not(:where(.admin-select-button, .admin-select-option)):focus-visible,
 .admin-information-video-dropzone:focus-within,
 .admin-information-video-switch:focus-visible {
   outline: 2px solid var(--chika-secondary-4);
@@ -13691,7 +13691,7 @@ td span {
 }
 
 .admin-information-video-thumbnail-controls label,
-.admin-information-video-thumbnail-controls button {
+.admin-information-video-thumbnail-controls button:not(:where(.admin-select-button, .admin-select-option)) {
   min-height: 36px;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
@@ -13709,7 +13709,7 @@ td span {
   white-space: nowrap;
 }
 
-.admin-information-video-thumbnail-controls button {
+.admin-information-video-thumbnail-controls button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 36px;
   padding: 6px;
 }
@@ -13726,7 +13726,7 @@ td span {
 }
 
 .admin-information-video-thumbnail-controls label:has(input:disabled),
-.admin-information-video-thumbnail-controls button:disabled {
+.admin-information-video-thumbnail-controls button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
@@ -13940,7 +13940,7 @@ td span {
   line-height: 18px;
 }
 
-.admin-information-upload-visibility > button {
+.admin-information-upload-visibility > button:not(:where(.admin-select-button, .admin-select-option)) {
   position: relative;
   width: 44px;
   height: 24px;
@@ -13952,7 +13952,7 @@ td span {
   padding: 4px;
 }
 
-.admin-information-upload-visibility > button > span {
+.admin-information-upload-visibility > button:not(:where(.admin-select-button, .admin-select-option)) > span {
   position: absolute;
   top: 4px;
   left: 4px;
@@ -13963,11 +13963,11 @@ td span {
   transition: left 160ms ease;
 }
 
-.admin-information-upload-visibility > button.is-active {
+.admin-information-upload-visibility > button:not(:where(.admin-select-button, .admin-select-option)).is-active {
   background: var(--text-primary);
 }
 
-.admin-information-upload-visibility > button.is-active > span {
+.admin-information-upload-visibility > button:not(:where(.admin-select-button, .admin-select-option)).is-active > span {
   left: 24px;
 }
 
@@ -13979,7 +13979,7 @@ td span {
   gap: 12px;
 }
 
-.admin-information-upload-actions button {
+.admin-information-upload-actions button:not(:where(.admin-select-button, .admin-select-option)) {
   height: 48px;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
@@ -13995,14 +13995,14 @@ td span {
   white-space: nowrap;
 }
 
-.admin-information-upload-actions button:last-child {
+.admin-information-upload-actions button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   border-color: var(--text-primary);
   background: var(--text-primary);
   color: #fff;
 }
 
-.admin-information-upload-actions button:disabled,
-.admin-information-upload-visibility > button:disabled {
+.admin-information-upload-actions button:not(:where(.admin-select-button, .admin-select-option)):disabled,
+.admin-information-upload-visibility > button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
@@ -14068,7 +14068,7 @@ td span {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .admin-information-upload-actions button {
+  .admin-information-upload-actions button:not(:where(.admin-select-button, .admin-select-option)) {
     width: 100%;
     padding-right: 12px;
     padding-left: 12px;
@@ -14181,7 +14181,7 @@ td span {
   gap: 8px;
 }
 
-.admin-information-video-tabs button {
+.admin-information-video-tabs button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 68px;
   min-height: 38px;
   border-color: #e2e8f0;
@@ -14192,12 +14192,12 @@ td span {
   font-weight: 600;
 }
 
-.admin-information-video-tabs button.is-active {
+.admin-information-video-tabs button:not(:where(.admin-select-button, .admin-select-option)).is-active {
   border-color: #0f172a;
   background: #0f172a;
 }
 
-.admin-information-video-tabs button:disabled {
+.admin-information-video-tabs button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: not-allowed;
   opacity: 1;
 }
@@ -14370,7 +14370,7 @@ td span {
   gap: 3px;
 }
 
-.admin-information-video-label-row > button {
+.admin-information-video-label-row > button:not(:where(.admin-select-button, .admin-select-option)) {
   border: 0;
   background: transparent;
   color: #0f766e;
@@ -14380,7 +14380,7 @@ td span {
   font-weight: 600;
 }
 
-.admin-information-video-label-row > button:disabled {
+.admin-information-video-label-row > button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   color: #94a3b8;
 }
 
@@ -14392,7 +14392,7 @@ td span {
   gap: 8px;
 }
 
-.admin-information-video-category-chips button {
+.admin-information-video-category-chips button:not(:where(.admin-select-button, .admin-select-option)) {
   min-height: 34px;
   border: 1px solid #e2e8f0;
   border-radius: 999px;
@@ -14405,14 +14405,14 @@ td span {
   line-height: 20px;
 }
 
-.admin-information-video-category-chips button.is-active {
+.admin-information-video-category-chips button:not(:where(.admin-select-button, .admin-select-option)).is-active {
   border-color: #0f766e;
   background: #f0fdfa;
   color: #0f766e;
   font-weight: 600;
 }
 
-.admin-information-video-category-chips button:disabled {
+.admin-information-video-category-chips button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
@@ -14430,7 +14430,7 @@ td span {
   line-height: 20px;
 }
 
-.admin-information-video-tags button {
+.admin-information-video-tags button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 20px;
   height: 20px;
   border: 0;
@@ -14442,7 +14442,7 @@ td span {
   padding: 0;
 }
 
-.admin-information-video-tags button img {
+.admin-information-video-tags button:not(:where(.admin-select-button, .admin-select-option)) img {
   width: 16px;
   height: 16px;
 }
@@ -14482,7 +14482,7 @@ td span {
 }
 
 .admin-information-video-thumbnail-controls label,
-.admin-information-video-thumbnail-controls button {
+.admin-information-video-thumbnail-controls button:not(:where(.admin-select-button, .admin-select-option)) {
   min-height: 36px;
   border-color: #e2e8f0;
   border-radius: 6px;
@@ -14584,7 +14584,7 @@ td span {
   font-weight: 500;
 }
 
-.admin-information-video-dropzone > button {
+.admin-information-video-dropzone > button:not(:where(.admin-select-button, .admin-select-option)) {
   height: 32px;
   flex: 0 0 auto;
   border: 1px solid #e2e8f0;
@@ -14737,7 +14737,7 @@ td span {
   padding-left: 16px;
 }
 
-.admin-information-video-related > button {
+.admin-information-video-related > button:not(:where(.admin-select-button, .admin-select-option)) {
   min-height: 38px;
   border: 1px solid #0f766e;
   border-radius: 8px;
@@ -14796,7 +14796,7 @@ td span {
   white-space: nowrap;
 }
 
-.admin-information-video-related li button {
+.admin-information-video-related li button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 24px;
   height: 24px;
   border: 0;
@@ -14867,7 +14867,7 @@ td span {
   padding: 4px;
 }
 
-.admin-information-video-preview-tabs button {
+.admin-information-video-preview-tabs button:not(:where(.admin-select-button, .admin-select-option)) {
   height: 32px;
   border: 0;
   border-radius: 6px;
@@ -14878,7 +14878,7 @@ td span {
   font-size: 13px;
 }
 
-.admin-information-video-preview-tabs button.is-active {
+.admin-information-video-preview-tabs button:not(:where(.admin-select-button, .admin-select-option)).is-active {
   background: #000b26;
   box-shadow: none;
   color: #fff;
@@ -15066,7 +15066,7 @@ td span {
   gap: 10px;
 }
 
-.admin-information-video-actions button {
+.admin-information-video-actions button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 96px;
   height: 42px;
   border: 1px solid #e2e8f0;
@@ -15080,14 +15080,14 @@ td span {
   font-weight: 600;
 }
 
-.admin-information-video-actions > div button:last-child {
+.admin-information-video-actions > div button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   border-color: #0f172a;
   background: #0f172a;
   color: #fff;
 }
 
-.admin-information-video-actions button:disabled,
-.admin-information-video-related button:disabled {
+.admin-information-video-actions button:not(:where(.admin-select-button, .admin-select-option)):disabled,
+.admin-information-video-related button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
@@ -15139,7 +15139,7 @@ td span {
   font-size: 12px;
 }
 
-.admin-information-video-dialog > header button {
+.admin-information-video-dialog > header button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 32px;
   height: 32px;
   border: 0;
@@ -15185,7 +15185,7 @@ td span {
   padding: 16px 20px;
 }
 
-.admin-information-video-dialog > footer button {
+.admin-information-video-dialog > footer button:not(:where(.admin-select-button, .admin-select-option)) {
   height: 40px;
   border: 0;
   border-radius: 8px;
@@ -15311,7 +15311,7 @@ td span {
     padding: 20px 16px 32px;
   }
 
-  .admin-information-video-tabs button {
+  .admin-information-video-tabs button:not(:where(.admin-select-button, .admin-select-option)) {
     min-width: 0;
     flex: 1 1 auto;
     padding-right: 14px;
@@ -15379,7 +15379,7 @@ td span {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .admin-information-video-actions button {
+  .admin-information-video-actions button:not(:where(.admin-select-button, .admin-select-option)) {
     width: 100%;
     min-width: 0;
     padding-right: 10px;
@@ -15481,7 +15481,7 @@ td span {
   object-fit: cover;
 }
 
-.admin-information-post-images-grid article > button {
+.admin-information-post-images-grid article > button:not(:where(.admin-select-button, .admin-select-option)) {
   position: absolute;
   z-index: 2;
   top: 8px;
@@ -15498,7 +15498,7 @@ td span {
   padding: 2px;
 }
 
-.admin-information-post-images-grid article > button img {
+.admin-information-post-images-grid article > button:not(:where(.admin-select-button, .admin-select-option)) img {
   width: 20px;
   height: 20px;
 }
@@ -15773,7 +15773,7 @@ td span {
   line-height: normal;
 }
 
-.admin-information-column-category-dialog > header > button {
+.admin-information-column-category-dialog > header > button:not(:where(.admin-select-button, .admin-select-option)) {
   min-height: 40px;
   flex: 0 0 auto;
   border: 0;
@@ -15792,7 +15792,7 @@ td span {
   line-height: normal;
 }
 
-.admin-information-column-category-dialog > header > button img {
+.admin-information-column-category-dialog > header > button:not(:where(.admin-select-button, .admin-select-option)) img {
   width: 16px;
   height: 16px;
 }
@@ -15916,7 +15916,7 @@ td span {
   color: #64748b;
 }
 
-.admin-information-column-category-table-wrap td:last-child button {
+.admin-information-column-category-table-wrap td:last-child button:not(:where(.admin-select-button, .admin-select-option)) {
   border: 0;
   background: transparent;
   color: #0f766e;
@@ -15995,7 +15995,7 @@ td span {
   line-height: normal;
 }
 
-.admin-information-column-category-form-dialog > header > button {
+.admin-information-column-category-form-dialog > header > button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 24px;
   height: 24px;
   flex: 0 0 24px;
@@ -16007,7 +16007,7 @@ td span {
   padding: 0;
 }
 
-.admin-information-column-category-form-dialog > header > button img {
+.admin-information-column-category-form-dialog > header > button:not(:where(.admin-select-button, .admin-select-option)) img {
   width: 24px;
   height: 24px;
 }
@@ -16105,7 +16105,7 @@ td span {
   gap: 2px;
 }
 
-.admin-information-column-category-toggle-field > button {
+.admin-information-column-category-toggle-field > button:not(:where(.admin-select-button, .admin-select-option)) {
   position: relative;
   width: 44px;
   height: 24px;
@@ -16117,11 +16117,11 @@ td span {
   padding: 0;
 }
 
-.admin-information-column-category-toggle-field > button.is-active {
+.admin-information-column-category-toggle-field > button:not(:where(.admin-select-button, .admin-select-option)).is-active {
   background: #0f766e;
 }
 
-.admin-information-column-category-toggle-field > button::after {
+.admin-information-column-category-toggle-field > button:not(:where(.admin-select-button, .admin-select-option))::after {
   position: absolute;
   top: 2px;
   left: 2px;
@@ -16132,7 +16132,7 @@ td span {
   content: "";
 }
 
-.admin-information-column-category-toggle-field > button.is-active::after {
+.admin-information-column-category-toggle-field > button:not(:where(.admin-select-button, .admin-select-option)).is-active::after {
   left: 22px;
 }
 
@@ -16157,8 +16157,8 @@ td span {
   gap: 12px;
 }
 
-.admin-information-column-category-form-dialog > footer button,
-.admin-information-column-category-warning-dialog > footer button {
+.admin-information-column-category-form-dialog > footer button:not(:where(.admin-select-button, .admin-select-option)),
+.admin-information-column-category-warning-dialog > footer button:not(:where(.admin-select-button, .admin-select-option)) {
   min-height: 37px;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
@@ -16173,19 +16173,19 @@ td span {
   white-space: nowrap;
 }
 
-.admin-information-column-category-form-dialog > footer > div button:last-child,
-.admin-information-column-category-warning-dialog > footer button:last-child {
+.admin-information-column-category-form-dialog > footer > div button:not(:where(.admin-select-button, .admin-select-option)):last-child,
+.admin-information-column-category-warning-dialog > footer button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   border-color: #0f766e;
   background: #0f766e;
   color: #fff;
 }
 
-.admin-information-column-category-form-dialog > footer button:disabled {
+.admin-information-column-category-form-dialog > footer button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: not-allowed;
   opacity: 0.45;
 }
 
-.admin-information-column-category-form-dialog > footer button.is-delete {
+.admin-information-column-category-form-dialog > footer button:not(:where(.admin-select-button, .admin-select-option)).is-delete {
   border-color: transparent;
   background: transparent;
   color: #dc2626;
@@ -16270,7 +16270,7 @@ td span {
     flex-direction: column;
   }
 
-  .admin-information-column-category-dialog > header > button {
+  .admin-information-column-category-dialog > header > button:not(:where(.admin-select-button, .admin-select-option)) {
     align-self: flex-end;
   }
 
@@ -16315,7 +16315,7 @@ td span {
     flex-direction: column;
   }
 
-  .admin-information-column-category-warning-dialog > footer button {
+  .admin-information-column-category-warning-dialog > footer button:not(:where(.admin-select-button, .admin-select-option)) {
     width: 100%;
   }
 }
@@ -16365,7 +16365,7 @@ td span {
 }
 
 .admin-information-column-cover-actions label,
-.admin-information-column-cover-actions button {
+.admin-information-column-cover-actions button:not(:where(.admin-select-button, .admin-select-option)) {
   min-height: 30px;
   border: 1px solid #d4d6da;
   border-radius: 6px;
@@ -16381,7 +16381,7 @@ td span {
   font-weight: 600;
 }
 
-.admin-information-column-cover-actions button {
+.admin-information-column-cover-actions button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 36px;
   min-height: 36px;
   border-color: #e2e8f0;
@@ -16391,7 +16391,7 @@ td span {
 }
 
 .admin-information-column-cover-actions label:has(input:disabled),
-.admin-information-column-cover-actions button:disabled {
+.admin-information-column-cover-actions button:not(:where(.admin-select-button, .admin-select-option)):disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
@@ -16482,7 +16482,7 @@ td span {
   padding: 2px;
 }
 
-.admin-information-column-body-heading button {
+.admin-information-column-body-heading button:not(:where(.admin-select-button, .admin-select-option)) {
   height: 24px;
   border: 0;
   border-radius: 5px;
@@ -16495,7 +16495,7 @@ td span {
   font-weight: 600;
 }
 
-.admin-information-column-body-heading button.is-active {
+.admin-information-column-body-heading button:not(:where(.admin-select-button, .admin-select-option)).is-active {
   background: #fff;
   color: #0f766e;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
@@ -16513,7 +16513,7 @@ td span {
   padding: 8px;
 }
 
-.admin-information-column-toolbar button {
+.admin-information-column-toolbar button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 24px;
   height: 24px;
   border: 0;
@@ -16529,14 +16529,14 @@ td span {
   font-weight: 800;
 }
 
-.admin-information-column-toolbar button.is-paragraph {
+.admin-information-column-toolbar button:not(:where(.admin-select-button, .admin-select-option)).is-paragraph {
   color: #0f766e;
   gap: 8px;
   font-size: 13px;
   font-weight: 600;
 }
 
-.admin-information-column-toolbar button img {
+.admin-information-column-toolbar button:not(:where(.admin-select-button, .admin-select-option)) img {
   width: 24px;
   height: 24px;
 }
@@ -16924,7 +16924,7 @@ td span {
     gap: 9px;
   }
 
-  .admin-information-column-toolbar button.is-paragraph {
+  .admin-information-column-toolbar button:not(:where(.admin-select-button, .admin-select-option)).is-paragraph {
     flex-basis: 100%;
     justify-content: flex-start;
   }
@@ -17130,7 +17130,7 @@ td span {
   white-space: nowrap;
 }
 
-.admin-information-article-tags button {
+.admin-information-article-tags button:not(:where(.admin-select-button, .admin-select-option)) {
   min-height: 23px;
   border: 1px solid #e2e8f0;
   border-radius: 4px;
@@ -17145,7 +17145,7 @@ td span {
   white-space: nowrap;
 }
 
-.admin-information-article-tags button.is-tag {
+.admin-information-article-tags button:not(:where(.admin-select-button, .admin-select-option)).is-tag {
   border: 0;
   background: #f0fdf4;
   color: #0f766e;
@@ -17244,7 +17244,7 @@ td span {
 }
 
 .admin-information-article-cover-controls label,
-.admin-information-article-cover-controls button {
+.admin-information-article-cover-controls button:not(:where(.admin-select-button, .admin-select-option)) {
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   background: #fff;
@@ -17271,7 +17271,7 @@ td span {
   clip-path: inset(50%);
 }
 
-.admin-information-article-cover-controls button {
+.admin-information-article-cover-controls button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 36px;
   height: 36px;
   display: inline-flex;
@@ -17373,7 +17373,7 @@ td span {
   padding: 8px;
 }
 
-.admin-information-article-toolbar button {
+.admin-information-article-toolbar button:not(:where(.admin-select-button, .admin-select-option)) {
   min-width: 0;
   height: 24px;
   border: 0;
@@ -17392,25 +17392,25 @@ td span {
   line-height: 16px;
 }
 
-.admin-information-article-toolbar button:hover {
+.admin-information-article-toolbar button:not(:where(.admin-select-button, .admin-select-option)):hover {
   background: #eef2f6;
 }
 
-.admin-information-article-toolbar button.is-paragraph {
+.admin-information-article-toolbar button:not(:where(.admin-select-button, .admin-select-option)).is-paragraph {
   gap: 8px;
   font-weight: 600;
 }
 
-.admin-information-article-toolbar button.is-bold {
+.admin-information-article-toolbar button:not(:where(.admin-select-button, .admin-select-option)).is-bold {
   font-weight: 800;
 }
 
-.admin-information-article-toolbar button.is-italic {
+.admin-information-article-toolbar button:not(:where(.admin-select-button, .admin-select-option)).is-italic {
   font-style: italic;
   font-weight: 400;
 }
 
-.admin-information-article-toolbar button.is-underline {
+.admin-information-article-toolbar button:not(:where(.admin-select-button, .admin-select-option)).is-underline {
   font-weight: 400;
   text-decoration: underline;
 }
@@ -17578,7 +17578,7 @@ td span {
   gap: 16px;
 }
 
-.admin-information-article-publishing > header button {
+.admin-information-article-publishing > header button:not(:where(.admin-select-button, .admin-select-option)) {
   width: 24px;
   height: 24px;
   flex: 0 0 24px;
@@ -17683,7 +17683,7 @@ td span {
   gap: 12px;
 }
 
-.admin-information-article-actions button {
+.admin-information-article-actions button:not(:where(.admin-select-button, .admin-select-option)) {
   height: 38px;
   border: 0;
   border-radius: 8px;
@@ -17698,7 +17698,7 @@ td span {
   white-space: nowrap;
 }
 
-.admin-information-article-actions button:disabled,
+.admin-information-article-actions button:not(:where(.admin-select-button, .admin-select-option)):disabled,
 .admin-information-article-publish-grid input:disabled {
   cursor: not-allowed;
   opacity: 0.55;
@@ -17751,14 +17751,14 @@ td span {
   line-height: 1.5;
 }
 
-.admin-information-article-actions > div button:first-child {
+.admin-information-article-actions > div button:not(:where(.admin-select-button, .admin-select-option)):first-child {
   border: 1px solid #e2e8f0;
   background: #fff;
   color: #1e293b;
   padding: 0 24px;
 }
 
-.admin-information-article-actions > div button:last-child {
+.admin-information-article-actions > div button:not(:where(.admin-select-button, .admin-select-option)):last-child {
   background: #0f766e;
   color: #fff;
   padding-right: 24px;
@@ -17815,7 +17815,7 @@ td span {
   padding: 4px;
 }
 
-.admin-information-article-preview-tabs button {
+.admin-information-article-preview-tabs button:not(:where(.admin-select-button, .admin-select-option)) {
   height: 32px;
   border: 0;
   border-radius: 6px;
@@ -17828,7 +17828,7 @@ td span {
   line-height: normal;
 }
 
-.admin-information-article-preview-tabs button.is-active {
+.admin-information-article-preview-tabs button:not(:where(.admin-select-button, .admin-select-option)).is-active {
   background: #0f766e;
   color: #fff;
   font-weight: 600;
@@ -18129,7 +18129,7 @@ td span {
   flex: 0 0 24px;
 }
 
-.admin-information-article button:focus-visible,
+.admin-information-article button:not(:where(.admin-select-button, .admin-select-option)):focus-visible,
 .admin-information-article input:focus-visible,
 .admin-information-article textarea:focus-visible,
 .admin-information-article-cover-controls label:focus-within {
@@ -18225,9 +18225,9 @@ td span {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .admin-information-article-actions button,
-  .admin-information-article-actions > div button:first-child,
-  .admin-information-article-actions > div button:last-child {
+  .admin-information-article-actions button:not(:where(.admin-select-button, .admin-select-option)),
+  .admin-information-article-actions > div button:not(:where(.admin-select-button, .admin-select-option)):first-child,
+  .admin-information-article-actions > div button:not(:where(.admin-select-button, .admin-select-option)):last-child {
     width: 100%;
     padding-right: 12px;
     padding-left: 12px;
@@ -18255,10 +18255,10 @@ td span {
 .admin-dentalpedia-create { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; gap: 8px; padding: 10px 16px; border: 0; border-radius: 8px; background: #0f766e; color: #fff; font-size: 14px; font-weight: 600; }
 .admin-dentalpedia-directory-body { padding: 32px; padding-top: 24px; }
 .admin-dentalpedia-type-filters, .admin-dentalpedia-status-filters { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 16px; }
-.admin-dentalpedia-type-filters button { border: 1px solid #d4d6da; border-radius: 99px; background: #f3f4f6; padding: 10px 24px; color: #3b4358; font-size: 14px; font-weight: 500; line-height: 20px; }
-.admin-dentalpedia-type-filters button[aria-pressed="true"] { border-color: #000b26; background: #000b26; color: #fff; font-weight: 700; }
-.admin-dentalpedia-status-filters button { border: 1px solid #d4d6da; border-radius: 20px; background: #fff; padding: 6px 14px; color: #596072; font-size: 13px; font-weight: 600; line-height: 19.5px; }
-.admin-dentalpedia-status-filters button[aria-pressed="true"] { border-color: #f56e00; background: #fee9d9; color: #f56e00; }
+.admin-dentalpedia-type-filters button:not(:where(.admin-select-button, .admin-select-option)) { border: 1px solid #d4d6da; border-radius: 99px; background: #f3f4f6; padding: 10px 24px; color: #3b4358; font-size: 14px; font-weight: 500; line-height: 20px; }
+.admin-dentalpedia-type-filters button:not(:where(.admin-select-button, .admin-select-option))[aria-pressed="true"] { border-color: #000b26; background: #000b26; color: #fff; font-weight: 700; }
+.admin-dentalpedia-status-filters button:not(:where(.admin-select-button, .admin-select-option)) { border: 1px solid #d4d6da; border-radius: 20px; background: #fff; padding: 6px 14px; color: #596072; font-size: 13px; font-weight: 600; line-height: 19.5px; }
+.admin-dentalpedia-status-filters button:not(:where(.admin-select-button, .admin-select-option))[aria-pressed="true"] { border-color: #f56e00; background: #fee9d9; color: #f56e00; }
 .admin-dentalpedia-search-row { display: flex; gap: 12px; padding-bottom: 16px; }
 .admin-dentalpedia-search { display: flex; flex: 1; min-width: 0; align-items: center; gap: 10px; border: 1px solid #d4d6da; border-radius: 8px; background: #fff; padding: 8px 14px; }
 .admin-dentalpedia-search > img { width: 24px; height: 24px; flex: 0 0 24px; }
@@ -18293,13 +18293,13 @@ td span {
 .admin-dentalpedia-more { display: inline-flex; padding: 8px; border: 0; border-radius: 4px; background: #fff; }
 .admin-dentalpedia-more:hover { background: #f1f5f9; }
 .admin-dentalpedia-menu { position: fixed; z-index: 1200; width: 160px; overflow: hidden; border: 1px solid #e2e5ea; border-radius: 8px; background: #fff; box-shadow: 0 4px 6px #0000001a; }
-.admin-dentalpedia-menu button { display: block; width: 100%; padding: 12px 16px; border: 0; background: #fff; text-align: left; color: #334155; font-size: 14px; font-weight: 500; }
-.admin-dentalpedia-menu button:hover, .admin-dentalpedia-menu button:focus-visible { background: #f8fafc; }
+.admin-dentalpedia-menu button:not(:where(.admin-select-button, .admin-select-option)) { display: block; width: 100%; padding: 12px 16px; border: 0; background: #fff; text-align: left; color: #334155; font-size: 14px; font-weight: 500; }
+.admin-dentalpedia-menu button:not(:where(.admin-select-button, .admin-select-option)):hover, .admin-dentalpedia-menu button:not(:where(.admin-select-button, .admin-select-option)):focus-visible { background: #f8fafc; }
 .admin-dentalpedia-menu .is-danger { border-top: 1px solid #e2e5ea; color: #ef4444; }
 .admin-dentalpedia-pagination { display: flex; align-items: center; justify-content: center; gap: 8px; padding-top: 16px; }
-.admin-dentalpedia-pagination button { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; padding: 4px 10px; border: 0; border-radius: 4px; background: transparent; color: #3b4358; font-size: 14px; }
-.admin-dentalpedia-pagination button[aria-current="page"] { background: #000b26; color: #fff; }
-.admin-dentalpedia-directory button:disabled, .admin-dentalpedia-menu button:disabled { cursor: default; opacity: .45; }
+.admin-dentalpedia-pagination button:not(:where(.admin-select-button, .admin-select-option)) { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; padding: 4px 10px; border: 0; border-radius: 4px; background: transparent; color: #3b4358; font-size: 14px; }
+.admin-dentalpedia-pagination button:not(:where(.admin-select-button, .admin-select-option))[aria-current="page"] { background: #000b26; color: #fff; }
+.admin-dentalpedia-directory button:not(:where(.admin-select-button, .admin-select-option)):disabled, .admin-dentalpedia-menu button:not(:where(.admin-select-button, .admin-select-option)):disabled { cursor: default; opacity: .45; }
 .admin-dentalpedia-table .admin-dentalpedia-empty { height: 360px; padding: 32px; text-align: center; color: #64748b; }
 /* Figma 7960:69679 — successful empty results replace the table and pagination. */
 .admin-dentalpedia-empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; width: 100%; min-height: 500px; padding: 80px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; text-align: center; }
@@ -18308,7 +18308,7 @@ td span {
 .admin-dentalpedia-empty-copy { display: flex; flex-direction: column; gap: 8px; min-width: 0; overflow-wrap: anywhere; }
 .admin-dentalpedia-empty-copy h2 { margin: 0; color: #1e293b; font-size: 18px; font-weight: 700; line-height: normal; }
 .admin-dentalpedia-empty-copy p { margin: 0; color: #64748b; font-size: 14px; font-weight: 400; line-height: normal; }
-.admin-dentalpedia-empty button, .admin-dentalpedia-feedback button { border: 0; background: none; color: #0f766e; text-decoration: underline; }
+.admin-dentalpedia-empty button:not(:where(.admin-select-button, .admin-select-option)), .admin-dentalpedia-feedback button:not(:where(.admin-select-button, .admin-select-option)) { border: 0; background: none; color: #0f766e; text-decoration: underline; }
 .admin-dentalpedia-feedback { display: flex; justify-content: space-between; gap: 16px; margin: 0 0 16px; padding: 12px 16px; border-radius: 8px; background: #fff1f2; color: #b91c1c; font-size: 14px; }
 .admin-dentalpedia-feedback.is-success { background: #f0fdf4; color: #0f766e; }
 /* Figma 7960:69980 / 7960:70151 — archive and delete confirmations. */
@@ -18323,17 +18323,17 @@ td span {
 .admin-dentalpedia-action-dialog p { margin: 0; color: #64748b; font-size: 14px; line-height: 20px; }
 .admin-dentalpedia-action-dialog p.is-error { color: #b91c1c; overflow-wrap: anywhere; }
 .admin-dentalpedia-action-dialog footer { display: flex; justify-content: space-between; gap: 10px; padding: 15px 16px 16px; border-top: 1px solid #e2e8f0; background: #f8fafc; }
-.admin-dentalpedia-action-dialog button { display: inline-flex; align-items: center; justify-content: center; min-height: 37px; padding: 9px 15px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; color: #1e293b; font-size: 14px; font-weight: 600; line-height: 17px; white-space: nowrap; }
-.admin-dentalpedia-action-dialog button.is-danger { border-color: #ef4444; background: #ef4444; color: #fff; }
-.admin-dentalpedia-action-dialog button.is-primary { border-color: #0f766e; background: #0f766e; color: #fff; }
+.admin-dentalpedia-action-dialog button:not(:where(.admin-select-button, .admin-select-option)) { display: inline-flex; align-items: center; justify-content: center; min-height: 37px; padding: 9px 15px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; color: #1e293b; font-size: 14px; font-weight: 600; line-height: 17px; white-space: nowrap; }
+.admin-dentalpedia-action-dialog button:not(:where(.admin-select-button, .admin-select-option)).is-danger { border-color: #ef4444; background: #ef4444; color: #fff; }
+.admin-dentalpedia-action-dialog button:not(:where(.admin-select-button, .admin-select-option)).is-primary { border-color: #0f766e; background: #0f766e; color: #fff; }
 .admin-dentalpedia-back { margin: 0 0 12px; padding: 0; border: 0; background: none; color: #0f766e; font-size: 13px; }
-.admin-information-upload-tabs button:disabled { cursor: default; opacity: .45; }
+.admin-information-upload-tabs button:not(:where(.admin-select-button, .admin-select-option)):disabled { cursor: default; opacity: .45; }
 @media (max-width: 700px) {
   .admin-dentalpedia-directory-heading { align-items: flex-start; flex-direction: column; gap: 16px; padding: 24px 16px; }
   .admin-dentalpedia-directory-body { padding: 16px; }
   .admin-dentalpedia-search-row { flex-direction: column; }
   .admin-dentalpedia-category { width: 100%; flex-basis: auto; }
-  .admin-dentalpedia-type-filters button { padding-right: 16px; padding-left: 16px; }
+  .admin-dentalpedia-type-filters button:not(:where(.admin-select-button, .admin-select-option)) { padding-right: 16px; padding-left: 16px; }
   .admin-dentalpedia-empty-state { padding: 48px 24px; }
 }
 
@@ -18384,8 +18384,8 @@ td span {
 
 .admin-name-editor { width: 100%; }
 .admin-name-editor-display, .admin-name-editor-buttons { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.admin-name-editor button { border: 1px solid #d8dde3; border-radius: 6px; padding: 6px 12px; background: white; cursor: pointer; font-size: 13px; }
-.admin-name-editor button:disabled { opacity: .5; cursor: default; }
+.admin-name-editor button:not(:where(.admin-select-button, .admin-select-option)) { border: 1px solid #d8dde3; border-radius: 6px; padding: 6px 12px; background: white; cursor: pointer; font-size: 13px; }
+.admin-name-editor button:not(:where(.admin-select-button, .admin-select-option)):disabled { opacity: .5; cursor: default; }
 .admin-name-editor input { width: 100%; max-width: 280px; border: 1px solid #d8dde3; border-radius: 6px; padding: 8px; }
 .admin-name-editor-buttons { margin-top: 8px; }
 .admin-name-editor p { font-size: 12px; margin-top: 8px; }
@@ -18399,9 +18399,9 @@ td span {
 .admin-global-search-dropdown { position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; display: flex; flex-direction: column; gap: 4px; width: min(420px, calc(100vw - 40px)); max-height: min(480px, calc(100dvh - 96px)); padding: 8px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: 12px; background: var(--surface); box-shadow: 0 8px 24px #000b261f; }
 .admin-global-search-group h3 { margin: 8px 8px 4px; color: var(--text-quaternary); font-size: 12px; font-weight: 600; }
 .admin-global-search-group ul { margin: 0; padding: 0; list-style: none; }
-.admin-global-search .admin-global-search-group button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; height: auto; padding: 8px; border: 0; border-radius: 8px; background: transparent; color: var(--text-primary); text-align: left; cursor: pointer; }
-.admin-global-search .admin-global-search-group button:hover,
-.admin-global-search .admin-global-search-group button:focus-visible { outline: 0; background: var(--chika-secondary-0); }
+.admin-global-search .admin-global-search-group button:not(:where(.admin-select-button, .admin-select-option)) { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; height: auto; padding: 8px; border: 0; border-radius: 8px; background: transparent; color: var(--text-primary); text-align: left; cursor: pointer; }
+.admin-global-search .admin-global-search-group button:not(:where(.admin-select-button, .admin-select-option)):hover,
+.admin-global-search .admin-global-search-group button:not(:where(.admin-select-button, .admin-select-option)):focus-visible { outline: 0; background: var(--chika-secondary-0); }
 .admin-global-search-group strong { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
 .admin-global-search-group span { color: var(--text-tertiary); font-size: 12px; overflow-wrap: anywhere; }
 .admin-global-search-hint, .admin-global-search-error { margin: 0; padding: 12px 8px; color: var(--text-tertiary); font-size: 13px; }
@@ -18445,6 +18445,10 @@ td span {
 .admin-name-editor p.admin-contact-phone-hint { color: #8a929c; margin-top: 6px; }
 
 /* The membership code issue card is a form, not a paginated list. */
+.admin-operational-table-card.admin-membership-invite-issue {
+  overflow: visible;
+}
+
 @media (min-width: 761px) {
   .admin-operational-table-card.admin-membership-invite-issue {
     height: auto;
