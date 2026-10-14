@@ -690,15 +690,6 @@
   text-align: center;
 }
 
-.admin-membership-edit-dialog {
-  width: min(440px, calc(100vw - 32px));
-}
-
-.admin-membership-edit-dialog form {
-  display: grid;
-  gap: 16px;
-}
-
 .admin-content--membership-registration {
   display: block;
   padding: 32px 32px 48px;
@@ -886,6 +877,33 @@
   cursor: pointer;
   padding: 20px;
   text-align: center;
+}
+
+.admin-membership-current-file {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  color: #3b4358;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.admin-membership-current-file a,
+.admin-membership-current-file button {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: #2f5fd0;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.admin-membership-current-file button {
+  color: #d92d20;
 }
 
 .admin-membership-upload-zone.is-large {

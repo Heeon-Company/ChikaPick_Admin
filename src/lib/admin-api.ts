@@ -1054,10 +1054,7 @@ export async function fetchDentalpediaRelatedContentOptions(
   ];
 }
 
-export async function createAdminMembershipPartner(
-  accessToken: string,
-  input: AdminMembershipCreateInput,
-) {
+function membershipContentFormData(input: AdminMembershipCreateInput) {
   const body = new FormData();
   body.set("name", input.name);
   body.set("category", input.category);
@@ -1087,10 +1084,43 @@ export async function createAdminMembershipPartner(
   if (input.cardImage) body.set("cardImage", input.cardImage);
   if (input.detailImage) body.set("detailImage", input.detailImage);
   if (input.attachmentFile) body.set("attachmentFile", input.attachmentFile);
+  return body;
+}
+
+export async function createAdminMembershipPartner(
+  accessToken: string,
+  input: AdminMembershipCreateInput,
+) {
   return adminFetch<AdminActionResult>("/api/v1/admin/memberships", accessToken, {
     method: "POST",
-    body,
+    body: membershipContentFormData(input),
   });
+}
+
+export async function fetchAdminMembershipPartnerDetail(
+  accessToken: string,
+  partnerId: string,
+) {
+  return adminFetch<{ item: AdminMembershipPartnerDetail }>(
+    `/api/v1/admin/memberships/${encodeURIComponent(partnerId)}`,
+    accessToken,
+  );
+}
+
+// Unselected images and files keep the stored ones; removeAttachment clears the file.
+export async function replaceAdminMembershipPartnerContent(
+  accessToken: string,
+  partnerId: string,
+  input: AdminMembershipCreateInput,
+  { removeAttachment = false }: { removeAttachment?: boolean } = {},
+) {
+  const body = membershipContentFormData(input);
+  body.set("removeAttachment", String(removeAttachment && !input.attachmentFile));
+  return adminFetch<AdminActionResult>(
+    `/api/v1/admin/memberships/${encodeURIComponent(partnerId)}`,
+    accessToken,
+    { method: "PATCH", body },
+  );
 }
 
 export async function updateAdminMembershipPartner(
@@ -1707,6 +1737,7 @@ import type {
   AdminMembershipCreateInput,
   AdminMembershipFilters,
   AdminMembershipManagementPayload,
+  AdminMembershipPartnerDetail,
   MembershipCategory,
 } from "./membership-management";
 import type {

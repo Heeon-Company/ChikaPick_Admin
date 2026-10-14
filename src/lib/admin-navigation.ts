@@ -27,7 +27,9 @@ function validScreen(value: unknown): value is AdminScreen {
   const screen = value as AdminScreen;
   if (!primaryTabs.some((tab) => tab.id === screen.tab)) return false;
   if (screen.id !== undefined &&
-    (!(screen.tab === "dental-sales" || screen.tab === "partner-clinics") || typeof screen.id !== "string" || !screen.id)) return false;
+    (!(screen.tab === "dental-sales" || screen.tab === "partner-clinics" ||
+      (screen.tab === "memberships" && screen.view === "registration")) ||
+      typeof screen.id !== "string" || !screen.id)) return false;
   if (screen.editor !== undefined &&
     (screen.tab !== "information-upload" || !screen.editor ||
       !["video", "post", "article"].includes(screen.editor.type) ||

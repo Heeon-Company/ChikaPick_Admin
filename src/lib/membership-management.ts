@@ -57,6 +57,32 @@ export interface AdminMembershipPartner {
   isVisible: boolean;
 }
 
+export interface AdminMembershipPartnerDetail {
+  attachmentLabel: string;
+  attachmentUrl: string | null;
+  benefitItems: string[];
+  cardImageUrl: string | null;
+  category: MembershipCategory;
+  contentType: MembershipContentType;
+  description: string;
+  detailDescription: string;
+  detailImageUrl: string | null;
+  detailTitle: string;
+  id: string;
+  inquiryButtonLabel: string;
+  inquiryMethod: MembershipInquiryMethod;
+  inquiryValue: string;
+  intro: string;
+  isPreferred: boolean;
+  isVisible: boolean;
+  name: string;
+  recommendedOrder: number;
+  richContent: string;
+  serviceTags: string[];
+  strengths: string[];
+  updatedAt: string;
+}
+
 export interface AdminMembershipInquiry {
   id: string;
   partnerId: string;

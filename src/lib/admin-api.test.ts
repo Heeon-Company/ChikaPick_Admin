@@ -33,6 +33,7 @@ import {
   fetchAdminInviteDirectory,
   fetchAdminManualHospitalSubmissions,
   fetchAdminMembershipManagement,
+  fetchAdminMembershipPartnerDetail,
   fetchAdminPartnerClinicDetail,
   fetchAdminPartnerAccountDetail,
   fetchAdminPartnerClinics,
@@ -64,6 +65,7 @@ import {
   updateAdminServiceAreaConfig,
   uploadAdminDentalSalesBusinessLicense,
   withdrawAdminAccount,
+  replaceAdminMembershipPartnerContent,
   restoreAdminPartnerClinicSignup,
 } from "./admin-api.ts";
 import { emptyDentalSalesFilters } from "./dental-sales.ts";
@@ -485,6 +487,66 @@ test("membership management API sends server filters and row mutations", async (
     recommendedOrder: 2,
   });
   assert.equal(calls[2]?.init?.method, "DELETE");
+});
+
+test("membership partner edit loads the saved form and replaces it as multipart data", async () => {
+  const calls: Array<{ input: string | URL | Request; init?: RequestInit }> = [];
+  const originalFetch = globalThis.fetch;
+  process.env.NEXT_PUBLIC_CHIKAPICK_API_BASE_URL = "https://api.example.com";
+  globalThis.fetch = async (input, init) => {
+    calls.push({ input, init });
+    return new Response(JSON.stringify({ ok: true, message: "updated", item: {} }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+
+  try {
+    await fetchAdminMembershipPartnerDetail("access-token", "partner/id");
+    await replaceAdminMembershipPartnerContent(
+      "access-token",
+      "partner/id",
+      {
+        attachmentFile: null,
+        attachmentLabel: "",
+        benefitItems: ["첫 달 15% 할인"],
+        cardImage: null,
+        category: "lab",
+        contentType: "editor",
+        description: "수정한 소개",
+        detailDescription: "",
+        detailImage: null,
+        detailTitle: "수정한 상세 제목",
+        inquiryButtonLabel: "상담 신청",
+        inquiryMethod: "phone",
+        inquiryValue: "0212345678",
+        intro: "수정한 본문",
+        isPreferred: false,
+        isVisible: true,
+        name: "서울기공연구소",
+        recommendedOrder: 3,
+        richContent: "본문",
+        richContentImages: [],
+        serviceTags: [],
+        strengths: [],
+      },
+      { removeAttachment: true },
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(calls[0]?.input, "https://api.example.com/api/v1/admin/memberships/partner%2Fid");
+  assert.equal(calls[0]?.init?.method, undefined);
+  assert.equal(calls[1]?.input, "https://api.example.com/api/v1/admin/memberships/partner%2Fid");
+  assert.equal(calls[1]?.init?.method, "PATCH");
+  const body = calls[1]?.init?.body;
+  assert.ok(body instanceof FormData);
+  assert.equal(body.get("detailTitle"), "수정한 상세 제목");
+  assert.equal(body.get("intro"), "수정한 본문");
+  assert.equal(body.get("inquiryMethod"), "phone");
+  assert.equal(body.get("removeAttachment"), "true");
+  assert.equal(body.get("cardImage"), null);
 });
 
 test("membership partner registration sends the complete form as multipart data", async () => {

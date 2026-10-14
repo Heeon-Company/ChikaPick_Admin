@@ -34,6 +34,7 @@ const flows: [AdminScreen, AdminScreen][] = [
   [{ tab: "dental-sales" }, { tab: "dental-sales", id: "sales-1" }],
   [{ tab: "partner-accounts" }, { tab: "partner-accounts", view: "search" }],
   [{ tab: "memberships" }, { tab: "memberships", view: "registration" }],
+  [{ tab: "memberships" }, { tab: "memberships", view: "registration", id: "partner-1" }],
   [{ tab: "service-expansion-requests" }, { tab: "service-expansion-requests", view: "copy" }],
   [{ tab: "service-expansion-requests" }, { tab: "service-expansion-requests", view: "clinic" }],
   [{ tab: "support-management" }, { tab: "support-management", supportEditor: { kind: "announcement", id: "notice-1" } }],

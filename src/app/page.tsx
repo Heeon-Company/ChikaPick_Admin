@@ -33,6 +33,8 @@ import {
   setAdminPartnerClinicAppVisibility,
   bulkUpdateAdminMembershipPartners,
   createAdminMembershipPartner,
+  fetchAdminMembershipPartnerDetail,
+  replaceAdminMembershipPartnerContent,
   createAdminPartnerClinicOperationEvent,
   createAdminExternalConnector,
   createAdminDentalSalesVisit,
@@ -244,6 +246,7 @@ import {
   type AdminMembershipFilters,
   type AdminMembershipManagementPayload,
   type AdminMembershipPartner,
+  type AdminMembershipPartnerDetail,
   type MembershipCategory,
   type MembershipContentType,
   type MembershipInquiryMethod,
@@ -411,12 +414,19 @@ function AdminConsole() {
   const selectedPartnerClinicId = screen.tab === "partner-clinics" ? screen.id ?? null : null;
   const isPartnerAccountSearchView = screen.tab === "partner-accounts" && screen.view === "search";
   const isMembershipRegistrationView = screen.tab === "memberships" && screen.view === "registration";
+  const editingMembershipPartnerId = isMembershipRegistrationView ? screen.id ?? null : null;
   const setDentalpediaEditor = (editor: DentalpediaContentSelection | null) => {
     if (editor) navigate({ tab: "information-upload", editor });
     else returnTo({ tab: "information-upload" });
   };
-  const setIsMembershipRegistrationView = (open: boolean) => {
-    if (open) navigate({ tab: "memberships", view: "registration" });
+  const setIsMembershipRegistrationView = (open: boolean, partnerId?: string) => {
+    if (open) {
+      navigate({
+        tab: "memberships",
+        view: "registration",
+        ...(partnerId ? { id: partnerId } : {}),
+      });
+    }
     else returnTo({ tab: "memberships" });
   };
   const [session, setSession] = useState<Session | null>(null);
@@ -1249,6 +1259,7 @@ function AdminConsole() {
             <MembershipManagementTab
               accessToken={session?.access_token ?? ""}
               searchRequest={searchHandoff}
+              editingPartnerId={editingMembershipPartnerId}
               isRegistrationView={isMembershipRegistrationView}
               onRegistrationViewChange={setIsMembershipRegistrationView}
             />
@@ -2216,14 +2227,16 @@ function AdminSettingsTab({
 
 function MembershipManagementTab({
   accessToken,
+  editingPartnerId,
   searchRequest,
   isRegistrationView,
   onRegistrationViewChange,
 }: {
   accessToken: string;
+  editingPartnerId: string | null;
   searchRequest: AdminSearchHandoff | null;
   isRegistrationView: boolean;
-  onRegistrationViewChange: (isOpen: boolean) => void;
+  onRegistrationViewChange: (isOpen: boolean, partnerId?: string) => void;
 }) {
   const [filters, setFilters] = useState<AdminMembershipFilters>(() => ({
     ...defaultAdminMembershipFilters,
@@ -2245,12 +2258,6 @@ function MembershipManagementTab({
     pendingInquiryCount: 0,
   });
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [editingPartner, setEditingPartner] = useState<AdminMembershipPartner | null>(
-    null,
-  );
-  const [editName, setEditName] = useState("");
-  const [editCategory, setEditCategory] = useState<MembershipCategory>("lab");
-  const [editOrder, setEditOrder] = useState("1");
   const [busyPartnerId, setBusyPartnerId] = useState<string | null>(null);
   const [isBulkBusy, setIsBulkBusy] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -2304,12 +2311,9 @@ function MembershipManagementTab({
     return () => window.clearTimeout(timeout);
   }, [loadMemberships]);
 
-  function openEditDialog(partner: AdminMembershipPartner) {
-    setEditingPartner(partner);
-    setEditName(partner.name);
-    setEditCategory(partner.category);
-    setEditOrder(String(partner.recommendedOrder));
+  function openEditView(partner: AdminMembershipPartner) {
     setNotice("");
+    onRegistrationViewChange(true, partner.id);
   }
 
   async function runPartnerAction(
@@ -2334,24 +2338,6 @@ function MembershipManagementTab({
     } finally {
       setBusyPartnerId(null);
     }
-  }
-
-  async function submitEdit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!editingPartner) return;
-    const recommendedOrder = Number(editOrder);
-    if (!editName.trim() || !Number.isInteger(recommendedOrder) || recommendedOrder < 1) {
-      setError("업체명과 추천순을 확인해 주세요.");
-      return;
-    }
-    const saved = await runPartnerAction(editingPartner.id, () =>
-      updateAdminMembershipPartner(accessToken, editingPartner.id, {
-        category: editCategory,
-        name: editName.trim(),
-        recommendedOrder,
-      }),
-    );
-    if (saved) setEditingPartner(null);
   }
 
   const allRowsSelected =
@@ -2390,15 +2376,24 @@ function MembershipManagementTab({
   }
 
   if (isRegistrationView) {
-    return (
+    const onSaved = async (message: string) => {
+      setNotice(message);
+      await loadMemberships();
+      onRegistrationViewChange(false);
+    };
+    return editingPartnerId ? (
+      <MembershipEditView
+        key={editingPartnerId}
+        accessToken={accessToken}
+        partnerId={editingPartnerId}
+        onCancel={() => onRegistrationViewChange(false)}
+        onSaved={onSaved}
+      />
+    ) : (
       <MembershipRegistrationView
         accessToken={accessToken}
         onCancel={() => onRegistrationViewChange(false)}
-        onSaved={async (message) => {
-          setNotice(message);
-          await loadMemberships();
-          onRegistrationViewChange(false);
-        }}
+        onSaved={onSaved}
       />
     );
   }
@@ -2545,7 +2540,7 @@ function MembershipManagementTab({
                           type="button"
                           className="admin-membership-edit-button"
                           disabled={isBusy}
-                          onClick={() => openEditDialog(partner)}
+                          onClick={() => openEditView(partner)}
                         >
                           수정
                         </button>
@@ -2658,111 +2653,127 @@ function MembershipManagementTab({
         </aside>
       </div>
 
-      {editingPartner ? (
-        <div className="admin-account-dialog-layer admin-membership-edit-layer">
-          <button
-            type="button"
-            className="admin-account-dialog-backdrop"
-            aria-label="멤버십 업체 수정 닫기"
-            onClick={() => setEditingPartner(null)}
-          />
-          <div
-            className="admin-account-dialog admin-membership-edit-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="admin-membership-edit-title"
-          >
-            <header>
-              <h2 id="admin-membership-edit-title">멤버십 업체 수정</h2>
-              <button type="button" onClick={() => setEditingPartner(null)} aria-label="닫기">
-                ×
-              </button>
-            </header>
-            <form onSubmit={submitEdit}>
-              <label>
-                <span>업체명</span>
-                <input
-                  value={editName}
-                  maxLength={80}
-                  onChange={(event) => setEditName(event.target.value)}
-                />
-              </label>
-              <label>
-                <span>카테고리</span>
-                <AdminSelect
-                  label="카테고리"
-                  value={editCategory}
-                  onChange={setEditCategory}
-                  options={membershipCategories.slice(1).map((category) => ({
-                    value: category.code as MembershipCategory,
-                    label: category.label,
-                  }))}
-                />
-              </label>
-              <label>
-                <span>추천순</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={10000}
-                  value={editOrder}
-                  onChange={(event) => setEditOrder(event.target.value)}
-                />
-              </label>
-              <div className="admin-account-dialog-actions">
-                <button type="button" onClick={() => setEditingPartner(null)}>
-                  취소
-                </button>
-                <button type="submit" disabled={busyPartnerId === editingPartner.id}>
-                  {busyPartnerId === editingPartner.id ? "저장 중" : "저장"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      ) : null}
+    </section>
+  );
+}
+
+function MembershipEditView({
+  accessToken,
+  onCancel,
+  onSaved,
+  partnerId,
+}: {
+  accessToken: string;
+  onCancel: () => void;
+  onSaved: (message: string) => Promise<void>;
+  partnerId: string;
+}) {
+  const [partner, setPartner] = useState<AdminMembershipPartnerDetail | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!accessToken) return;
+    let isCurrent = true;
+    fetchAdminMembershipPartnerDetail(accessToken, partnerId)
+      .then(({ item }) => {
+        if (isCurrent) setPartner(item);
+      })
+      .catch((loadError: unknown) => {
+        if (!isCurrent) return;
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "멤버십 업체 정보를 불러오지 못했습니다.",
+        );
+      });
+    return () => {
+      isCurrent = false;
+    };
+  }, [accessToken, partnerId]);
+
+  if (partner) {
+    return (
+      <MembershipRegistrationView
+        accessToken={accessToken}
+        initial={partner}
+        onCancel={onCancel}
+        onSaved={onSaved}
+      />
+    );
+  }
+
+  return (
+    <section className="admin-membership-registration" aria-label="제휴 업체 수정">
+      <header className="admin-membership-registration-heading">
+        <nav aria-label="현재 위치">
+          <button type="button" onClick={onCancel}>멤버십 관리</button>
+          <span aria-hidden="true">›</span>
+          <strong>업체 수정</strong>
+        </nav>
+        <h1>제휴 업체 수정</h1>
+      </header>
+      {error ? (
+        <p className="admin-membership-registration-error" role="alert">{error}</p>
+      ) : (
+        <div className="admin-membership-loading">불러오는 중...</div>
+      )}
     </section>
   );
 }
 
 function MembershipRegistrationView({
   accessToken,
+  initial,
   onCancel,
   onSaved,
 }: {
   accessToken: string;
+  initial?: AdminMembershipPartnerDetail;
   onCancel: () => void;
   onSaved: (message: string) => Promise<void>;
 }) {
-  const [name, setName] = useState("");
-  const [category, setCategory] = useState<MembershipCategory>("lab");
-  const [recommendedOrder, setRecommendedOrder] = useState("1");
-  const [description, setDescription] = useState("");
+  const isEditing = Boolean(initial);
+  const [name, setName] = useState(initial?.name ?? "");
+  const [category, setCategory] = useState<MembershipCategory>(initial?.category ?? "lab");
+  const [recommendedOrder, setRecommendedOrder] = useState(
+    String(initial?.recommendedOrder ?? 1),
+  );
+  const [description, setDescription] = useState(initial?.description ?? "");
   const [cardImage, setCardImage] = useState<File | null>(null);
-  const [isPreferred, setIsPreferred] = useState(true);
-  const [isVisible, setIsVisible] = useState(true);
-  const [detailTitle, setDetailTitle] = useState("");
-  const [detailDescription, setDetailDescription] = useState("");
+  const [isPreferred, setIsPreferred] = useState(initial?.isPreferred ?? true);
+  const [isVisible, setIsVisible] = useState(initial?.isVisible ?? true);
+  const [detailTitle, setDetailTitle] = useState(initial?.detailTitle ?? "");
+  const [detailDescription, setDetailDescription] = useState(
+    initial?.detailDescription ?? "",
+  );
   const [detailImage, setDetailImage] = useState<File | null>(null);
   const [inquiryButtonLabel, setInquiryButtonLabel] = useState(
-    "상세 보기 및 혜택 신청",
+    initial?.inquiryButtonLabel ?? "상세 보기 및 혜택 신청",
   );
-  const [inquiryMethod, setInquiryMethod] =
-    useState<MembershipInquiryMethod>("external_link");
-  const [inquiryValue, setInquiryValue] = useState("");
-  const [intro, setIntro] = useState("");
-  const [serviceTags, setServiceTags] = useState<string[]>([]);
+  const [inquiryMethod, setInquiryMethod] = useState<MembershipInquiryMethod>(
+    initial?.inquiryMethod ?? "external_link",
+  );
+  const [inquiryValue, setInquiryValue] = useState(initial?.inquiryValue ?? "");
+  const [intro, setIntro] = useState(initial?.intro ?? "");
+  const [serviceTags, setServiceTags] = useState<string[]>(initial?.serviceTags ?? []);
   const [tagDraft, setTagDraft] = useState("");
   const [isAddingTag, setIsAddingTag] = useState(false);
-  const [strengths, setStrengths] = useState<string[]>([""]);
-  const [benefitItems, setBenefitItems] = useState<string[]>([""]);
-  const [contentType, setContentType] = useState<MembershipContentType>("section");
-  const [richContent, setRichContent] = useState("");
+  const [strengths, setStrengths] = useState<string[]>(
+    initial?.strengths.length ? initial.strengths : [""],
+  );
+  const [benefitItems, setBenefitItems] = useState<string[]>(
+    initial?.benefitItems.length ? initial.benefitItems : [""],
+  );
+  const [contentType, setContentType] = useState<MembershipContentType>(
+    initial?.contentType ?? "section",
+  );
+  const [richContent, setRichContent] = useState(initial?.richContent ?? "");
   const [richContentImages, setRichContentImages] = useState<
     AdminMembershipCreateInput["richContentImages"]
   >([]);
-  const [attachmentLabel, setAttachmentLabel] = useState("");
+  const [attachmentLabel, setAttachmentLabel] = useState(initial?.attachmentLabel ?? "");
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const [removeAttachment, setRemoveAttachment] = useState(false);
   const [dragging, setDragging] = useState<{
     index: number;
     list: "strengths" | "benefits";
@@ -2776,7 +2787,7 @@ function MembershipRegistrationView({
     name, category, recommendedOrder, description, cardImage, isPreferred, isVisible,
     detailTitle, detailDescription, detailImage, inquiryButtonLabel, inquiryMethod,
     inquiryValue, intro, serviceTags, tagDraft, strengths, benefitItems, contentType,
-    richContent, richContentImages, attachmentLabel, attachmentFile,
+    richContent, richContentImages, attachmentLabel, attachmentFile, removeAttachment,
   }, { busy: isSaving });
 
   function addTag() {
@@ -2912,14 +2923,20 @@ function MembershipRegistrationView({
     setIsSaving(true);
     setError("");
     try {
-      const result = await createAdminMembershipPartner(accessToken, input);
+      const result = initial
+        ? await replaceAdminMembershipPartnerContent(accessToken, initial.id, input, {
+            removeAttachment,
+          })
+        : await createAdminMembershipPartner(accessToken, input);
       markSaved();
       await onSaved(result.message);
     } catch (saveError) {
       setError(
         saveError instanceof Error
           ? saveError.message
-          : "멤버십 업체를 등록하지 못했습니다.",
+          : isEditing
+            ? "멤버십 업체를 수정하지 못했습니다."
+            : "멤버십 업체를 등록하지 못했습니다.",
       );
     } finally {
       setIsSaving(false);
@@ -2927,14 +2944,17 @@ function MembershipRegistrationView({
   }
 
   return (
-    <section className="admin-membership-registration" aria-label="제휴 업체 등록">
+    <section
+      className="admin-membership-registration"
+      aria-label={isEditing ? "제휴 업체 수정" : "제휴 업체 등록"}
+    >
       <header className="admin-membership-registration-heading">
         <nav aria-label="현재 위치">
           <button type="button" onClick={onCancel}>멤버십 관리</button>
           <span aria-hidden="true">›</span>
-          <strong>업체 등록</strong>
+          <strong>{isEditing ? "업체 수정" : "업체 등록"}</strong>
         </nav>
-        <h1>제휴 업체 등록</h1>
+        <h1>{isEditing ? "제휴 업체 수정" : "제휴 업체 등록"}</h1>
       </header>
 
       <form onSubmit={submitRegistration}>
@@ -2985,6 +3005,7 @@ function MembershipRegistrationView({
                 file={cardImage}
                 accept="image/jpeg,image/png,image/gif"
                 hint="JPG, PNG, GIF (최대 2MB)"
+                currentFileUrl={initial?.cardImageUrl}
                 onChange={setCardImage}
               />
               <div className="admin-membership-form-toggles">
@@ -3024,6 +3045,7 @@ function MembershipRegistrationView({
                 accept="image/jpeg,image/png,image/gif"
                 hint="권장 사이즈: 1200 × 630px (최대 10MB)"
                 large
+                currentFileUrl={initial?.detailImageUrl}
                 onChange={setDetailImage}
               />
               <div className="admin-membership-form-row">
@@ -3267,7 +3289,10 @@ function MembershipRegistrationView({
                 file={attachmentFile}
                 accept="image/jpeg,image/png,image/gif,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
                 hint="JPG, PNG, GIF, PDF, PPT, PPTX (최대 10MB)"
+                currentFileUrl={initial?.attachmentUrl}
+                isCurrentFileRemoved={removeAttachment}
                 onChange={setAttachmentFile}
+                onRemoveCurrentFile={setRemoveAttachment}
               />
             </MembershipFormCard>
           </div>
@@ -3317,22 +3342,50 @@ function MembershipFormField({
 
 function MembershipFileField({
   accept,
+  currentFileUrl,
   file,
   hint,
+  isCurrentFileRemoved = false,
   label,
   large = false,
   onChange,
+  onRemoveCurrentFile,
 }: {
   accept: string;
+  currentFileUrl?: string | null;
   file: File | null;
   hint: string;
+  isCurrentFileRemoved?: boolean;
   label: string;
   large?: boolean;
   onChange: (file: File | null) => void;
+  onRemoveCurrentFile?: (removed: boolean) => void;
 }) {
   return (
     <div className="admin-membership-file-field">
       <span>{label}</span>
+      {currentFileUrl && !file ? (
+        <p className="admin-membership-current-file">
+          {isCurrentFileRemoved ? (
+            <>
+              <span>저장하면 등록된 파일이 삭제됩니다.</span>
+              <button type="button" onClick={() => onRemoveCurrentFile?.(false)}>
+                되돌리기
+              </button>
+            </>
+          ) : (
+            <>
+              <span>등록된 파일이 유지됩니다. 새 파일을 올리면 교체됩니다.</span>
+              <a href={currentFileUrl} target="_blank" rel="noreferrer">현재 파일 보기</a>
+              {onRemoveCurrentFile ? (
+                <button type="button" onClick={() => onRemoveCurrentFile(true)}>
+                  삭제
+                </button>
+              ) : null}
+            </>
+          )}
+        </p>
+      ) : null}
       <label
         className={large ? "admin-membership-upload-zone is-large" : "admin-membership-upload-zone"}
         onDragOver={(event) => event.preventDefault()}
