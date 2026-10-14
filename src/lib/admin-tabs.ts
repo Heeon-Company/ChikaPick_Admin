@@ -17,6 +17,7 @@ export const primaryTabs = [
   { id: "chikapick-accounts", label: "치카픽 계정 조회", icon: "/Type=Family.svg" },
   { id: "partner-accounts", label: "파트너스 계정 조회", icon: "/Type=Family.svg" },
   { id: "partner-invites", label: "파트너 초대코드 관리", icon: "/Type=Settings.svg" },
+  { id: "membership-invites", label: "멤버십 초대코드 관리", icon: "/Type=Ticket.svg" },
   { id: "memberships", label: "멤버십 관리", icon: "/Type=Ticket.svg" },
   { id: "terms-management", label: "약관 관리", icon: "/Type=Diary.svg" },
   { id: "support-management", label: "고객지원 관리", icon: "/Type=Opinion.svg" },

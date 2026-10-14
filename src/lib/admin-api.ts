@@ -1151,6 +1151,71 @@ export async function deleteAdminMembershipPartner(
   );
 }
 
+export async function fetchAdminMembershipInvites(
+  accessToken: string,
+  filters: AdminMembershipInviteFilters,
+  page: number,
+) {
+  const params = new URLSearchParams({ page: String(page), pageSize: "20" });
+  if (filters.status !== "all") params.set("status", filters.status);
+  if (filters.query.trim()) params.set("search", filters.query.trim());
+  return adminFetch<AdminMembershipInvitePayload>(
+    `/api/v1/admin/membership-invites?${params.toString()}`,
+    accessToken,
+  );
+}
+
+export async function issueAdminMembershipInvite(
+  accessToken: string,
+  input: AdminMembershipInviteIssueInput,
+) {
+  const body = new FormData();
+  body.set("name", input.name.trim());
+  body.set("category", input.category);
+  if (input.businessLicense) body.set("businessLicense", input.businessLicense);
+  return adminFetch<AdminActionResult & { code: string; inviteId: string }>(
+    "/api/v1/admin/membership-invites",
+    accessToken,
+    { method: "POST", body },
+  );
+}
+
+function membershipInvitePath(inviteId: string, action: string) {
+  return `/api/v1/admin/membership-invites/${encodeURIComponent(inviteId)}/${action}`;
+}
+
+export async function revealAdminMembershipInvite(accessToken: string, inviteId: string) {
+  return adminFetch<{ code: string; status: string }>(
+    membershipInvitePath(inviteId, "reveal"),
+    accessToken,
+    { method: "POST" },
+  );
+}
+
+export async function revokeAdminMembershipInvite(accessToken: string, inviteId: string) {
+  return adminFetch<AdminActionResult>(membershipInvitePath(inviteId, "revoke"), accessToken, {
+    method: "POST",
+  });
+}
+
+export async function reissueAdminMembershipInvite(accessToken: string, inviteId: string) {
+  return adminFetch<AdminActionResult & { code: string; inviteId: string }>(
+    membershipInvitePath(inviteId, "reissue"),
+    accessToken,
+    { method: "POST" },
+  );
+}
+
+export async function fetchAdminMembershipInviteBusinessLicenseUrl(
+  accessToken: string,
+  inviteId: string,
+) {
+  return adminFetch<{ url: string }>(
+    membershipInvitePath(inviteId, "business-license"),
+    accessToken,
+  );
+}
+
 export async function sendAdminPasswordReset(
   accessToken: string,
   userId: string,
@@ -1740,6 +1805,11 @@ import type {
   AdminMembershipPartnerDetail,
   MembershipCategory,
 } from "./membership-management";
+import type {
+  AdminMembershipInviteFilters,
+  AdminMembershipInviteIssueInput,
+  AdminMembershipInvitePayload,
+} from "./membership-invites";
 import type {
   AdminAuditLogFilters,
   AdminAuditLogPayload,

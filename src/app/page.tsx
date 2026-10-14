@@ -33,6 +33,12 @@ import {
   setAdminPartnerClinicAppVisibility,
   bulkUpdateAdminMembershipPartners,
   createAdminMembershipPartner,
+  fetchAdminMembershipInviteBusinessLicenseUrl,
+  fetchAdminMembershipInvites,
+  issueAdminMembershipInvite,
+  reissueAdminMembershipInvite,
+  revealAdminMembershipInvite,
+  revokeAdminMembershipInvite,
   fetchAdminMembershipPartnerDetail,
   replaceAdminMembershipPartnerContent,
   createAdminPartnerClinicOperationEvent,
@@ -120,6 +126,15 @@ import {
   shouldAutoLoadAdminConsole,
 } from "@/lib/admin-auth-session";
 import { primaryTabs, type PrimaryAdminTab } from "@/lib/admin-tabs";
+import {
+  canReissueMembershipInvite,
+  defaultAdminMembershipInviteFilters,
+  membershipInviteStatusLabel,
+  validateMembershipInviteIssue,
+  type AdminMembershipInvite,
+  type AdminMembershipInviteFilters,
+  type AdminMembershipInvitePayload,
+} from "@/lib/membership-invites";
 import { AdminNavigationProvider, useAdminNavigation, useUnsavedChanges } from "@/components/AdminNavigation";
 import {
   reservationSourceLabel,
@@ -327,6 +342,7 @@ const primaryTabContentLayouts: Record<PrimaryAdminTab, AdminContentLayout> = {
   "chikapick-accounts": "fluid",
   "partner-accounts": "fluid",
   "partner-invites": "fluid",
+  "membership-invites": "fluid",
   memberships: "fluid",
   "terms-management": "fluid",
   "sales-performance": "fluid",
@@ -370,6 +386,8 @@ const primaryTabDescriptions: Record<PrimaryAdminTab, string> = {
     "치카픽 파트너스에 가입한 계정을 이메일로 조회하고 소속 정보를 확인합니다.",
   "partner-invites":
     "파트너 치과가 발급한 초대코드의 상태와 사용 이력을 조회하고 필요한 코드를 폐기합니다.",
+  "membership-invites":
+    "멤버십 제휴 업체가 파트너스에 가입할 때 쓰는 코드를 발급하고, 가입 여부를 확인합니다.",
   memberships: "치카픽 멤버십 탭에 노출될 제휴 업체를 등록합니다.",
   "terms-management":
     "치카픽과 파트너스에 적용되는 약관 버전을 조회하고 새 버전을 게시합니다.",
@@ -1349,6 +1367,8 @@ function AdminConsole() {
                 runAction((token) => revokeInvite(token, inviteId))
               }
             />
+          ) : activePrimaryTab === "membership-invites" ? (
+            <MembershipInviteDirectoryTab accessToken={session?.access_token ?? ""} />
           ) : activePrimaryTab === "support-management" ? (
             <SupportManagementTab accessToken={session?.access_token ?? ""} />
           ) : activePrimaryTab === "terms-management" ? (
@@ -9777,6 +9797,424 @@ function PartnerInviteDirectoryTab({
                 복사
               </button>
               <button type="button" onClick={() => setInviteCodeDialog(null)}>
+                확인
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function MembershipInviteDirectoryTab({ accessToken }: { accessToken: string }) {
+  const [draftFilters, setDraftFilters] = useState<AdminMembershipInviteFilters>(
+    defaultAdminMembershipInviteFilters,
+  );
+  const [filters, setFilters] = useState<AdminMembershipInviteFilters>(
+    defaultAdminMembershipInviteFilters,
+  );
+  const [currentPage, setCurrentPage] = useState(1);
+  const [data, setData] = useState<AdminMembershipInvitePayload | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [busyInviteId, setBusyInviteId] = useState<string | null>(null);
+  const [issueName, setIssueName] = useState("");
+  const [issueCategory, setIssueCategory] = useState<MembershipCategory>("lab");
+  const [issueLicense, setIssueLicense] = useState<File | null>(null);
+  const [issueLicenseInputKey, setIssueLicenseInputKey] = useState(0);
+  const [isIssuing, setIsIssuing] = useState(false);
+  const [codeDialog, setCodeDialog] = useState<{
+    code: string | null;
+    error: string;
+    isLoading: boolean;
+    isNew: boolean;
+    partnerName: string;
+  } | null>(null);
+  const [copyMessage, setCopyMessage] = useState("");
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  const loadInvites = useCallback(async () => {
+    if (!accessToken) return;
+    setIsLoading(true);
+    setError("");
+    try {
+      setData(await fetchAdminMembershipInvites(accessToken, filters, currentPage));
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "멤버십 초대코드를 불러오지 못했습니다.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [accessToken, currentPage, filters]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => void loadInvites(), 0);
+    return () => window.clearTimeout(timeout);
+  }, [loadInvites]);
+
+  function applyFilters(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setCurrentPage(1);
+    setFilters({ ...draftFilters, query: draftFilters.query.trim() });
+  }
+
+  async function issueCode(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const input = { businessLicense: issueLicense, category: issueCategory, name: issueName };
+    const validationError = validateMembershipInviteIssue(input);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    setIsIssuing(true);
+    setError("");
+    setNotice("");
+    try {
+      const result = await issueAdminMembershipInvite(accessToken, input);
+      setCopyMessage("");
+      setCodeDialog({
+        code: result.code,
+        error: "",
+        isLoading: false,
+        isNew: true,
+        partnerName: issueName.trim(),
+      });
+      setIssueName("");
+      setIssueLicense(null);
+      setIssueLicenseInputKey((current) => current + 1);
+      setNotice(result.message);
+      setCurrentPage(1);
+      await loadInvites();
+    } catch (issueError) {
+      setError(
+        issueError instanceof Error
+          ? issueError.message
+          : "멤버십 제휴 코드를 발급하지 못했습니다.",
+      );
+    } finally {
+      setIsIssuing(false);
+    }
+  }
+
+  async function openCode(invite: AdminMembershipInvite) {
+    setCopyMessage("");
+    setCodeDialog({
+      code: null,
+      error: "",
+      isLoading: true,
+      isNew: false,
+      partnerName: invite.partnerName,
+    });
+    try {
+      const result = await revealAdminMembershipInvite(accessToken, invite.id);
+      setCodeDialog((current) =>
+        current ? { ...current, code: result.code, isLoading: false } : current,
+      );
+    } catch (revealError) {
+      setCodeDialog((current) =>
+        current
+          ? {
+              ...current,
+              error:
+                revealError instanceof Error
+                  ? revealError.message
+                  : "초대코드를 확인하지 못했습니다.",
+              isLoading: false,
+            }
+          : current,
+      );
+    }
+  }
+
+  async function runInviteAction(
+    invite: AdminMembershipInvite,
+    action: "revoke" | "reissue",
+  ) {
+    const confirmation =
+      action === "revoke"
+        ? `${invite.partnerName}의 멤버십 제휴 코드를 폐기할까요? 폐기 후에는 가입에 쓸 수 없습니다.`
+        : `${invite.partnerName}의 코드를 다시 발급할까요? 이전 코드는 더 이상 쓸 수 없습니다.`;
+    if (!window.confirm(confirmation)) return;
+    setBusyInviteId(invite.id);
+    setError("");
+    setNotice("");
+    try {
+      if (action === "revoke") {
+        const result = await revokeAdminMembershipInvite(accessToken, invite.id);
+        setNotice(result.message);
+      } else {
+        const result = await reissueAdminMembershipInvite(accessToken, invite.id);
+        setCopyMessage("");
+        setCodeDialog({
+          code: result.code,
+          error: "",
+          isLoading: false,
+          isNew: true,
+          partnerName: invite.partnerName,
+        });
+        setNotice(result.message);
+      }
+      await loadInvites();
+    } catch (actionError) {
+      setError(
+        actionError instanceof Error
+          ? actionError.message
+          : "멤버십 제휴 코드를 처리하지 못했습니다.",
+      );
+    } finally {
+      setBusyInviteId(null);
+    }
+  }
+
+  async function openBusinessLicense(invite: AdminMembershipInvite) {
+    // Opened before the request so the browser does not block the new tab.
+    const popup = window.open("", "_blank");
+    try {
+      const { url } = await fetchAdminMembershipInviteBusinessLicenseUrl(
+        accessToken,
+        invite.id,
+      );
+      if (popup) popup.location.href = url;
+      else window.location.assign(url);
+    } catch (licenseError) {
+      popup?.close();
+      setError(
+        licenseError instanceof Error
+          ? licenseError.message
+          : "사업자등록증을 열지 못했습니다.",
+      );
+    }
+  }
+
+  async function copyCode() {
+    if (!codeDialog?.code) return;
+    try {
+      await navigator.clipboard.writeText(codeDialog.code);
+      setCopyMessage("초대코드를 복사했습니다.");
+    } catch {
+      setCopyMessage("복사하지 못했습니다. 코드를 직접 선택해 주세요.");
+    }
+  }
+
+  return (
+    <section className="admin-operational-page">
+      <section className="admin-operational-table-card admin-membership-invite-issue">
+        <div className="admin-operational-table-heading">
+          <strong>멤버십 제휴 코드 발급</strong>
+        </div>
+        <p className="admin-operational-guidance">
+          업체명, 카테고리, 사업자등록증 사본을 등록하면 코드가 발급됩니다. 업체가
+          파트너스에서 &lsquo;멤버십 제휴 업체&rsquo;로 가입할 때 이 코드를 입력하면 자기
+          업체 글만 작성할 수 있습니다. 작성한 글은 멤버십 관리에서 노출을 켜야
+          공개됩니다.
+        </p>
+        <form className="admin-membership-invite-form" onSubmit={issueCode}>
+          <label>
+            <span>업체명</span>
+            <input
+              value={issueName}
+              maxLength={80}
+              placeholder="업체명을 입력해 주세요."
+              onChange={(event) => setIssueName(event.target.value)}
+            />
+          </label>
+          <label>
+            <span>카테고리</span>
+            <AdminSelect
+              label="카테고리"
+              value={issueCategory}
+              onChange={setIssueCategory}
+              options={membershipCategories.slice(1).map((category) => ({
+                value: category.code as MembershipCategory,
+                label: category.label,
+              }))}
+            />
+          </label>
+          <label>
+            <span>사업자등록증 사본</span>
+            <input
+              key={issueLicenseInputKey}
+              type="file"
+              accept="application/pdf,image/jpeg,image/png"
+              onChange={(event) => setIssueLicense(event.target.files?.[0] ?? null)}
+            />
+          </label>
+          <button type="submit" disabled={isIssuing}>
+            {isIssuing ? "발급 중" : "코드 발급"}
+          </button>
+        </form>
+      </section>
+
+      <form className="admin-operational-filters" onSubmit={applyFilters}>
+        <label className="admin-operational-search">
+          <span>업체명</span>
+          <input
+            type="search"
+            value={draftFilters.query}
+            placeholder="업체명을 입력해 주세요."
+            onChange={(event) =>
+              setDraftFilters((current) => ({ ...current, query: event.target.value }))
+            }
+          />
+        </label>
+        <label>
+          <span>상태</span>
+          <AdminSelect
+            label="상태"
+            value={draftFilters.status}
+            onChange={(value) =>
+              setDraftFilters((current) => ({ ...current, status: value }))
+            }
+            options={[
+              { value: "all", label: "전체" },
+              { value: "active", label: "가입 대기" },
+              { value: "redeemed", label: "가입 완료" },
+              { value: "revoked", label: "폐기" },
+            ]}
+          />
+        </label>
+        <button type="submit">조회</button>
+      </form>
+
+      <section className="admin-operational-table-card">
+        <div className="admin-operational-table-heading">
+          <strong>멤버십 초대코드</strong>
+          <span>{data?.pagination.totalItems.toLocaleString("ko-KR") ?? "0"}건</span>
+        </div>
+        <p className="admin-operational-guidance">
+          업체명을 누르면 초대코드를 확인하고 복사할 수 있습니다.
+        </p>
+        {notice ? <p className="admin-operational-notice" role="status">{notice}</p> : null}
+        {error ? <p className="admin-operational-error" role="alert">{error}</p> : null}
+        <div className="admin-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>업체명</th>
+                <th>카테고리</th>
+                <th>사업자등록증</th>
+                <th>발급자</th>
+                <th>상태</th>
+                <th>발급 일시</th>
+                <th>가입 계정</th>
+                <th>가입 일시</th>
+                <th>처리</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data?.items.map((invite) => (
+                <tr key={invite.id}>
+                  <td>
+                    <button
+                      type="button"
+                      className="admin-invite-clinic-button"
+                      aria-haspopup="dialog"
+                      onClick={() => void openCode(invite)}
+                    >
+                      {invite.partnerName}
+                    </button>
+                    {invite.partnerDeleted ? (
+                      <span className="admin-membership-invite-deleted">삭제된 업체</span>
+                    ) : null}
+                  </td>
+                  <td>{membershipCategoryLabel(invite.partnerCategory)}</td>
+                  <td>
+                    {invite.hasBusinessLicense ? (
+                      <button
+                        type="button"
+                        className="admin-small-button"
+                        onClick={() => void openBusinessLicense(invite)}
+                      >
+                        보기
+                      </button>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                  <td>{invite.issuerEmail ?? "—"}</td>
+                  <td>
+                    <span className="admin-operational-status">
+                      {membershipInviteStatusLabel(invite.status)}
+                    </span>
+                  </td>
+                  <td>{adminDirectoryDateTime(invite.issuedAt)}</td>
+                  <td>{invite.accountEmail ?? "—"}</td>
+                  <td>{adminDirectoryDateTime(invite.redeemedAt)}</td>
+                  <td>
+                    <div className="admin-membership-invite-actions">
+                      <button
+                        type="button"
+                        className="admin-small-button"
+                        disabled={!canReissueMembershipInvite(invite) || busyInviteId === invite.id}
+                        onClick={() => void runInviteAction(invite, "reissue")}
+                      >
+                        재발급
+                      </button>
+                      <button
+                        type="button"
+                        className="admin-small-button"
+                        disabled={invite.status !== "active" || busyInviteId === invite.id}
+                        onClick={() => void runInviteAction(invite, "revoke")}
+                      >
+                        {busyInviteId === invite.id ? "처리 중" : "폐기"}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {!isLoading && (data?.items.length ?? 0) === 0 ? (
+                <EmptyRow colSpan={9} label="발급한 멤버십 초대코드가 없습니다." />
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+        {isLoading ? (
+          <p className="admin-operational-loading">초대코드를 불러오는 중입니다.</p>
+        ) : null}
+        {data ? (
+          <OperationalPagination pagination={data.pagination} onPageChange={setCurrentPage} />
+        ) : null}
+      </section>
+      {codeDialog ? (
+        <div className="admin-hospital-review-dialog-layer">
+          <button
+            type="button"
+            className="admin-hospital-review-dialog-backdrop"
+            aria-label="초대코드 팝업 닫기"
+            onClick={() => setCodeDialog(null)}
+          />
+          <section
+            className="admin-hospital-review-dialog admin-hospital-invite-dialog admin-partner-invite-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-membership-invite-dialog-title"
+          >
+            <h2 id="admin-membership-invite-dialog-title">{codeDialog.partnerName}</h2>
+            <p>{codeDialog.isNew ? "멤버십 제휴 코드를 발급했습니다" : "멤버십 제휴 코드"}</p>
+            {codeDialog.isLoading ? (
+              <div className="admin-partner-invite-dialog-message" role="status">
+                초대코드를 불러오는 중입니다.
+              </div>
+            ) : codeDialog.code ? (
+              <div className="admin-hospital-invite-code" aria-label="멤버십 제휴 코드">
+                {codeDialog.code}
+              </div>
+            ) : (
+              <div className="admin-partner-invite-dialog-message" role="alert">
+                {codeDialog.error}
+              </div>
+            )}
+            <p>업체에 이 코드를 전달해 주세요. 한 번 가입하면 다시 쓸 수 없습니다.</p>
+            {copyMessage ? <p role="status">{copyMessage}</p> : null}
+            <div className="admin-hospital-invite-actions">
+              <button type="button" disabled={!codeDialog.code} onClick={() => void copyCode()}>
+                복사
+              </button>
+              <button type="button" onClick={() => setCodeDialog(null)}>
                 확인
               </button>
             </div>

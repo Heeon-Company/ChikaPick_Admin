@@ -33,7 +33,13 @@ import {
   fetchAdminInviteDirectory,
   fetchAdminManualHospitalSubmissions,
   fetchAdminMembershipManagement,
+  fetchAdminMembershipInviteBusinessLicenseUrl,
+  fetchAdminMembershipInvites,
   fetchAdminMembershipPartnerDetail,
+  issueAdminMembershipInvite,
+  reissueAdminMembershipInvite,
+  revealAdminMembershipInvite,
+  revokeAdminMembershipInvite,
   fetchAdminPartnerClinicDetail,
   fetchAdminPartnerAccountDetail,
   fetchAdminPartnerClinics,
@@ -487,6 +493,54 @@ test("membership management API sends server filters and row mutations", async (
     recommendedOrder: 2,
   });
   assert.equal(calls[2]?.init?.method, "DELETE");
+});
+
+test("membership invite API issues codes as multipart data and calls the invite actions", async () => {
+  const calls: Array<{ input: string | URL | Request; init?: RequestInit }> = [];
+  const originalFetch = globalThis.fetch;
+  process.env.NEXT_PUBLIC_CHIKAPICK_API_BASE_URL = "https://api.example.com";
+  globalThis.fetch = async (input, init) => {
+    calls.push({ input, init });
+    return new Response(JSON.stringify({ ok: true, items: [], pagination: {}, code: "MB-ABCD-2345" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+
+  try {
+    await fetchAdminMembershipInvites("access-token", { query: " 기공 ", status: "active" }, 2);
+    await issueAdminMembershipInvite("access-token", {
+      businessLicense: new File(["%PDF-"], "license.pdf", { type: "application/pdf" }),
+      category: "lab",
+      name: " 새기공소 ",
+    });
+    await revealAdminMembershipInvite("access-token", "invite/id");
+    await reissueAdminMembershipInvite("access-token", "invite/id");
+    await revokeAdminMembershipInvite("access-token", "invite/id");
+    await fetchAdminMembershipInviteBusinessLicenseUrl("access-token", "invite/id");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(
+    calls[0]?.input,
+    "https://api.example.com/api/v1/admin/membership-invites?page=2&pageSize=20&status=active&search=%EA%B8%B0%EA%B3%B5",
+  );
+  assert.equal(calls[1]?.init?.method, "POST");
+  const body = calls[1]?.init?.body;
+  assert.ok(body instanceof FormData);
+  assert.equal(body.get("name"), "새기공소");
+  assert.equal(body.get("category"), "lab");
+  assert.ok(body.get("businessLicense") instanceof File);
+  assert.deepEqual(
+    calls.slice(2).map((call) => [call.input, call.init?.method]),
+    [
+      ["https://api.example.com/api/v1/admin/membership-invites/invite%2Fid/reveal", "POST"],
+      ["https://api.example.com/api/v1/admin/membership-invites/invite%2Fid/reissue", "POST"],
+      ["https://api.example.com/api/v1/admin/membership-invites/invite%2Fid/revoke", "POST"],
+      ["https://api.example.com/api/v1/admin/membership-invites/invite%2Fid/business-license", undefined],
+    ],
+  );
 });
 
 test("membership partner edit loads the saved form and replaces it as multipart data", async () => {
