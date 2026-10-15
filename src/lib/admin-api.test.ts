@@ -1338,7 +1338,7 @@ test("createAdminDentalSalesVisit posts an immutable visit payload", async () =>
     note: "초대 코드 전달",
   };
   try {
-    await createAdminDentalSalesVisit("access-token", "sales/1", body);
+    await createAdminDentalSalesVisit("access-token", "sales/1", body, unusedStorage);
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -1348,15 +1348,153 @@ test("createAdminDentalSalesVisit posts an immutable visit payload", async () =>
     "https://api.example.com/api/v1/admin/dental-sales/sales%2F1/visits",
   );
   assert.equal(calls[0]?.init?.method, "POST");
-  const formData = calls[0]?.init?.body as FormData;
-  assert.equal(formData.get("visitedAt"), body.visitedAt);
-  assert.equal(formData.get("salespersonUserId"), body.salespersonUserId);
-  assert.equal(formData.get("detailStatus"), body.detailStatus);
-  assert.equal(formData.get("note"), body.note);
-  assert.deepEqual(formData.getAll("attachmentFiles"), []);
+  assert.deepEqual(JSON.parse(calls[0]?.init?.body as string), {
+    ...body,
+    attachments: [],
+  });
 });
 
-test("sales documents and partner operations use persisted multipart and JSON contracts", async () => {
+const unusedStorage = {
+  from() {
+    throw new Error("storage should not be used");
+  },
+} as never;
+
+function signedUploadFake() {
+  const fetchCalls: Array<{ path: string; method?: string; body: unknown }> = [];
+  const storageCalls: Array<{ bucket: string; path: string; token: string; file: File }> = [];
+  let uploadCount = 0;
+  const fetch = async (input: string | URL | Request, init?: RequestInit) => {
+    const path = new URL(String(input)).pathname;
+    fetchCalls.push({
+      path,
+      method: init?.method,
+      body: typeof init?.body === "string" ? JSON.parse(init.body) : init?.body,
+    });
+    const payload = path.endsWith("/uploads")
+      ? {
+          upload: {
+            bucket: "admin-sales-documents",
+            path: `sales-profiles/p/uploads/${++uploadCount}.jpg`,
+            token: `token-${uploadCount}`,
+          },
+        }
+      : { ok: true, message: "saved" };
+    return new Response(JSON.stringify(payload), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+  const storage = {
+    from(bucket: string) {
+      return {
+        async uploadToSignedUrl(path: string, token: string, file: File) {
+          storageCalls.push({ bucket, path, token, file });
+          return { data: { path }, error: null };
+        },
+      };
+    },
+  } as never;
+  return { fetch, fetchCalls, storage, storageCalls };
+}
+
+test("sales visit attachments go to storage first and the visit sends only their paths", async () => {
+  const fake = signedUploadFake();
+  const originalFetch = globalThis.fetch;
+  process.env.NEXT_PUBLIC_CHIKAPICK_API_BASE_URL = "https://api.example.com";
+  globalThis.fetch = fake.fetch as typeof fetch;
+  const photos = [
+    new File([new Uint8Array([0xff, 0xd8, 0xff])], "방문1.jpg", { type: "image/jpeg" }),
+    new File([new Uint8Array([0xff, 0xd8, 0xff])], "방문2.jpg", { type: "image/jpeg" }),
+  ];
+  try {
+    await createAdminDentalSalesVisit(
+      "access-token",
+      "profile/1",
+      {
+        visitedAt: "2026-10-15T03:00:00.000Z",
+        salespersonUserId: "admin-1",
+        detailStatus: "INTEREST",
+        attachments: photos,
+      },
+      fake.storage,
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.deepEqual(
+    fake.fetchCalls.slice(0, 2).map((call) => [call.path, call.body]),
+    photos.map((file) => [
+      "/api/v1/admin/dental-sales/profile%2F1/uploads",
+      { kind: "visit", fileName: file.name, contentType: "image/jpeg", sizeBytes: 3 },
+    ]),
+  );
+  assert.deepEqual(
+    fake.storageCalls.map((call) => [call.bucket, call.path, call.token, call.file]),
+    [
+      ["admin-sales-documents", "sales-profiles/p/uploads/1.jpg", "token-1", photos[0]],
+      ["admin-sales-documents", "sales-profiles/p/uploads/2.jpg", "token-2", photos[1]],
+    ],
+  );
+  assert.equal(fake.fetchCalls[2]?.path, "/api/v1/admin/dental-sales/profile%2F1/visits");
+  assert.deepEqual((fake.fetchCalls[2]?.body as { attachments: unknown }).attachments, [
+    { storagePath: "sales-profiles/p/uploads/1.jpg", fileName: "방문1.jpg" },
+    { storagePath: "sales-profiles/p/uploads/2.jpg", fileName: "방문2.jpg" },
+  ]);
+});
+
+test("a business license goes to storage first so files over 4.5MB never hit the API body", async () => {
+  const fake = signedUploadFake();
+  const originalFetch = globalThis.fetch;
+  process.env.NEXT_PUBLIC_CHIKAPICK_API_BASE_URL = "https://api.example.com";
+  globalThis.fetch = fake.fetch as typeof fetch;
+  const file = new File([new Uint8Array(6 * 1024 * 1024)], "연세처음치과 사업자등록증.jpg", {
+    type: "image/jpeg",
+  });
+  try {
+    await uploadAdminDentalSalesBusinessLicense("access-token", "profile/1", file, fake.storage);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.deepEqual(fake.fetchCalls[0]?.body, {
+    kind: "business-license",
+    fileName: file.name,
+    contentType: "image/jpeg",
+    sizeBytes: file.size,
+  });
+  assert.equal(fake.storageCalls[0]?.file, file);
+  assert.deepEqual(fake.fetchCalls[1], {
+    path: "/api/v1/admin/dental-sales/profile%2F1/business-license",
+    method: "POST",
+    body: { storagePath: "sales-profiles/p/uploads/1.jpg", fileName: file.name },
+  });
+});
+
+test("a failed storage upload names the file and stops before the API save", async () => {
+  const fake = signedUploadFake();
+  const originalFetch = globalThis.fetch;
+  process.env.NEXT_PUBLIC_CHIKAPICK_API_BASE_URL = "https://api.example.com";
+  globalThis.fetch = fake.fetch as typeof fetch;
+  const failingStorage = {
+    from() {
+      return { uploadToSignedUrl: async () => ({ data: null, error: new Error("network") }) };
+    },
+  } as never;
+  const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], "license.jpg", { type: "image/jpeg" });
+  try {
+    await assert.rejects(
+      uploadAdminDentalSalesBusinessLicense("access-token", "profile/1", file, failingStorage),
+      { message: "license.jpg 파일을 올리지 못했습니다. 다시 시도해 주세요." },
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  assert.equal(fake.fetchCalls.length, 1);
+});
+
+test("partner operations use persisted JSON contracts", async () => {
   const calls: Array<{ input: string | URL | Request; init?: RequestInit }> = [];
   const originalFetch = globalThis.fetch;
   process.env.NEXT_PUBLIC_CHIKAPICK_API_BASE_URL = "https://api.example.com";
@@ -1367,16 +1505,7 @@ test("sales documents and partner operations use persisted multipart and JSON co
       headers: { "Content-Type": "application/json" },
     });
   };
-  const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], "license.jpg", {
-    type: "image/jpeg",
-  });
-
   try {
-    await uploadAdminDentalSalesBusinessLicense(
-      "access-token",
-      "profile/1",
-      file,
-    );
     await assignAdminPartnerClinicOperator(
       "access-token",
       "clinic/1",
@@ -1403,23 +1532,15 @@ test("sales documents and partner operations use persisted multipart and JSON co
     globalThis.fetch = originalFetch;
   }
 
-  assert.equal(
-    calls[0]?.input,
-    "https://api.example.com/api/v1/admin/dental-sales/profile%2F1/business-license",
-  );
-  assert.equal(
-    (calls[0]?.init?.body as FormData).get("businessLicenseFile"),
-    file,
-  );
-  assert.deepEqual(JSON.parse(calls[1]?.init?.body as string), {
+  assert.deepEqual(JSON.parse(calls[0]?.init?.body as string), {
     assignedOperatorUserId: "admin-2",
   });
-  assert.deepEqual(JSON.parse(calls[2]?.init?.body as string), {
+  assert.deepEqual(JSON.parse(calls[1]?.init?.body as string), {
     type: "operation_memo",
     content: "확인 메모",
     occurredAt: "2026-07-19T03:00:00.000Z",
   });
-  assert.deepEqual(JSON.parse(calls[3]?.init?.body as string), {
+  assert.deepEqual(JSON.parse(calls[2]?.init?.body as string), {
     action: "hide",
     partnerIds: [
       "60000000-0000-0000-0000-000000000001",

@@ -1454,17 +1454,27 @@ export async function createAdminDentalSalesVisit(
     note?: string;
     attachments?: File[];
   },
+  storage: SalesDocumentStorage = createSupabaseBrowserClient().storage,
 ) {
-  const formData = new FormData();
-  formData.set("visitedAt", body.visitedAt);
-  formData.set("salespersonUserId", body.salespersonUserId);
-  formData.set("detailStatus", body.detailStatus);
-  if (body.note) formData.set("note", body.note);
-  body.attachments?.forEach((file) => formData.append("attachmentFiles", file));
+  const attachments = [];
+  for (const file of body.attachments ?? []) {
+    attachments.push(
+      await uploadAdminSalesDocument(accessToken, profileId, "visit", file, storage),
+    );
+  }
   return adminFetch<AdminActionResult>(
     `/api/v1/admin/dental-sales/${encodeURIComponent(profileId)}/visits`,
     accessToken,
-    { method: "POST", body: formData },
+    {
+      method: "POST",
+      body: JSON.stringify({
+        visitedAt: body.visitedAt,
+        salespersonUserId: body.salespersonUserId,
+        detailStatus: body.detailStatus,
+        ...(body.note ? { note: body.note } : {}),
+        attachments,
+      }),
+    },
   );
 }
 
@@ -1472,14 +1482,58 @@ export async function uploadAdminDentalSalesBusinessLicense(
   accessToken: string,
   profileId: string,
   file: File,
+  storage: SalesDocumentStorage = createSupabaseBrowserClient().storage,
 ) {
-  const body = new FormData();
-  body.set("businessLicenseFile", file);
+  const uploaded = await uploadAdminSalesDocument(
+    accessToken,
+    profileId,
+    "business-license",
+    file,
+    storage,
+  );
   return adminFetch<AdminActionResult>(
     `/api/v1/admin/dental-sales/${encodeURIComponent(profileId)}/business-license`,
     accessToken,
-    { method: "POST", body },
+    { method: "POST", body: JSON.stringify(uploaded) },
   );
+}
+
+type SalesDocumentStorage = Pick<
+  ReturnType<typeof createSupabaseBrowserClient>["storage"],
+  "from"
+>;
+
+// Sales documents can be up to 10MB, past the API's 4.5MB request-body limit,
+// so each file goes straight to private storage through a signed target and
+// the API only gets the stored path.
+async function uploadAdminSalesDocument(
+  accessToken: string,
+  profileId: string,
+  kind: "business-license" | "visit",
+  file: File,
+  storage: SalesDocumentStorage,
+) {
+  const { upload } = await adminFetch<{
+    upload: { bucket: string; path: string; token: string };
+  }>(`/api/v1/admin/dental-sales/${encodeURIComponent(profileId)}/uploads`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({
+      kind,
+      fileName: file.name,
+      contentType: file.type,
+      sizeBytes: file.size,
+    }),
+  });
+  const result = await storage
+    .from(upload.bucket)
+    .uploadToSignedUrl(upload.path, upload.token, file, {
+      contentType: file.type,
+      upsert: false,
+    });
+  if (result.error) {
+    throw new Error(`${file.name} 파일을 올리지 못했습니다. 다시 시도해 주세요.`);
+  }
+  return { storagePath: upload.path, fileName: file.name };
 }
 
 export type SalesDentistLicenseStatus =
