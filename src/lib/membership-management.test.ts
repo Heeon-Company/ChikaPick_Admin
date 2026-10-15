@@ -57,8 +57,16 @@ test("membership registration validates required fields and Figma upload limits"
   assert.equal(
     validateMembershipRegistration({
       ...valid,
-      cardImage: { size: 2 * 1024 * 1024 + 1, type: "image/png" } as File,
+      cardImage: { size: 2 * 1024 * 1024 + 1, type: "image/gif" } as File,
     }),
     "대표 썸네일 이미지는 2MB 이하만 등록할 수 있습니다.",
+  );
+  // Large JPG/PNG photos are shrunk before upload, so they are not refused here.
+  assert.equal(
+    validateMembershipRegistration({
+      ...valid,
+      cardImage: { size: 5 * 1024 * 1024, type: "image/png" } as File,
+    }),
+    null,
   );
 });

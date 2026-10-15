@@ -495,25 +495,41 @@ test("membership management API sends server filters and row mutations", async (
   assert.equal(calls[2]?.init?.method, "DELETE");
 });
 
-test("membership invite API issues codes as multipart data and calls the invite actions", async () => {
+test("membership invite API stages the license, issues codes and calls the invite actions", async () => {
   const calls: Array<{ input: string | URL | Request; init?: RequestInit }> = [];
   const originalFetch = globalThis.fetch;
   process.env.NEXT_PUBLIC_CHIKAPICK_API_BASE_URL = "https://api.example.com";
   globalThis.fetch = async (input, init) => {
     calls.push({ input, init });
-    return new Response(JSON.stringify({ ok: true, items: [], pagination: {}, code: "MB-ABCD-2345" }), {
+    const upload = String(input).endsWith("/membership-uploads")
+      ? { upload: { bucket: "partner-direct-uploads", path: "staged/license.pdf", token: "t" } }
+      : {};
+    return new Response(JSON.stringify({ ok: true, items: [], pagination: {}, code: "MB-ABCD-2345", ...upload }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
   };
+  const staged: File[] = [];
+  const storage = {
+    from() {
+      return {
+        async uploadToSignedUrl(_path: string, _token: string, file: File) {
+          staged.push(file);
+          return { data: {}, error: null };
+        },
+      };
+    },
+  } as never;
+  const license = new File(["%PDF-"], "license.pdf", { type: "application/pdf" });
 
   try {
     await fetchAdminMembershipInvites("access-token", { query: " 기공 ", status: "active" }, 2);
-    await issueAdminMembershipInvite("access-token", {
-      businessLicense: new File(["%PDF-"], "license.pdf", { type: "application/pdf" }),
-      category: "lab",
-      name: " 새기공소 ",
-    });
+    await issueAdminMembershipInvite(
+      "access-token",
+      { businessLicense: license, category: "lab", name: " 새기공소 " },
+      storage,
+    );
+    calls.splice(1, 1);
     await revealAdminMembershipInvite("access-token", "invite/id");
     await reissueAdminMembershipInvite("access-token", "invite/id");
     await revokeAdminMembershipInvite("access-token", "invite/id");
@@ -531,7 +547,12 @@ test("membership invite API issues codes as multipart data and calls the invite 
   assert.ok(body instanceof FormData);
   assert.equal(body.get("name"), "새기공소");
   assert.equal(body.get("category"), "lab");
-  assert.ok(body.get("businessLicense") instanceof File);
+  // The license is staged in storage first; the form carries only its path.
+  assert.deepEqual(staged, [license]);
+  assert.deepEqual(JSON.parse(String(body.get("businessLicense"))), {
+    uploadPath: "staged/license.pdf",
+    fileName: "license.pdf",
+  });
   assert.deepEqual(
     calls.slice(2).map((call) => [call.input, call.init?.method]),
     [
@@ -585,6 +606,7 @@ test("membership partner edit loads the saved form and replaces it as multipart 
         strengths: [],
       },
       { removeAttachment: true },
+      unusedStorage,
     );
   } finally {
     globalThis.fetch = originalFetch;
@@ -639,7 +661,7 @@ test("membership partner registration sends the complete form as multipart data"
       richContentImages: [],
       serviceTags: ["CAD/CAM"],
       strengths: ["3D 스캐너 보유"],
-    });
+    }, unusedStorage);
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -655,6 +677,99 @@ test("membership partner registration sends the complete form as multipart data"
   assert.equal(body.get("isPreferred"), "true");
   assert.deepEqual(JSON.parse(String(body.get("strengths"))), ["3D 스캐너 보유"]);
   assert.deepEqual(JSON.parse(String(body.get("richContentImageTokens"))), []);
+});
+
+test("membership post images and attachment are staged and the form carries only their paths", async () => {
+  const calls: Array<{ path: string; body: unknown }> = [];
+  const originalFetch = globalThis.fetch;
+  process.env.NEXT_PUBLIC_CHIKAPICK_API_BASE_URL = "https://api.example.com";
+  let count = 0;
+  globalThis.fetch = async (input, init) => {
+    const path = new URL(String(input)).pathname;
+    calls.push({ path, body: typeof init?.body === "string" ? JSON.parse(init.body) : init?.body });
+    const payload = path.endsWith("/membership-uploads")
+      ? { upload: { bucket: "partner-direct-uploads", path: `staged/${++count}`, token: `t${count}` } }
+      : { ok: true, message: "created" };
+    return new Response(JSON.stringify(payload), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+  const staged: string[] = [];
+  const storage = {
+    from() {
+      return {
+        async uploadToSignedUrl(path: string, _token: string, file: File) {
+          staged.push(`${path}:${file.name}`);
+          return { data: {}, error: null };
+        },
+      };
+    },
+  } as never;
+  const png = (name: string) => new File([new Uint8Array([0x89, 0x50])], name, { type: "image/png" });
+
+  try {
+    await createAdminMembershipPartner(
+      "access-token",
+      {
+        attachmentFile: new File(["%PDF-"], "소개서.pdf", { type: "application/pdf" }),
+        attachmentLabel: "소개서",
+        benefitItems: [],
+        cardImage: png("card.png"),
+        category: "lab",
+        contentType: "editor",
+        description: "소개",
+        detailDescription: "",
+        detailImage: png("detail.png"),
+        detailTitle: "상세",
+        inquiryButtonLabel: "상담 신청",
+        inquiryMethod: "phone",
+        inquiryValue: "0212345678",
+        intro: "",
+        isPreferred: false,
+        isVisible: false,
+        name: "서울기공연구소",
+        recommendedOrder: 1,
+        richContent: "본문",
+        richContentImages: [{ file: png("inline.png"), token: "tok-1" }],
+        serviceTags: [],
+        strengths: [],
+      },
+      storage,
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.deepEqual(
+    calls.slice(0, 4).map((call) => [call.path, (call.body as { purpose: string }).purpose]),
+    [
+      ["/api/v1/admin/membership-uploads", "membership-image"],
+      ["/api/v1/admin/membership-uploads", "membership-image"],
+      ["/api/v1/admin/membership-uploads", "membership-image"],
+      ["/api/v1/admin/membership-uploads", "membership-attachment"],
+    ],
+  );
+  assert.deepEqual(staged, [
+    "staged/1:inline.png",
+    "staged/2:card.png",
+    "staged/3:detail.png",
+    "staged/4:소개서.pdf",
+  ]);
+  const form = calls[4]?.body as FormData;
+  assert.equal(calls[4]?.path, "/api/v1/admin/memberships");
+  assert.deepEqual(form.getAll("richContentImages").map((value) => JSON.parse(String(value))), [
+    { uploadPath: "staged/1", fileName: "inline.png" },
+  ]);
+  assert.deepEqual(JSON.parse(String(form.get("cardImage"))), {
+    uploadPath: "staged/2",
+    fileName: "card.png",
+  });
+  assert.deepEqual(JSON.parse(String(form.get("attachmentFile"))), {
+    uploadPath: "staged/4",
+    fileName: "소개서.pdf",
+  });
+  assert.ok(!form.getAll("cardImage").some((value) => value instanceof File));
 });
 
 test("fetchAdminSecretFeedback requests the anonymous feedback directory", async () => {

@@ -1,4 +1,5 @@
 import type { MembershipCategory } from "./membership-management.ts";
+import { isShrinkablePhoto } from "./photo-resize.ts";
 
 export type MembershipInviteStatus = "active" | "redeemed" | "revoked";
 export type MembershipInviteStatusFilter = MembershipInviteStatus | "all";
@@ -57,7 +58,7 @@ export function validateMembershipInviteIssue(input: AdminMembershipInviteIssueI
   if (!businessLicenseTypes.includes(input.businessLicense.type)) {
     return "사업자등록증은 PDF, JPG, PNG 파일만 첨부할 수 있습니다.";
   }
-  if (input.businessLicense.size > 10 * 1024 * 1024) {
+  if (input.businessLicense.size > 10 * 1024 * 1024 && !isShrinkablePhoto(input.businessLicense)) {
     return "사업자등록증은 10MB 이하만 첨부할 수 있습니다.";
   }
   return null;

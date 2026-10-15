@@ -1,3 +1,5 @@
+import { isShrinkablePhoto } from "./photo-resize.ts";
+
 export const membershipCategories = [
   { code: "all", label: "전체" },
   { code: "lab", label: "기공소" },
@@ -194,7 +196,8 @@ export function membershipAssetError(
       : "이미지는 JPG, PNG, GIF 형식만 등록할 수 있습니다.";
   }
   const maximum = kind === "card" ? 2 * 1024 * 1024 : 10 * 1024 * 1024;
-  if (file.size > maximum) {
+  // 큰 JPG/PNG 사진은 업로드할 때 줄이므로 여기서 막지 않는다.
+  if (file.size > maximum && !isShrinkablePhoto(file)) {
     return kind === "card"
       ? "대표 썸네일 이미지는 2MB 이하만 등록할 수 있습니다."
       : "파일은 10MB 이하만 등록할 수 있습니다.";

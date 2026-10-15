@@ -214,6 +214,7 @@ export interface ManualHospitalApprovalResult extends AdminActionResult {
   };
 }
 
+import { shrinkPhotoForUpload } from "./photo-resize.ts";
 import { adminApiBaseUrl } from "./public-env.ts";
 import { createSupabaseBrowserClient } from "./supabase.ts";
 import type {
@@ -1054,7 +1055,52 @@ export async function fetchDentalpediaRelatedContentOptions(
   ];
 }
 
-function membershipContentFormData(input: AdminMembershipCreateInput) {
+const megabyte = 1024 * 1024;
+
+// Membership files go to the staging bucket first and the form carries only
+// the staged path, so a post with several large images stays under the API's
+// 4.5MB request-body limit. Large JPG/PNG photos are shrunk before upload.
+async function stageMembershipFile(
+  accessToken: string,
+  purpose: "membership-image" | "membership-attachment" | "membership-business-license",
+  file: File,
+  maxBytes: number,
+  storage: SalesDocumentStorage,
+) {
+  const prepared = await shrinkPhotoForUpload(file, maxBytes);
+  const { upload } = await adminFetch<{
+    upload: { bucket: string; path: string; token: string };
+  }>("/api/v1/admin/membership-uploads", accessToken, {
+    method: "POST",
+    body: JSON.stringify({
+      purpose,
+      fileName: prepared.name,
+      contentType: prepared.type,
+      sizeBytes: prepared.size,
+    }),
+  });
+  const result = await storage
+    .from(upload.bucket)
+    .uploadToSignedUrl(upload.path, upload.token, prepared, {
+      contentType: prepared.type,
+      upsert: false,
+    });
+  if (result.error) {
+    throw new Error(`${file.name} 파일을 올리지 못했습니다. 다시 시도해 주세요.`);
+  }
+  return JSON.stringify({ uploadPath: upload.path, fileName: prepared.name });
+}
+
+async function membershipContentFormData(
+  accessToken: string,
+  input: AdminMembershipCreateInput,
+  storage: SalesDocumentStorage,
+) {
+  const stage = (
+    purpose: "membership-image" | "membership-attachment",
+    file: File,
+    maxBytes: number,
+  ) => stageMembershipFile(accessToken, purpose, file, maxBytes, storage);
   const body = new FormData();
   body.set("name", input.name);
   body.set("category", input.category);
@@ -1077,23 +1123,33 @@ function membershipContentFormData(input: AdminMembershipCreateInput) {
     "richContentImageTokens",
     JSON.stringify(input.richContentImages.map((image) => image.token)),
   );
-  input.richContentImages.forEach((image) =>
-    body.append("richContentImages", image.file),
-  );
+  for (const image of input.richContentImages) {
+    body.append("richContentImages", await stage("membership-image", image.file, 10 * megabyte));
+  }
   body.set("attachmentLabel", input.attachmentLabel);
-  if (input.cardImage) body.set("cardImage", input.cardImage);
-  if (input.detailImage) body.set("detailImage", input.detailImage);
-  if (input.attachmentFile) body.set("attachmentFile", input.attachmentFile);
+  if (input.cardImage) {
+    body.set("cardImage", await stage("membership-image", input.cardImage, 2 * megabyte));
+  }
+  if (input.detailImage) {
+    body.set("detailImage", await stage("membership-image", input.detailImage, 10 * megabyte));
+  }
+  if (input.attachmentFile) {
+    body.set(
+      "attachmentFile",
+      await stage("membership-attachment", input.attachmentFile, 10 * megabyte),
+    );
+  }
   return body;
 }
 
 export async function createAdminMembershipPartner(
   accessToken: string,
   input: AdminMembershipCreateInput,
+  storage: SalesDocumentStorage = createSupabaseBrowserClient().storage,
 ) {
   return adminFetch<AdminActionResult>("/api/v1/admin/memberships", accessToken, {
     method: "POST",
-    body: membershipContentFormData(input),
+    body: await membershipContentFormData(accessToken, input, storage),
   });
 }
 
@@ -1113,8 +1169,9 @@ export async function replaceAdminMembershipPartnerContent(
   partnerId: string,
   input: AdminMembershipCreateInput,
   { removeAttachment = false }: { removeAttachment?: boolean } = {},
+  storage: SalesDocumentStorage = createSupabaseBrowserClient().storage,
 ) {
-  const body = membershipContentFormData(input);
+  const body = await membershipContentFormData(accessToken, input, storage);
   body.set("removeAttachment", String(removeAttachment && !input.attachmentFile));
   return adminFetch<AdminActionResult>(
     `/api/v1/admin/memberships/${encodeURIComponent(partnerId)}`,
@@ -1168,11 +1225,23 @@ export async function fetchAdminMembershipInvites(
 export async function issueAdminMembershipInvite(
   accessToken: string,
   input: AdminMembershipInviteIssueInput,
+  storage: SalesDocumentStorage = createSupabaseBrowserClient().storage,
 ) {
   const body = new FormData();
   body.set("name", input.name.trim());
   body.set("category", input.category);
-  if (input.businessLicense) body.set("businessLicense", input.businessLicense);
+  if (input.businessLicense) {
+    body.set(
+      "businessLicense",
+      await stageMembershipFile(
+        accessToken,
+        "membership-business-license",
+        input.businessLicense,
+        10 * megabyte,
+        storage,
+      ),
+    );
+  }
   return adminFetch<AdminActionResult & { code: string; inviteId: string }>(
     "/api/v1/admin/membership-invites",
     accessToken,
@@ -1510,9 +1579,10 @@ async function uploadAdminSalesDocument(
   accessToken: string,
   profileId: string,
   kind: "business-license" | "visit",
-  file: File,
+  original: File,
   storage: SalesDocumentStorage,
 ) {
+  const file = await shrinkPhotoForUpload(original, 10 * 1024 * 1024);
   const { upload } = await adminFetch<{
     upload: { bucket: string; path: string; token: string };
   }>(`/api/v1/admin/dental-sales/${encodeURIComponent(profileId)}/uploads`, accessToken, {
@@ -1578,7 +1648,8 @@ export async function uploadAdminSalesDentistLicense(
   const base = `/api/v1/admin/dental-sales/${encodeURIComponent(profileId)}/dentist-licenses/${encodeURIComponent(userId)}`;
   const storage = createSupabaseBrowserClient().storage;
   const uploads = [];
-  for (const file of files) {
+  for (const original of files) {
+    const file = await shrinkPhotoForUpload(original, 10 * 1024 * 1024);
     const { upload } = await adminFetch<{
       upload: { bucket: string; path: string; token: string; submission_id: string };
     }>(`${base}/upload-url`, accessToken, {

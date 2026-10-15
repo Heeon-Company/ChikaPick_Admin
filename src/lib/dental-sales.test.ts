@@ -122,8 +122,13 @@ test("business registration attachment validation enforces the Figma limits", ()
     "JPG, PNG, PDF 파일만 선택할 수 있습니다.",
   );
   assert.equal(
-    dentalSalesBusinessFileError({ type: "image/png", size: 10 * 1024 * 1024 + 1 }),
+    dentalSalesBusinessFileError({ type: "application/pdf", size: 10 * 1024 * 1024 + 1 }),
     "파일 크기는 10MB 이하여야 합니다.",
+  );
+  // Large JPG/PNG photos are shrunk before upload, so they are not refused here.
+  assert.equal(
+    dentalSalesBusinessFileError({ type: "image/png", size: 19 * 1024 * 1024 }),
+    null,
   );
 });
 

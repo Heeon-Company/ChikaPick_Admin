@@ -1,3 +1,5 @@
+import { isShrinkablePhoto } from "./photo-resize.ts";
+
 export type DentalSalesHospitalStatus = "NOT_VISITED" | "VISITING" | "SIGNED";
 export type DentalSalesVisitDetailStatus =
   | "INTEREST"
@@ -346,7 +348,8 @@ export function dentalSalesBusinessFileError(file: {
   if (!["image/jpeg", "image/png", "application/pdf"].includes(file.type)) {
     return "JPG, PNG, PDF 파일만 선택할 수 있습니다.";
   }
-  if (file.size > 10 * 1024 * 1024) {
+  // 큰 JPG/PNG 사진은 업로드할 때 줄이므로 여기서 막지 않는다.
+  if (file.size > 10 * 1024 * 1024 && !isShrinkablePhoto(file)) {
     return "파일 크기는 10MB 이하여야 합니다.";
   }
   return null;
