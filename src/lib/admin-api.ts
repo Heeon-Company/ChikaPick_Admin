@@ -1275,6 +1275,15 @@ export async function reissueAdminMembershipInvite(accessToken: string, inviteId
   );
 }
 
+// 담당자 변경: unlinks the partner's current account and issues a new code.
+export async function changeAdminMembershipInviteAccount(accessToken: string, inviteId: string) {
+  return adminFetch<AdminActionResult & { code: string; inviteId: string }>(
+    membershipInvitePath(inviteId, "change-account"),
+    accessToken,
+    { method: "POST" },
+  );
+}
+
 export async function fetchAdminMembershipInviteBusinessLicenseUrl(
   accessToken: string,
   inviteId: string,

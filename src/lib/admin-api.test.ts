@@ -9,6 +9,7 @@ import {
   bulkUpdateAdminMembershipPartners,
   cancelAdminPartnerClinicSignup,
   createAdminDentalpediaCategory,
+  changeAdminMembershipInviteAccount,
   createAdminMembershipPartner,
   createAdminExternalConnector,
   createAdminDentalSalesVisit,
@@ -534,6 +535,7 @@ test("membership invite API stages the license, issues codes and calls the invit
     await reissueAdminMembershipInvite("access-token", "invite/id");
     await revokeAdminMembershipInvite("access-token", "invite/id");
     await fetchAdminMembershipInviteBusinessLicenseUrl("access-token", "invite/id");
+    await changeAdminMembershipInviteAccount("access-token", "invite/id");
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -560,6 +562,7 @@ test("membership invite API stages the license, issues codes and calls the invit
       ["https://api.example.com/api/v1/admin/membership-invites/invite%2Fid/reissue", "POST"],
       ["https://api.example.com/api/v1/admin/membership-invites/invite%2Fid/revoke", "POST"],
       ["https://api.example.com/api/v1/admin/membership-invites/invite%2Fid/business-license", undefined],
+      ["https://api.example.com/api/v1/admin/membership-invites/invite%2Fid/change-account", "POST"],
     ],
   );
 });

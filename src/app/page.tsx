@@ -32,6 +32,7 @@ import {
   linkAdminPartnerClinicSalesProfile,
   setAdminPartnerClinicAppVisibility,
   bulkUpdateAdminMembershipPartners,
+  changeAdminMembershipInviteAccount,
   createAdminMembershipPartner,
   fetchAdminMembershipInviteBusinessLicenseUrl,
   fetchAdminMembershipInvites,
@@ -9829,7 +9830,11 @@ function MembershipInviteDirectoryTab({ accessToken }: { accessToken: string }) 
     isLoading: boolean;
     isNew: boolean;
     partnerName: string;
+    subtitle?: string;
   } | null>(null);
+  const [accountChangeInvite, setAccountChangeInvite] =
+    useState<AdminMembershipInvite | null>(null);
+  const [isChangingAccount, setIsChangingAccount] = useState(false);
   const [copyMessage, setCopyMessage] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -9927,6 +9932,36 @@ function MembershipInviteDirectoryTab({ accessToken }: { accessToken: string }) 
             }
           : current,
       );
+    }
+  }
+
+  async function changeAccount(invite: AdminMembershipInvite) {
+    setIsChangingAccount(true);
+    setError("");
+    setNotice("");
+    try {
+      const result = await changeAdminMembershipInviteAccount(accessToken, invite.id);
+      setAccountChangeInvite(null);
+      setCopyMessage("");
+      setCodeDialog({
+        code: result.code,
+        error: "",
+        isLoading: false,
+        isNew: true,
+        partnerName: invite.partnerName,
+        subtitle: "새 담당자용 멤버십 제휴 코드를 발급했습니다",
+      });
+      setNotice(result.message);
+      await loadInvites();
+    } catch (changeError) {
+      setError(
+        changeError instanceof Error
+          ? changeError.message
+          : "담당자를 변경하지 못했습니다.",
+      );
+      setAccountChangeInvite(null);
+    } finally {
+      setIsChangingAccount(false);
     }
   }
 
@@ -10146,14 +10181,25 @@ function MembershipInviteDirectoryTab({ accessToken }: { accessToken: string }) 
                   <td>{adminDirectoryDateTime(invite.redeemedAt)}</td>
                   <td>
                     <div className="admin-membership-invite-actions">
-                      <button
-                        type="button"
-                        className="admin-small-button"
-                        disabled={!canReissueMembershipInvite(invite) || busyInviteId === invite.id}
-                        onClick={() => void runInviteAction(invite, "reissue")}
-                      >
-                        재발급
-                      </button>
+                      {invite.status === "redeemed" ? (
+                        <button
+                          type="button"
+                          className="admin-small-button"
+                          disabled={invite.partnerDeleted || busyInviteId === invite.id}
+                          onClick={() => setAccountChangeInvite(invite)}
+                        >
+                          담당자 변경
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="admin-small-button"
+                          disabled={!canReissueMembershipInvite(invite) || busyInviteId === invite.id}
+                          onClick={() => void runInviteAction(invite, "reissue")}
+                        >
+                          재발급
+                        </button>
+                      )}
                       <button
                         type="button"
                         className="admin-small-button"
@@ -10179,6 +10225,59 @@ function MembershipInviteDirectoryTab({ accessToken }: { accessToken: string }) 
           <OperationalPagination pagination={data.pagination} onPageChange={setCurrentPage} />
         ) : null}
       </section>
+      {accountChangeInvite ? (
+        <div className="admin-hospital-review-dialog-layer">
+          <button
+            type="button"
+            className="admin-hospital-review-dialog-backdrop"
+            aria-label="담당자 변경 팝업 닫기"
+            disabled={isChangingAccount}
+            onClick={() => setAccountChangeInvite(null)}
+          />
+          <section
+            className="admin-hospital-review-dialog admin-membership-account-change-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-membership-account-change-title"
+          >
+            <h2 id="admin-membership-account-change-title">담당자 변경</h2>
+            <p className="admin-membership-account-change-lead">
+              {accountChangeInvite.partnerName}의 업체 계정을 새 담당자에게 넘깁니다.
+            </p>
+            <dl className="admin-membership-account-change-current">
+              <div>
+                <dt>현재 연결된 계정</dt>
+                <dd>{accountChangeInvite.accountEmail ?? "—"}</dd>
+              </div>
+              <div>
+                <dt>가입 일시</dt>
+                <dd>{adminDirectoryDateTime(accountChangeInvite.redeemedAt)}</dd>
+              </div>
+            </dl>
+            <ul className="admin-membership-account-change-effects">
+              <li>현재 계정은 바로 업체 정보 관리 화면에 들어갈 수 없게 됩니다.</li>
+              <li>새 멤버십 제휴 코드가 발급됩니다. 새 담당자가 이 코드로 파트너스에 가입합니다.</li>
+              <li>업체가 작성한 글과 공개 상태는 그대로 유지됩니다.</li>
+            </ul>
+            <div className="admin-hospital-invite-actions">
+              <button
+                type="button"
+                disabled={isChangingAccount}
+                onClick={() => setAccountChangeInvite(null)}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                disabled={isChangingAccount}
+                onClick={() => void changeAccount(accountChangeInvite)}
+              >
+                {isChangingAccount ? "변경 중" : "담당자 변경"}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
       {codeDialog ? (
         <div className="admin-hospital-review-dialog-layer">
           <button
@@ -10194,7 +10293,10 @@ function MembershipInviteDirectoryTab({ accessToken }: { accessToken: string }) 
             aria-labelledby="admin-membership-invite-dialog-title"
           >
             <h2 id="admin-membership-invite-dialog-title">{codeDialog.partnerName}</h2>
-            <p>{codeDialog.isNew ? "멤버십 제휴 코드를 발급했습니다" : "멤버십 제휴 코드"}</p>
+            <p>
+              {codeDialog.subtitle ??
+                (codeDialog.isNew ? "멤버십 제휴 코드를 발급했습니다" : "멤버십 제휴 코드")}
+            </p>
             {codeDialog.isLoading ? (
               <div className="admin-partner-invite-dialog-message" role="status">
                 초대코드를 불러오는 중입니다.

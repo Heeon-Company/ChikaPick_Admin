@@ -18460,3 +18460,60 @@ td span {
   }
 }
 
+/* 멤버십 초대코드 관리: 담당자 변경 확인 */
+.admin-membership-account-change-dialog {
+  width: min(480px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-membership-account-change-dialog h2 {
+  margin: 0;
+}
+
+.admin-membership-account-change-lead {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.admin-membership-account-change-current {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+  border-radius: 10px;
+  background: #f4f6f8;
+  padding: 14px 16px;
+}
+
+.admin-membership-account-change-current > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.admin-membership-account-change-current dt {
+  color: var(--text-tertiary);
+}
+
+.admin-membership-account-change-current dd {
+  margin: 0;
+  color: var(--text-primary);
+  font-weight: 600;
+  text-align: right;
+  word-break: break-all;
+}
+
+.admin-membership-account-change-effects {
+  margin: 0;
+  padding-left: 18px;
+  list-style: disc;
+  display: grid;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 19px;
+}
